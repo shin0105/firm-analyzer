@@ -1,0 +1,45 @@
+{
+  "query": "한국과학기술원경영대학 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://kaist.ac.kr/kr/html/footer/0814.html?mode=V&no=19da3743554e9ee8dce238ce29b7c5a7&GotoPage=132",
+      "title": "[KAIST 경영대학 이그제큐티브MBA] 부직학생 채용 공고",
+      "content": "... 과학기술 인재 양성 - 국가 정책으로 추진하는 중장기 연구 개발과 국가 과학기술 저력 배양을 위한 기초응용 연구 수행 - 각 분야 연구 기관 및 산업계와 연계한 연구",
+      "score": 0.99899954,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.catch.co.kr/Comp/RecruitInfo/042691",
+      "title": "한국과학기술원 2025년 채용정보 - 캐치",
+      "content": "KAIST 전산학부 전임직교원 채용. 대학교수/행정직, 빅데이터/AI, 웹기획/PM/웹마케팅 외 2개. 신입/경력박사↑정규직. ~11.28(금) 관심. KAIST 경영공학부 생산전략 및",
+      "score": 0.9956346,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.business.kaist.ac.kr/whyKCB/010702",
+      "title": "HOME KCB > 지원서비스 > 경력개발 - KAIST 경영대학 - 카이스트",
+      "content": "경력개발센터 사이트를 통해 기업별 채용 및 인턴 정보를 연중 수시로 공지하고 있습니다. 인재 채용 계획이 있을 경우 모집요강을 보내 주시면(career@kaist.ac.kr) 경력",
+      "score": 0.9184803,
+      "raw_content": null
+    },
+    {
+      "url": "https://btm.kaist.ac.kr/index.do?menuSeq=2968",
+      "title": "채용정보 - 카이스트 BTM - KAIST",
+      "content": "채용정보 ; 74, [채용 안내] DN솔루션즈 2025년 하반기 신입사원 모집 – R&D 기술기획 분야 (기술... BTM Office ; 73, [CJ주식회사] SID 신입 Associate Consultant 모집 (~",
+      "score": 0.5679366,
+      "raw_content": null
+    },
+    {
+      "url": "https://kaist.recruitment.kr/mrs2/attachFile/downloadFile?fileUid=9b93b508-2caa-44b7-ac23-386e9fdb1865.pdf",
+      "title": "[PDF] 한국과학기술원 NCS 기반 직무기술서 – 행정직(연구행정)",
+      "content": "한국과학기술원법. - 깊이 있는 이론과 실제적인 응용력으로 국가 산업 발전에 기여할 고급 과학기술 인재 양성. - 국가 정책으로 추진하는 중장기 연구 개발과 국가",
+      "score": 0.23091975,
+      "raw_content": null
+    }
+  ],
+  "response_time": 3.45,
+  "request_id": "453d79d7-f376-47b2-92bb-dfddddc6e8a7"
+}
