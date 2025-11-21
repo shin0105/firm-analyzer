@@ -1,0 +1,45 @@
+{
+  "query": "국립산림과학원 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://nifos.forest.go.kr/kfsweb/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_1034&pageIndex=1&pageUnit=10&searchtitle=&searchcont=&searchkey=&searchwriter=&searchWrd=&ctgryLrcls=CTGRY128&ctgryMdcls=&ctgrySmcls=&ntcStartDt=&ntcEndDt=&mn=UKFR_03_01_04&orgId=",
+      "title": "알림마당 > 공지·공고 > 채용 > 목록 - 국립산림과학원",
+      "content": "연구사업. 산림을 통해 국가 브랜드 창출을 선도하는 세계 일류 산림연구기관 국립산림과학원입니다. 연구추진전략 · 부서별연구분야 ... 학원 기간제근로자(전산분야) 채용",
+      "score": 0.7946564,
+      "raw_content": null
+    },
+    {
+      "url": "https://nifos.forest.go.kr/kfsweb/cop/bbs/selectBoardList.do?bbsId=BBSMSTR_1034&orgId=kfri&mn=UKFR_03_01_04&ctgryLrcls=CTGRY128",
+      "title": "국립산림과학원 - 알림마당 > 공지·공고 > 채용 > 목록 - 산림청",
+      "content": "부서별연구분야 · 미래산림전략연구부 · 산림재난·환경연구부 · 산림생명자원연구부 ... 제목 국립산림과학원 기간제근로자(전산분야) 채용... 담당부서 연구기획과.",
+      "score": 0.6954834,
+      "raw_content": null
+    },
+    {
+      "url": "https://nifos.forest.go.kr/kfsweb/cop/bbs/selectBoardList.do;jsessionid=f0NO5sMtdFSl2bCS46NgVKVFaXv0XNDl9F3aDbjQ4CAvAIMvVqWhnFGu095f4EdD.frswas02_servlet_engine5?mn=UKFR_03_01_04&pageIndex=3&pageUnit=10&searchtitle=title&searchcont=&searchkey=&searchwriter=&searchdept=&searchWrd=&ctgryLrcls=CTGRY128&ctgryMdcls=&ctgrySmcls=&ntcStartDt=&ntcEndDt=&orgId=kfri&bbsId=BBSMSTR_1034",
+      "title": "알림마당 > 공지·공고 > 채용 > 목록 - 국립산림과학원",
+      "content": "부서별연구분야 · 미래산림전략연구부 · 산림재난·환경연구부 · 산림생명자원연구부 ... 국립산림과학원 산사태연구과 연구보조 채용공... 담당부서 산사태연구과.",
+      "score": 0.6549173,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.law.go.kr/admRulLsInfoP.do?admRulSeq=2100000202517&vSct=",
+      "title": "국립산림과학원 석·박사연구원 및 전문연구요원 운영 규정",
+      "content": "제8조(채용절차) ① 석ㆍ박사연구원 및 연구요원 채용을 위해 채용 예정 인원, 채용 분야, 응시 자격 및 근로조건 등을 7일 이상 공고하여야 한다. ② 석ㆍ박사연구원 및 연구",
+      "score": 0.46453777,
+      "raw_content": null
+    },
+    {
+      "url": "https://nifos.go.kr/kfsweb/cop/bbs/selectBoardList.do;jsessionid=rS1tTIxnclaqvkXxx9lD1e6pTmgxSnlQSX47bKRoqyOkBKFlxuBhnVOOKCIaD4Eu.frswas01_servlet_engine5?mn=UKFR_03_01_04&pageIndex=3&pageUnit=10&searchtitle=title&searchcont=&searchkey=&searchwriter=&searchdept=&searchWrd=&ctgryLrcls=CTGRY128&ctgryMdcls=&ctgrySmcls=&ntcStartDt=&ntcEndDt=&orgId=kfri&bbsId=BBSMSTR_1034",
+      "title": "알림마당 > 공지·공고 > 채용 > 목록 - 국립산림과학원",
+      "content": "채용 ; 2952, 국립산림과학원 목재공학연구과 기간제근로자(... 목재공학연구과, 2025-09-01, 2025-09-07 ; 2951, 국립산림과학원 일반임기제(임업8급) 경력경... 운영지원과",
+      "score": 0.45231876,
+      "raw_content": null
+    }
+  ],
+  "response_time": 0.0,
+  "request_id": "928e961d-b97d-40e3-a0ca-222b1009d269"
+}

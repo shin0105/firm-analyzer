@@ -1,0 +1,45 @@
+{
+  "query": "서울과학기술대학교 철도전문대학원 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://www.seoultech.ac.kr/service/info/recruit/?do=commonview&searchtext=%ED%95%9C%EA%B5%AD%EC%96%B4&searchtype=1&nowpage=1&bnum=3601&bidx=557563&cate=10&profboardidx=",
+      "title": "민원서비스 - 대학정보알림 - 채용정보 - 상세내용 - 서울과학기술대학교",
+      "content": "○ 열차제어 및 철도 계측시스템 등 관련 기술 분야 강의 가능한 자. ○ 철도신호기술 분야 대형 연구과제 기획 및 수행이 가능한자. 22. 철도전문대학원.",
+      "score": 0.9997565,
+      "raw_content": null
+    },
+    {
+      "url": "https://higrad.net/laboratory/organizations/339105/recruitment/recruits?listType=TOTAL&pagesize=10&sortType=RDT&cntType=ORG&limit=25&displayType=TIT&siteid=3&page=54&mjrRelCds=E14",
+      "title": "서울과학기술대학교 철도전문대학원 철도안전공학과연구실",
+      "content": "철원플라즈마산업기술연구원 나노소재·플라즈마분야(기구설계, 연구개발) 직원 채용. 25.11.06 ~ 25.11.23. 어반리즘 하우스 연구원 모집. 25.11.12 ~ 25.11.18. 컨텍 2026",
+      "score": 0.9985896,
+      "raw_content": null
+    },
+    {
+      "url": "https://railway.seoultech.ac.kr/bbs/notice?do=commonview&searchtext=&searchtype=&nowpage=1&bnum=5539&bidx=545551&cate=&profboardidx=",
+      "title": "철도전문대학원 - 정보광장 - 공지/소식 - 서울과학기술대학교",
+      "content": "모집기간 : ~ 4/26(금) 마감. 채용분야 : 규제개혁분야, 에너지분야, 노무사, 변호사 ... [전체대학원]2024년도 전기 자연계대학원 전문연구요원 편입대상자",
+      "score": 0.997917,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.seoultech.ac.kr/univ/expert/rail/intro",
+      "title": "철도전문대학원 - 소개 - 서울과학기술대학교",
+      "content": "소개 ; 박사, 2년 6개월, 2학기제/년, 주간/야간, 36학점 ; 석 ·박사통합, 4년, 2학기제/년, 주간/야간. 60학점 ('20학년도 입학생 까지 57학점+논문연구과목3학점). 60학점",
+      "score": 0.9224824,
+      "raw_content": null
+    },
+    {
+      "url": "https://railway.seoultech.ac.kr/",
+      "title": "철도전문대학원 - 서울과학기술대학교",
+      "content": "학사일정 · 대학원학사 · 수강신청 안내 · 장학제도 안내 · 학위과정 이수 안내 · 대학원생 권리장전 · 학위논문제출자격시험 안내. 입학안내>. 정보광장>.",
+      "score": 0.891055,
+      "raw_content": null
+    }
+  ],
+  "response_time": 2.92,
+  "request_id": "914f72cd-5e7e-40fe-8204-fa57f844b7ac"
+}

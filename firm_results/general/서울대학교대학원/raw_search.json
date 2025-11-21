@@ -1,0 +1,45 @@
+{
+  "query": "서울대학교대학원 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://my.snu.ac.kr/ctt/bb/bulletin?b=1&ls=20&ln=1&dm=r&p=24122",
+      "title": "서울대학교 국제대학원 4단계 BK21 사업단 신진연구인력 채용 공고 ...",
+      "content": "-계약교수 또는 박사후연구원 1명 · 지원자격 ; -전공 분야 연구 및 학술 활동, 국내외 학술행사 기획, 연차보고서 작성, 참여대학원생 지도 등 · 근무조건.",
+      "score": 0.6172364,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.snu.ac.kr/snunow/notice/job-openings?md=v&bbsidx=160938",
+      "title": "서울대학교 대학혁신센터 연구원 채용 공고 - 공지사항 - 서울대 소식",
+      "content": "-대학혁신지원사업 성과관리 및 평가·분석 등에 관한 업무; -고등교육 정책 및 대학혁신 관련 연구 수행. □전공분야. -행정학, 정책학, 교육학 등.",
+      "score": 0.57723385,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.snu.ac.kr/snunow/notice/job-openings?md=v&bbsidx=158862",
+      "title": "서울대학교 국가미래전략원 SNU Strategic Studies Fellowship ...",
+      "content": "서울대학교 국가미래전략원 SNU Strategic Studies Fellowship 연구원 채용공고 · 가.문의: 02-880-2893 · 나.접수방법: 이메일(snuifs2894@snu.ac.kr) 접수",
+      "score": 0.22359776,
+      "raw_content": null
+    },
+    {
+      "url": "https://health.snu.ac.kr/%EC%B1%84%EC%9A%A9%EC%A0%95%EB%B3%B4/",
+      "title": "채용정보 - 서울대학교 보건대학원",
+      "content": "[가톨릭대학교 의과대학 중독정책연구소] 연구원 채용공고 (연구책임자: 이해국 교수, 가톨릭대학교 의과대학). 다운로드. 보건대학원2682025-11-12.",
+      "score": 0.22187328,
+      "raw_content": null
+    },
+    {
+      "url": "https://gsds.snu.ac.kr/",
+      "title": "서울대학교 데이터사이언스대학원 – Seoul National University ...",
+      "content": "Seoul National University   \nGraduate School of Data Science\n\nSeoul National University   \nGraduate School of Data Science\n\n# Seoul National University Graduate School of Data Science\n\n##### We research and develop innovative technology, educate the next generation of data scientists, and cultivate multidisciplinary collaboration.\n\nLearn More\n\n##### News\n\nMore\n\n ##### 이재진 교수 연구팀, 판결문 개인정보 비식별화 모델 개발\n\n  Jul 18,2025\n ##### 이재진 교수 연구팀, 고성능 한국어 LLM ‘Llama-Thunder’ 개발 [...] Jul 3,2025\n ##### 오민환 교수, 美 아마존 연구상 수상\n\n  Jul 1,2025\n\n##### Research Highlights\n\nMore\n\n ##### ToolDial: Multi-turn Dialogue Generation Method for Tool-Augmented Language Models\n\n  Jul 24,2025\n ##### PVP: An Image Dataset for Personalized Visual Persuasion with Persuasion Strategies, Viewer Characteristics, and Persuasiveness Ratings\n\n  Jul 8,2025\n ##### Context-Robust Knowledge Editing for Language Models\n\n  Jun 24,2025",
+      "score": 0.1645839,
+      "raw_content": null
+    }
+  ],
+  "response_time": 3.06,
+  "request_id": "61f5c7a9-746d-425f-96c0-d9902df3f6b4"
+}
