@@ -1,4 +1,4 @@
-.env
+
 .vscode/
 __pycache__/
 *.pyc
@@ -8,5 +8,4 @@ __pycache__/
 *.log
 .DS_Store
 .idea/
-.env.local
-.env.*.local
+
