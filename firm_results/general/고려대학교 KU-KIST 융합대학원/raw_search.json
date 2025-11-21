@@ -1,0 +1,45 @@
+{
+  "query": "고려대학교 KU-KIST 융합대학원 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://www.kist.re.kr/ko/notice/recruiting-students.do?mode=view&articleNo=8643",
+      "title": "2023학년도 전기 고려대학교 KU-KIST융합대학원 신입생 모집 안내",
+      "content": "주요 연구분야 · R&R체계 · 지속가능경영 · KISTandard · KISTandard Report · 사회 ... 글로벌KIST. 학생모집. 채용공지 · 학생모집. 채용정보. 채용공지",
+      "score": 0.9997086,
+      "raw_content": null
+    },
+    {
+      "url": "https://higrad.net/laboratory/organizations/589507/recruitment/recruits?listType=TOTAL&pagesize=5&sortType=FREQ&cntType=ORG&limit=25&displayType=TIT&siteid=3&page=15&mjrRelCds=E05",
+      "title": "고려대학교 KU-KIST융합대학원 인공지능및에너지소재연구실",
+      "content": "저는 인공지능과 계산과학을 활용한 에너지 소재 개발 연구를 하는 백서인입니다. 협력하는 실험 그룹의 결과를 해석하기 위해 계산과학 시뮬레이션을.",
+      "score": 0.99783427,
+      "raw_content": null
+    },
+    {
+      "url": "http://kist.re.kr/ko/notice/recruiting-students.do?mode=view&articleNo=8643&title=2023%ED%95%99%EB%85%84%EB%8F%84+%EC%A0%84%EA%B8%B0+%EA%B3%A0%EB%A0%A4%EB%8C%80%ED%95%99%EA%B5%90+KU-KIST%EC%9C%B5%ED%95%A9%EB%8C%80%ED%95%99%EC%9B%90+%EC%8B%A0%EC%9E%85%EC%83%9D+%EB%AA%A8%EC%A7%91+%EC%95%88%EB%82%B4",
+      "title": "2023학년도 전기 고려대학교 KU-KIST융합대학원 신입생 ...",
+      "content": "2023학년도 전기 고려대학교 KU-KIST융합대학원 신입생 모집 안내 · 1. 모집인원 : 석사과정 00명 이내, 석·박사통합과정/박사과정 00명 이내 · 2. 모집전공",
+      "score": 0.9957353,
+      "raw_content": null
+    },
+    {
+      "url": "https://kukistschool.korea.ac.kr/",
+      "title": "KU-KIST융합대학원 - 고려대학교",
+      "content": "No information is available for this page.",
+      "score": 0.9905874,
+      "raw_content": null
+    },
+    {
+      "url": "https://phdkim.net/board/graduate-recruiting/175",
+      "title": "[고려대학교 KU-KIST융합대학원] 2026학년도 전기 석·박사 신입생 모집",
+      "content": "MIT가 목적이 되는것이 아니라, 연구가 너무 좋고 하고 싶은 연구가 있어서 그에 따른 수단으로 MIT를 가는 겁니다. ... 인터뷰 제의면 매우 긍정적이네요.",
+      "score": 0.9224824,
+      "raw_content": null
+    }
+  ],
+  "response_time": 3.03,
+  "request_id": "ffb7a9dd-8e83-437b-87de-0a7f6d63848b"
+}
