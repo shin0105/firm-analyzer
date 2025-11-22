@@ -1,0 +1,45 @@
+{
+  "query": "(주)누비랩 AI R&D Center 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://www.wanted.co.kr/wd/55350",
+      "title": "[누비랩] AI 엔지니어 (전문연구요원 가능) 채용 공고 - 원티드",
+      "content": "음식 탐지 및 인식에 관한 기술들을 연구합니다. NLP, Vision 등의 최신 딥러닝 모델들을 연구하고 실제 제품으로 만들어갑니다. 또한, 음식 도메인에서 겪는 엣지 케이스",
+      "score": 0.6122407,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.catch.co.kr/NCS/RecruitInfoDetails/346690",
+      "title": "[누비랩] [전문연구요원]AI 엔지니어 채용 (~10/10) - 캐치",
+      "content": "2023.10.10 | [전문연구요원]AI 엔지니어 채용 | 경력:경력무관, 고용형태:정규직(수습 3개월), 학력:학력무관, 대표부문:데이터 엔지니어, 머신러닝 엔지니어,",
+      "score": 0.43136916,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.jobkorea.co.kr/company/44871153",
+      "title": "누비랩 - 잡코리아",
+      "content": "국내 최초 환경전문 연구단지인 환경산업연구단지 입주 기업; 2020년 AI 그랜드 챌린지에서 top5/top3 연구 기관 선정; 자동으로 음식을 인식 & 측정하는 효율적인",
+      "score": 0.2482429,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.nuvi-labs.com/",
+      "title": "Nuvilab",
+      "content": "Proven with over 41 million track record, we trace food type and amount data in real time\n\nLearn about our products\n\n## Your insights extracted from the genuine data\n\nCustomized intelligence solutions  \nfor the operational purpose of  \neach food service site\n\nLearn about your solutions\n\n## Food Service Powered by Vision AI\n\nCutting-edge technology tailored for industry leaders in food service worldwide\n\nLearn about whom we serve\n\n Hospitals\n Sports Training\n Airlines\n Restaurants [...] Hospitals\n Sports Training\n Airlines\n Restaurants\n\n Long-term Care Facilities\n K-12 Schools\n Day Care Centers\n Plants\n\n Long-term Care Facilities\n K-12 Schools\n Day Care Centers\n Plants\n\n## Solutions at your service, for your service\n\nBook a demo\n\n## Our numbers.\n\nNumber of food dataset as of June 2025\n:   0\n\nCross-verification within\n:   0hrs\n\nModel accuracy up to\n:   0%\n\nScanning time\n:   Real-time [...] # NUVILAB\n\n# Dataware for Food Services\n\nWe measure to   \nhelp you manage\n\npatient meals\n\nflight catering\n\npan waste\n\nschool meals\n\nfood inventory\n\nkitchen waste\n\nleftovers\n\nplate waste\n\noverproduction\n\nfood waste\n\npatient meals\n\nflight catering\n\npan waste\n\nschool meals\n\nfood inventory\n\nkitchen waste\n\nleftovers\n\nplate waste\n\noverproduction\n\nfood waste\n\npatient meals\n\nVideo Player is loading.\n\nCurrent Time \n0:00\n\n/\n\nDuration \n-:-\n\nLoaded: 0%\n\nStream Type LIVE\n\nRemaining Time \n-\n0:00\n\n1x",
+      "score": 0.205201,
+      "raw_content": null
+    },
+    {
+      "url": "https://nuvilab.career.greetinghr.com/",
+      "title": "누비랩 - 그리팅",
+      "content": "No information is available for this page. · Learn why",
+      "score": 0.112356596,
+      "raw_content": null
+    }
+  ],
+  "response_time": 2.97,
+  "request_id": "e506c968-6729-41de-921d-0f04ed9228b2"
+}
