@@ -18,3 +18,4 @@ tavily-python==0.7.10
 tiktoken==0.9.0
 tzdata==2025.2
 urllib3==2.5.0
+openai==2.8.1
