@@ -41,9 +41,31 @@ if not os.path.exists(OUTPUT_DIR):
 df = pd.read_csv(INPUT_FILE)
 print(f"Loaded {len(df)} firms to process.")
 
+PROCESSED_FOLDERS = set()
+for category in ("finance", "general"):
+    category_path = os.path.join(OUTPUT_DIR, category)
+    if os.path.isdir(category_path):
+        for entry in os.listdir(category_path):
+            PROCESSED_FOLDERS.add(entry)
+
 
 def sanitize_filename(name):
     return re.sub(r'[\\/*?:"<>|]', "", name)
+
+
+RATE_LIMIT_PATTERNS = (
+    "rate limit",
+    "reached the limit",
+    "reach the limit",
+    "limit exceeded",
+    "quota",
+    "quota exceeded",
+)
+
+
+def _detect_rate_limit_message(message: str) -> bool:
+    lower_msg = message.lower()
+    return any(pattern in lower_msg for pattern in RATE_LIMIT_PATTERNS)
 
 
 def summarize_firm(firm_name, search_results):
@@ -80,10 +102,28 @@ def summarize_firm(firm_name, search_results):
             temperature=0.5,
             response_format={"type": "json_object"},
         )
-        return json.loads(response.choices[0].message.content)
     except Exception as e:
         print(f"Error summarizing {firm_name}: {e}")
         return None
+
+    if not response.choices:
+        raise ValueError(f"No response returned for {firm_name}.")
+
+    message_content = response.choices[0].message.content or ""
+    if not message_content.strip():
+        raise ValueError(f"Empty response returned for {firm_name}.")
+
+    if _detect_rate_limit_message(message_content):
+        raise RuntimeError(
+            "LLM indicated a rate limit or quota issue. Please check your API usage."
+        )
+
+    result_json = json.loads(message_content)
+    summary_text = result_json.get("summary")
+    if not summary_text:
+        raise ValueError(f"LLM did not return a summary for {firm_name}.")
+
+    return result_json
 
 
 # Process firms
@@ -92,7 +132,7 @@ firms_to_process = df
 
 finance_firms_list = []
 
-for index, row in firms_to_process.iterrows():
+for row_number, (_, row) in enumerate(firms_to_process.iterrows(), start=1):
     firm_name = row["업체명"]
     address = row["소재지"]
 
@@ -101,11 +141,11 @@ for index, row in firms_to_process.iterrows():
     finance_path = os.path.join(OUTPUT_DIR, "finance", safe_name)
     general_path = os.path.join(OUTPUT_DIR, "general", safe_name)
 
-    if os.path.exists(finance_path) or os.path.exists(general_path):
+    if safe_name in PROCESSED_FOLDERS or os.path.exists(finance_path) or os.path.exists(general_path):
         print(f"Skipping {firm_name} (already processed).")
         continue
 
-    print(f"Processing [{index+1}/{len(df)}] {firm_name}...")
+    print(f"Processing [{row_number}/{len(df)}] {firm_name}...")
 
     # 1. Search
     try:
@@ -118,44 +158,54 @@ for index, row in firms_to_process.iterrows():
         continue
 
     # 2. Summarize and Classify
-    result_data = summarize_firm(firm_name, search_response.get("results", []))
+    try:
+        result_data = summarize_firm(firm_name, search_response.get("results", []))
+    except RuntimeError as err:
+        print(f"Stopping execution: {err}")
+        raise SystemExit(1) from err
+    except ValueError as err:
+        print(f"Stopping execution: {err}")
+        raise
 
-    if result_data:
-        summary = result_data.get("summary", "")
-        is_finance = result_data.get("is_finance_quant", False)
+    if result_data is None:
+        print(f"Skipping {firm_name} due to summarization failure.")
+        continue
 
-        # Determine folder
-        category_folder = "finance" if is_finance else "general"
-        safe_name = sanitize_filename(firm_name)
-        firm_dir = os.path.join(OUTPUT_DIR, category_folder, safe_name)
+    summary = result_data.get("summary", "")
+    is_finance = result_data.get("is_finance_quant", False)
 
-        if not os.path.exists(firm_dir):
-            os.makedirs(firm_dir)
+    # Determine folder
+    category_folder = "finance" if is_finance else "general"
+    safe_name = sanitize_filename(firm_name)
+    firm_dir = os.path.join(OUTPUT_DIR, category_folder, safe_name)
 
-        # Save raw search
-        with open(
-            os.path.join(firm_dir, "raw_search.json"), "w", encoding="utf-8"
-        ) as f:
-            json.dump(search_response, f, ensure_ascii=False, indent=2)
+    if not os.path.exists(firm_dir):
+        os.makedirs(firm_dir)
 
-        # Save summary
-        with open(os.path.join(firm_dir, "summary.md"), "w", encoding="utf-8") as f:
-            f.write(f"# {firm_name}\n\n")
-            f.write(f"**Address:** {address}\n")
-            f.write(f"**Category:** {'Finance/Quant' if is_finance else 'General'}\n\n")
-            f.write(summary)
+    PROCESSED_FOLDERS.add(safe_name)
 
-        if is_finance:
-            finance_firms_list.append(
-                {
-                    "firm_name": firm_name,
-                    "address": address,
-                    "summary_snippet": summary[:100] + "...",
-                }
-            )
-            print(f"  -> Classified as Finance/Quant")
-        else:
-            print(f"  -> Classified as General")
+    # Save raw search
+    with open(os.path.join(firm_dir, "raw_search.json"), "w", encoding="utf-8") as f:
+        json.dump(search_response, f, ensure_ascii=False, indent=2)
+
+    # Save summary
+    with open(os.path.join(firm_dir, "summary.md"), "w", encoding="utf-8") as f:
+        f.write(f"# {firm_name}\n\n")
+        f.write(f"**Address:** {address}\n")
+        f.write(f"**Category:** {'Finance/Quant' if is_finance else 'General'}\n\n")
+        f.write(summary)
+
+    if is_finance:
+        finance_firms_list.append(
+            {
+                "firm_name": firm_name,
+                "address": address,
+                "summary_snippet": summary[:100] + "...",
+            }
+        )
+        print(f"  -> Classified as Finance/Quant")
+    else:
+        print(f"  -> Classified as General")
 
     time.sleep(1)  # Respect rate limits
 
