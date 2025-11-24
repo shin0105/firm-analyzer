@@ -141,7 +141,11 @@ for row_number, (_, row) in enumerate(firms_to_process.iterrows(), start=1):
     finance_path = os.path.join(OUTPUT_DIR, "finance", safe_name)
     general_path = os.path.join(OUTPUT_DIR, "general", safe_name)
 
-    if safe_name in PROCESSED_FOLDERS or os.path.exists(finance_path) or os.path.exists(general_path):
+    if (
+        safe_name in PROCESSED_FOLDERS
+        or os.path.exists(finance_path)
+        or os.path.exists(general_path)
+    ):
         print(f"Skipping {firm_name} (already processed).")
         continue
 
