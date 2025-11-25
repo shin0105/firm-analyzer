@@ -1,0 +1,45 @@
+{
+  "query": "(주)엘리스그룹 한국정보과학교육연구소 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://www.saramin.co.kr/zf_user/company-info/view/csn/eGY3eFVXemdqb0x6aG5STHc1TDVMUT09/company_nm/(%EC%A3%BC)%EC%97%98%EB%A6%AC%EC%8A%A4%EA%B7%B8%EB%A3%B9?srsltid=AfmBOooUlZdr6WPW98oJfuvG96habb94aUtDN9Q4mjfjADAWcJpSY8_C",
+      "title": "(주)엘리스그룹 2025년 기업정보 | 직원수, 근무환경, 복리후생 등",
+      "content": "엘리스는 소프트웨어&인공지능 교육을 혁신하는 플랫폼, 콘텐츠, 솔루션을 제공합니다. ※ 엘리스 채용 : https://elice.io/career ※ 엘리스 홈 : https://elice.io/",
+      "score": 0.47446132,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Exu03CBIPL8",
+      "title": "[2024 ICT 산업전망컨퍼런스] 2일차 Session l 엘리스그룹 김재원 대표",
+      "content": "프로덕트 팀은 교육 회사라다는 좀 더 클라우드 서비스 회사라고 저희는 인식하고 있고 실제로 그런 어 조건으로 개발자를 채용하고 있다고 보시면 될 것 같습니다 그래서 그렇게 환경을 구축했고 보건 복지부 사례는 이제 동의된 ecg 데이터 혹은 우리나라의 보건 복지부는 어마어마하게 큰 데이터를 갖고 있습니다 정말 말도 안 되게 그리고 그것이 뭐 최근 한 3개월 전에 아마 심의를 거쳐서 이거를 좀 연구로 활용하자는게 아마 재정이 됐던 걸로 알고 있는데 그걸 가져다가 이제 서울대 의대나 뭐 연세대 의대 교수님들이 어 우리가 이제 딥러닝 좀 배워 봐야겠다고 해서이 교육 과정도 만들어서 저 흉부선 암이 있는지 없는지를 자동 디텍트 하는 딥러닝 과정을 또 만들어서 제공을 했고 이것도 당연히 GPU 필요해서 뭐 GPU 인프라도 저희 거를 활용해서 제공을 했었습니다 국방부 같은 경우는 이제 인공위성 사진입니다 인공위성 사진에 샘플 된 데이터로 배를 찾고 뭐 비행기를 찾고 뭐 여러 가지를 찾는 건데 [...] 연구를 하려면 데이터가 거의 필수적이기 때문에 그 교육 데이터를 좀 수집할 수 있게끔 이제 플랫폼을 개발했습니다 그리고 제가 사실 저번 주에도 싱가포르 갔었는데 싱가포르 대학도 지금 아직까지 전학교 어 원래 한 200명 이제 뽑았는데 그 싱가포르나 베트남 쪽은 한국처럼 교육부가 인원을 제한하지 않았거든요 그래서 전산학 출신이 200명에서 1천명으로 기하급수적으로 늘었는데 그 천명에 대한 시험을 종이로 보고 있다고 하더라고요 그게 관리가 거의 불가능해서 그래서 저희 솔루션 다시 한번 뭐 홍보하고 왔는데 결국 결과적으로 저희가 바라본 는 교육 환경이 생각보다 낙후되어 있고 그리고 이것을 개선하는게 생각보다 매우 어렵고 그리고 비즈니스적으로 봐도 이게 사실 비즈니스적으로 잘 그 맞지가 않죠 그 비용 대비 들어가는 투입되는 비용 대비 매출이 그렇게 높지 않을 수 있으니 그러다 보니까 계속 교육 환경이 낙후되어 있는 거 같았고 저희는 다행스럽게 이게 연구 과제였습니다 그래서 다양한 논문을 [...] 왜냐면 다 그냥 요만한데 앉아서 들으니까 컴퓨터 놓을 책상도 없고 컴퓨터에 연결할 전원도 없죠 그런 환경에다 뭐 네트워크는 당연히 안 되고 그런 이제 기본적인 환경이 구성이 되어 있지 않고 거기다가 학생들이 제출하는 코드는 다 각기 다를 수 있습니다 왜냐면 똑같은 목표를 달성하는데 있어서 다 다른 코드가 될 수 있으니까 이것을 채점하는 조교의 수가 뭐 기하급수적으로 는다고 보시면 될 거 같습니다 그래서 1500명 학생을 어 하기 위해서 일단 제가 아는 바로는 투입된 조교 숫자만 100명 정도가 된다고 알고 있고이 100명의 조교들이 정말 수동적으로 뭐 가르치다가 결국은이 cs50 스타트업의 솔루션 중에 하나인 터미널이라고 하는 지금 유다 시티에 인수가 됐는데 그 회사 솔루션을 먼저 써서 시작을 하다가 그 솔루션이 인수돼 그다음에는 클라우드 그 아이디라고 해서 ID 9이라고 하는 솔루션 있거든요 그건 다시 아마존이 샀는데 그 솔루션을 써서 클라우드 환경을 구축해서 수업을 제공하기",
+      "score": 0.40797067,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.elice.careers/",
+      "title": "엘리스 채용",
+      "content": "Empowering AI, Elice. 엘리스는 디지털 기술로 인류의 기회를 창출하여 널리 이롭게 한다는 미션 아래, 다양한 산업과 조직의 AX(AI Transformation)를",
+      "score": 0.39389837,
+      "raw_content": null
+    },
+    {
+      "url": "https://m.saramin.co.kr/job-search/company-info-view/recruit?csn=eGY3eFVXemdqb0x6aG5STHc1TDVMUT09",
+      "title": "(주)엘리스그룹 채용 | 2025년 진행 중인 공고 5건 - 사람인",
+      "content": "정보보호 담당자 경력 채용. 서울 강남구 외경력 2~20년대졸↑. (주)엘리스그룹. 기업이미지. ~12.08(월). 스크랩. 입사지원. 합격 시 50만원. 정보보호 엔지니어 경력 채용.",
+      "score": 0.2694956,
+      "raw_content": null
+    },
+    {
+      "url": "https://elice.io/ko",
+      "title": "AI 세상의 베이스, 엘리스 - Elice",
+      "content": "고객 사례\n\n배우고, 만들고, 실행까지 AI는 엘리스에서\n\n인프라・클라우드・플랫폼을 잇는 End-to-End AI 솔루션\n\n무료로 시작하기도입문의\n\nAI 세상의 베이스, 엘리스\n\nAI헬피챗\n\n###### 모든 AI를 한번에 기업・기관을 위한 생성형 AI\n\n더 알아보기\n\n엘리스LXP\n\n###### 학습자와 강사를 위한 AI 기반 실습 교육 플랫폼\n\n더 알아보기\n\n엘리스테스트\n\n###### 채용・승진・해커톤・경연대회까지 올인원 AI 역량 평가 시스템\n\n더 알아보기\n\n엘리스클라우드\n\n###### 고성능 GPU・NPU를 합리적으로 이용하는 AI 클라우드\n\n더 알아보기\n\n## Elice AI Solutions — driving AI innovation for enterprises and institutions\n\nAI Helpy Chat\n\n###### All your business AI needs, in one AI Helpy Chat [...] ###### GPT, Nano Banana, Claude, and internal AI models all at once\n\nLearn more\n\n광주교육대학교, 공교육에 특화된 AI헬피챗으로 예비 교사 AI 역량 강화\n\nRead more\n\n기자를 위한 생성형AI 실무 교육 사례ㅣ아주경제와 함께한 엘리스 AI헬피챗 활용 교육\n\nRead more\n\n## Elice in the press\n\n###### 엘리스그룹, 아시아 첫 수랭식 AI PMDC로 고성능 GPU B200 제공\n\n2025. 10. 29.\n\n###### 엘리스그룹, 'DTF 2025'에서 B200 수랭식 클러스터 구축 사례로 AI 인프라 역량 공개\n\n2025. 9. 18.###### 엘리스그룹, 기업∙기관 전용 생성형 AI 솔루션 ‘AI헬피챗’출시\n\n2025. 9. 10.###### 엘리스그룹, 싱가포르 국방부 산하 '캡 비스타'와 AI 파트너십 체결\n\n2025. 8. 28. [...] ### Reliable and Secure Solutions\n\n###### Elice has obtained domestic and international information security certifications and provides safe, highly reliable solutions.",
+      "score": 0.17999165,
+      "raw_content": null
+    }
+  ],
+  "response_time": 3.32,
+  "request_id": "a2b2d6ab-2d8f-42b0-b5c4-f45770ab162a"
+}
