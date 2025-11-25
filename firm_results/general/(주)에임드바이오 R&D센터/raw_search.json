@@ -1,0 +1,45 @@
+{
+  "query": "(주)에임드바이오 R&D센터 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://work.mma.go.kr/caisBYIS/search/cygonggogeomsaekView.do;jsessionid=U952TURG7SsGVu0d-w_xmggX0Vp0jMoiB7G8wPvD2WkyVyGT4U1J!-1046648399!-368520215?menu_id=&searchCondition=&searchKeyword=&pageUnit=10&pageIndex=12&cygonggo_no=2000001200489&jbc_cd=&byjjeopche_cd=220200341&eopjong_gbcd=&gegyumo_cd=&eopche_nm=&sido_addr=&sigungu_addr=&jeonjik_yn=&yeokjong_brcd=&cyjemok_nm=&eopjong_gbcd_list=&bokrihs_cd_list=",
+      "title": "(서울)전문연구요원 채용 - 채용공고>「산업지원 병역일터」",
+      "content": "병역지정업체정보 ; (주)에임드바이오 R&D센터 ; 벤처기업부설연구소 · 02-6285-0748 ; 서울특별시 송파구 정의로67, 10층, 11층 (문정동, MK타워).",
+      "score": 0.5954225,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.jobkorea.co.kr/Recruit/GI_Read/46570393",
+      "title": "2025년 (주)에임드바이오 Scientist를 모집합니다. (CMC팀) | 잡코리아",
+      "content": "에임드바이오는 암을 포함한 난치성 뇌 질환 환자에게 치료 솔루션을 제공하기 위해 2018년 8월 삼성서울병원에서 스핀오프한 Start Up 기업으로 유한양행· 삼성생명",
+      "score": 0.5230555,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.incruit.com/company/1684329850/",
+      "title": "2025년 에임드바이오 채용 기업정보 - 인크루트",
+      "content": "에임드바이오는 암을 포함한 난치성 뇌 질환 환자에게 치료 솔루션을 제공하기 위해 2018년 8월 삼성서울병원에서 스핀오프하여 설립되었습니다.",
+      "score": 0.4430467,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.jobkorea.co.kr/company/45696669/recruit",
+      "title": "에임드바이오 채용 - 2025년 진행 중인 공고 총 3건 | 잡코리아",
+      "content": "채용정보 리스트 ; D-22 · (주)에임드바이오에서 총무 담당자 모집합니다. ; D-12 · (주)에임드바이오에서 HR 인사담당자 경력직 모집합니다. ; D-11 · 미래 바이오 산업을 주도",
+      "score": 0.4400126,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.saramin.co.kr/zf_user/company-info/view/csn/b2ZQQnpkWjdmK0ZXY2pEclNmKzM4Zz09/company_nm/(%EC%A3%BC)%EC%97%90%EC%9E%84%EB%93%9C%EB%B0%94%EC%9D%B4%EC%98%A4?srsltid=AfmBOoq6iR2VNbnGuUu1zmYHaM3sfnUjodZtkI2LzoSSAtL4syCQWSDC",
+      "title": "(주)에임드바이오 2025년 기업정보 | 직원수, 근무환경, 복리후생 등",
+      "content": "에임드바이오는 암을 포함한 난치성 뇌 질환 환자에게 치료 솔루션을 제공하기 위해 2018년 8월 삼성서울병원에서 스핀오프한 Start Up 기업으로 유한양행· 삼성생명",
+      "score": 0.25811598,
+      "raw_content": null
+    }
+  ],
+  "response_time": 3.1,
+  "request_id": "897deaf8-d870-4db2-9b81-d433b1981552"
+}

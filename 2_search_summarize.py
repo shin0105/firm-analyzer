@@ -164,12 +164,9 @@ for row_number, (_, row) in enumerate(firms_to_process.iterrows(), start=1):
     # 2. Summarize and Classify
     try:
         result_data = summarize_firm(firm_name, search_response.get("results", []))
-    except RuntimeError as err:
+    except Exception as err:
         print(f"Stopping execution: {err}")
         raise SystemExit(1) from err
-    except ValueError as err:
-        print(f"Stopping execution: {err}")
-        raise
 
     if result_data is None:
         print(f"Skipping {firm_name} due to summarization failure.")

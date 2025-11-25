@@ -1,0 +1,45 @@
+{
+  "query": "(주)엘솔루 언어지능연구소 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://m.incruit.com/jobdb_info/jobpostcontmobile.asp?job=2507010001056&mdetail=y&ver=inView",
+      "title": "(주)엘솔루 R&D본부 ASR팀 연구직 차장급 채용 - 인크루트",
+      "content": "㈜엘솔루. (주)엘솔루 R&D본부 ASR팀 연구직 차장급 채용. 엘솔루는 빅데이터와 인공지능 기술 기반으로 AI음성인식, AI자동번역 및 자연어처리 등. AI언어지능 솔루션",
+      "score": 0.73914057,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.llsollu.com/",
+      "title": "엘솔루",
+      "content": "엘솔루는 음성인식, 기계번역, 자연어처리, 오픈API플랫폼을 핵심 사업영역으로 영위하고 있으며, AI솔루션 기반 언어처리 글로벌 스탠다드를 지향하는 세계 최고의 언어",
+      "score": 0.6479992,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.llsollu.com/llsollu/",
+      "title": "음성인식, 자동번역, 자연어처리, 인공지능 전문기업 | LLSOLLU",
+      "content": "빅데이터와 인공지능 기술을 융합시켜 최적의 환경과 생산성, 효율성을 증대시킬 수 있는 음성인식, 기계번역 및 자연어처리 전문 기업.",
+      "score": 0.39543822,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.incruit.com/company/23215505/",
+      "title": "2025년 ㈜엘솔루 채용 기업정보",
+      "content": "엘솔루는 소프트웨어·솔루션·ASP 업종의 중소기업으로 채용, 연봉, 기업정보 등 취업에 필요한 모든 정보를 확인할 수 있습니다.",
+      "score": 0.36990723,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.rallit.com/companies/525",
+      "title": "엘솔루 채용",
+      "content": "채용 정보, 회사 소개, 근무 환경, 입사축하금까지! 엘솔루 기업 정보를 랠릿에서 확인하세요.",
+      "score": 0.31308413,
+      "raw_content": null
+    }
+  ],
+  "response_time": 3.23,
+  "request_id": "78c1ca68-6ac3-470d-bff2-39a63034533e"
+}
