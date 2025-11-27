@@ -1,0 +1,45 @@
+{
+  "query": "(주)유투바이오 기업부설연구소(IT) 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "title": "( 주 ) 유투바이오 2025년 기업정보 | 직원수, 매출액, 복리후생 등 - 사람인",
+      "url": "https://www.saramin.co.kr/zf_user/company-info/view/csn/bXBaeCt3Y0F3Znp3bk1sMTJWejVGdz09/company_nm/(주)유투바이오",
+      "content": "사업내용 . 체외진단검사서비스,의료IT솔루션/의료기기 제조,도매,무역,전자상거래/소프트웨어 개발,공급.",
+      "score": 0.70702106,
+      "raw_content": null
+    },
+    {
+      "url": "https://m.jobkorea.co.kr/Recruit/GI_Read/47869388?sc=1",
+      "title": "(주)유투바이오 IT연구소 C#, .net 개발자 모집 - 잡코리아",
+      "content": "기업정보 ; 산업. 물질성분 검사 및 분석업 ; 사원수. 102명 (2025.09.30) ; 기업구분. 중소기업 ; 자본금. 56억 4,359만원 (2024.12.31) ; 설립일. 2009.01.02 (17년차).",
+      "score": 0.62879556,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.jobkorea.co.kr/company/16151502/recruit",
+      "title": "유투바이오 채용 - 2025년 진행 중인 공고 총 2건 - 잡코리아",
+      "content": "채용정보 리스트 · D-15 스크랩 (주)유투바이오 IT연구소 개발자 모집 신입·경력 서울특별시 대졸↑ 솔루션·SI·CRM·ERP,프론트엔드개발자 · D-3 스크랩 [(주)유투바이오] CS부",
+      "score": 0.6122407,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.u2bio.com/recruitment/recruitmentInquiry.do",
+      "title": "채용문의 | 채용정보 U2Bio",
+      "content": "U2Bio의 채용절차는 [서류전형→부서면접→임원면접→채용검진]의 4단계로 이루어 집니다. 채용 바로가기. 채용 문의는 메일을 통해 간편하게 문의해보세요.",
+      "score": 0.23046087,
+      "raw_content": null
+    },
+    {
+      "title": "교수/연구 > 연구분야 및 연구실 > 적응지능연구실 - 컴퓨터공학과",
+      "url": "https://www.changwon.ac.kr/ce/cm/cntnts/cntntsView.do?mi=6609&cntntsId=1927",
+      "content": "전임교수. 명예교수. 연구분야 및 연구실. 연구분야 및 연구실. 프로그래밍언어연구실. 적응지능연구실.",
+      "score": 0.032298584,
+      "raw_content": null
+    }
+  ],
+  "response_time": 5.91,
+  "request_id": "ce03694d-b308-41dd-b4f2-87dcb221f860"
+}
