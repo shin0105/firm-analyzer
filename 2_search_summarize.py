@@ -169,8 +169,7 @@ for row_number, (_, row) in enumerate(firms_to_process.iterrows(), start=1):
         raise SystemExit(1) from err
 
     if result_data is None:
-        print(f"Skipping {firm_name} due to summarization failure.")
-        continue
+        raise RuntimeError(f"Summarization failed for {firm_name}.")
 
     summary = result_data.get("summary", "")
     is_finance = result_data.get("is_finance_quant", False)
