@@ -8,4 +8,9 @@ __pycache__/
 *.log
 .DS_Store
 .idea/
+.env
+
+# Temporary filter outputs
+*_firms.csv
+!seoul_firms.csv
 
