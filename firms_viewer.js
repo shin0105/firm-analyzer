@@ -76,9 +76,40 @@ function initMap() {
     
     map = L.map('map').setView([36.5, 127.5], 7);
     
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    // Base layer - CartoDB Voyager for cleaner look
+    const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+    });
+    
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    });
+    
+    // OpenRailwayMap overlay for subway/railway visibility
+    const railwayOverlay = L.tileLayer('https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
+        attribution: 'Style: <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA 2.0</a> <a href="http://www.openrailwaymap.org/">OpenRailwayMap</a>',
+        maxZoom: 19,
+        opacity: 0.8
+    });
+    
+    // Add base layer and railway overlay
+    cartoLayer.addTo(map);
+    railwayOverlay.addTo(map);
+    
+    // Layer control
+    const baseLayers = {
+        "CartoDB Voyager (지하철 표시)": cartoLayer,
+        "기본 지도": osmLayer
+    };
+    
+    const overlays = {
+        "지하철/철도 노선": railwayOverlay
+    };
+    
+    L.control.layers(baseLayers, overlays).addTo(map);
 }
 
 // Load firms data
