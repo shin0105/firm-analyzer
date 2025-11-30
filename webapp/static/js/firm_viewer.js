@@ -6,6 +6,9 @@ let filteredFirms = [];
 let selectedRegion = 'all';
 let selectedDistrict = 'all';
 
+// Coordinate offset to prevent overlapping markers
+const MARKER_OFFSET = 0.01;
+
 // Seoul districts (구) list
 const seoulDistricts = [
     '강남구', '강동구', '강북구', '강서구', '관악구', '광진구', '구로구', '금천구',
@@ -273,9 +276,12 @@ function parseCSV(csvText) {
 
 // Load CSV data
 function loadCSVData() {
+    // Use the data serving route from Flask
+    const dataUrl = '/data/2025_전문연구요원_인원배정.csv';
+    
     // Try PapaParse first, fallback to fetch if not available
     if (typeof Papa !== 'undefined') {
-        Papa.parse('2025_전문연구요원_인원배정.csv', {
+        Papa.parse(dataUrl, {
             download: true,
             header: true,
             encoding: 'UTF-8',
@@ -296,7 +302,9 @@ function loadCSVData() {
 
 // Fallback CSV loading using fetch
 function loadCSVFallback() {
-    fetch('2025_전문연구요원_인원배정.csv')
+    const dataUrl = '/data/2025_전문연구요원_인원배정.csv';
+    
+    fetch(dataUrl)
         .then(response => response.text())
         .then(csvText => {
             const results = parseCSV(csvText);
@@ -531,8 +539,8 @@ function getCoordinates(address) {
         if (address.includes(key.split(' ').slice(0, 2).join(' '))) {
             // Add small random offset to prevent markers from stacking
             return {
-                lat: coords.lat + (Math.random() - 0.5) * 0.01,
-                lng: coords.lng + (Math.random() - 0.5) * 0.01
+                lat: coords.lat + (Math.random() - 0.5) * MARKER_OFFSET,
+                lng: coords.lng + (Math.random() - 0.5) * MARKER_OFFSET
             };
         }
     }
@@ -543,8 +551,8 @@ function getCoordinates(address) {
         const cityDistrict = parts[0] + ' ' + parts[1];
         if (locationCoordinates[cityDistrict]) {
             return {
-                lat: locationCoordinates[cityDistrict].lat + (Math.random() - 0.5) * 0.01,
-                lng: locationCoordinates[cityDistrict].lng + (Math.random() - 0.5) * 0.01
+                lat: locationCoordinates[cityDistrict].lat + (Math.random() - 0.5) * MARKER_OFFSET,
+                lng: locationCoordinates[cityDistrict].lng + (Math.random() - 0.5) * MARKER_OFFSET
             };
         }
     }
