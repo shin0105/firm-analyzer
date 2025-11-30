@@ -5,6 +5,7 @@ let allFirms = [];
 let filteredFirms = [];
 let selectedRegion = 'all';
 let selectedDistrict = 'all';
+let currentTileLayer = null;
 
 // Seoul districts (구) list
 const seoulDistricts = [
@@ -26,6 +27,25 @@ const regionCenters = {
     '울산': { lat: 35.5384, lng: 129.3114, zoom: 11 },
     '경기': { lat: 37.4138, lng: 127.5183, zoom: 9 },
     '세종': { lat: 36.4800, lng: 127.2890, zoom: 12 }
+};
+
+// Map tile layers - using OpenStreetMap Transport layer for subway visibility
+const tileLayers = {
+    transport: {
+        url: 'https://tile.thunderforest.com/transport/{z}/{x}/{y}.png?apikey=6170aad10dfd42a38d4d8c709a536f38',
+        attribution: '© <a href="https://www.thunderforest.com/">Thunderforest</a>, © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        name: '교통 지도'
+    },
+    osm: {
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        name: '기본 지도'
+    },
+    osmHot: {
+        url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/">HOT</a>',
+        name: 'HOT 지도'
+    }
 };
 
 // District centers for Seoul
@@ -57,173 +77,44 @@ const seoulDistrictCenters = {
     '중랑구': { lat: 37.6063, lng: 127.0928, zoom: 13 }
 };
 
-// Approximate coordinates for Korean locations (simplified geocoding)
-const locationCoordinates = {
-    // Seoul districts
-    '서울특별시 강남구': { lat: 37.5172, lng: 127.0473 },
-    '서울특별시 강동구': { lat: 37.5301, lng: 127.1238 },
-    '서울특별시 강북구': { lat: 37.6396, lng: 127.0257 },
-    '서울특별시 강서구': { lat: 37.5509, lng: 126.8495 },
-    '서울특별시 관악구': { lat: 37.4784, lng: 126.9516 },
-    '서울특별시 광진구': { lat: 37.5385, lng: 127.0823 },
-    '서울특별시 구로구': { lat: 37.4954, lng: 126.8874 },
-    '서울특별시 금천구': { lat: 37.4519, lng: 126.9020 },
-    '서울특별시 노원구': { lat: 37.6542, lng: 127.0568 },
-    '서울특별시 도봉구': { lat: 37.6688, lng: 127.0471 },
-    '서울특별시 동대문구': { lat: 37.5744, lng: 127.0396 },
-    '서울특별시 동작구': { lat: 37.5124, lng: 126.9393 },
-    '서울특별시 마포구': { lat: 37.5663, lng: 126.9014 },
-    '서울특별시 서대문구': { lat: 37.5791, lng: 126.9368 },
-    '서울특별시 서초구': { lat: 37.4837, lng: 127.0324 },
-    '서울특별시 성동구': { lat: 37.5633, lng: 127.0371 },
-    '서울특별시 성북구': { lat: 37.5894, lng: 127.0167 },
-    '서울특별시 송파구': { lat: 37.5145, lng: 127.1050 },
-    '서울특별시 양천구': { lat: 37.5170, lng: 126.8664 },
-    '서울특별시 영등포구': { lat: 37.5264, lng: 126.8962 },
-    '서울특별시 용산구': { lat: 37.5324, lng: 126.9900 },
-    '서울특별시 은평구': { lat: 37.6027, lng: 126.9291 },
-    '서울특별시 종로구': { lat: 37.5735, lng: 126.9790 },
-    '서울특별시 중구': { lat: 37.5641, lng: 126.9979 },
-    '서울특별시 중랑구': { lat: 37.6063, lng: 127.0928 },
-    // Busan districts
-    '부산광역시 강서구': { lat: 35.2122, lng: 128.9803 },
-    '부산광역시 금정구': { lat: 35.2428, lng: 129.0922 },
-    '부산광역시 기장군': { lat: 35.2446, lng: 129.2222 },
-    '부산광역시 남구': { lat: 35.1366, lng: 129.0845 },
-    '부산광역시 동구': { lat: 35.1295, lng: 129.0458 },
-    '부산광역시 동래구': { lat: 35.1972, lng: 129.0837 },
-    '부산광역시 부산진구': { lat: 35.1631, lng: 129.0530 },
-    '부산광역시 북구': { lat: 35.1972, lng: 128.9903 },
-    '부산광역시 사상구': { lat: 35.1526, lng: 128.9915 },
-    '부산광역시 사하구': { lat: 35.1046, lng: 128.9747 },
-    '부산광역시 서구': { lat: 35.0976, lng: 129.0244 },
-    '부산광역시 수영구': { lat: 35.1454, lng: 129.1131 },
-    '부산광역시 연제구': { lat: 35.1760, lng: 129.0799 },
-    '부산광역시 영도구': { lat: 35.0912, lng: 129.0680 },
-    '부산광역시 중구': { lat: 35.1062, lng: 129.0321 },
-    '부산광역시 해운대구': { lat: 35.1629, lng: 129.1635 },
-    // Daejeon districts
-    '대전광역시 대덕구': { lat: 36.3469, lng: 127.4156 },
-    '대전광역시 동구': { lat: 36.3121, lng: 127.4549 },
-    '대전광역시 서구': { lat: 36.3556, lng: 127.3835 },
-    '대전광역시 유성구': { lat: 36.3623, lng: 127.3562 },
-    '대전광역시 중구': { lat: 36.3256, lng: 127.4213 },
-    // Daegu districts
-    '대구광역시 군위군': { lat: 36.2427, lng: 128.5728 },
-    '대구광역시 남구': { lat: 35.8461, lng: 128.5975 },
-    '대구광역시 달서구': { lat: 35.8297, lng: 128.5332 },
-    '대구광역시 달성군': { lat: 35.7746, lng: 128.4312 },
-    '대구광역시 동구': { lat: 35.8858, lng: 128.6356 },
-    '대구광역시 북구': { lat: 35.8856, lng: 128.5828 },
-    '대구광역시 서구': { lat: 35.8722, lng: 128.5592 },
-    '대구광역시 수성구': { lat: 35.8586, lng: 128.6308 },
-    '대구광역시 중구': { lat: 35.8692, lng: 128.6062 },
-    // Incheon districts
-    '인천광역시 강화군': { lat: 37.7467, lng: 126.4878 },
-    '인천광역시 계양구': { lat: 37.5370, lng: 126.7376 },
-    '인천광역시 남동구': { lat: 37.4488, lng: 126.7312 },
-    '인천광역시 동구': { lat: 37.4737, lng: 126.6432 },
-    '인천광역시 미추홀구': { lat: 37.4637, lng: 126.6506 },
-    '인천광역시 부평구': { lat: 37.5076, lng: 126.7219 },
-    '인천광역시 서구': { lat: 37.5455, lng: 126.6760 },
-    '인천광역시 연수구': { lat: 37.4100, lng: 126.6784 },
-    '인천광역시 옹진군': { lat: 37.4467, lng: 126.6367 },
-    '인천광역시 중구': { lat: 37.4736, lng: 126.6213 },
-    // Gwangju districts
-    '광주광역시 광산구': { lat: 35.1395, lng: 126.7936 },
-    '광주광역시 남구': { lat: 35.1333, lng: 126.9025 },
-    '광주광역시 동구': { lat: 35.1461, lng: 126.9231 },
-    '광주광역시 북구': { lat: 35.1744, lng: 126.9122 },
-    '광주광역시 서구': { lat: 35.1523, lng: 126.8895 },
-    // Ulsan districts
-    '울산광역시 남구': { lat: 35.5443, lng: 129.3304 },
-    '울산광역시 동구': { lat: 35.5050, lng: 129.4165 },
-    '울산광역시 북구': { lat: 35.5837, lng: 129.3612 },
-    '울산광역시 울주군': { lat: 35.5222, lng: 129.0999 },
-    '울산광역시 중구': { lat: 35.5683, lng: 129.3323 },
-    // Gyeonggi cities (main ones)
-    '경기도 수원시': { lat: 37.2636, lng: 127.0286 },
-    '경기도 성남시': { lat: 37.4449, lng: 127.1389 },
-    '경기도 용인시': { lat: 37.2411, lng: 127.1775 },
-    '경기도 고양시': { lat: 37.6584, lng: 126.8320 },
-    '경기도 화성시': { lat: 37.1993, lng: 126.8312 },
-    '경기도 안양시': { lat: 37.3943, lng: 126.9568 },
-    '경기도 평택시': { lat: 36.9921, lng: 127.1127 },
-    '경기도 시흥시': { lat: 37.3801, lng: 126.8029 },
-    '경기도 파주시': { lat: 37.7599, lng: 126.7800 },
-    '경기도 의정부시': { lat: 37.7381, lng: 127.0337 },
-    '경기도 김포시': { lat: 37.6153, lng: 126.7156 },
-    '경기도 광명시': { lat: 37.4786, lng: 126.8646 },
-    '경기도 광주시': { lat: 37.4295, lng: 127.2551 },
-    '경기도 군포시': { lat: 37.3617, lng: 126.9352 },
-    '경기도 하남시': { lat: 37.5394, lng: 127.2145 },
-    '경기도 오산시': { lat: 37.1498, lng: 127.0775 },
-    '경기도 이천시': { lat: 37.2725, lng: 127.4350 },
-    '경기도 안산시': { lat: 37.3219, lng: 126.8309 },
-    '경기도 안성시': { lat: 37.0079, lng: 127.2797 },
-    '경기도 의왕시': { lat: 37.3446, lng: 126.9687 },
-    '경기도 양주시': { lat: 37.7852, lng: 127.0460 },
-    '경기도 포천시': { lat: 37.8949, lng: 127.2003 },
-    '경기도 여주시': { lat: 37.2983, lng: 127.6370 },
-    '경기도 동두천시': { lat: 37.9034, lng: 127.0606 },
-    '경기도 과천시': { lat: 37.4295, lng: 126.9874 },
-    '경기도 구리시': { lat: 37.5943, lng: 127.1297 },
-    '경기도 남양주시': { lat: 37.6360, lng: 127.2165 },
-    '경기도 부천시': { lat: 37.5034, lng: 126.7660 },
-    // Sejong
-    '세종특별자치시': { lat: 36.4800, lng: 127.2890 },
-    // Other regions
-    '강원특별자치도 춘천시': { lat: 37.8813, lng: 127.7298 },
-    '강원특별자치도 원주시': { lat: 37.3422, lng: 127.9201 },
-    '강원특별자치도 강릉시': { lat: 37.7519, lng: 128.8761 },
-    '충청북도 청주시': { lat: 36.6424, lng: 127.4890 },
-    '충청북도 충주시': { lat: 36.9910, lng: 127.9259 },
-    '충청북도 진천군': { lat: 36.8554, lng: 127.4356 },
-    '충청북도 음성군': { lat: 36.9399, lng: 127.6909 },
-    '충청남도 천안시': { lat: 36.8151, lng: 127.1139 },
-    '충청남도 아산시': { lat: 36.7898, lng: 127.0018 },
-    '충청남도 서산시': { lat: 36.7845, lng: 126.4503 },
-    '충청남도 공주시': { lat: 36.4465, lng: 127.1191 },
-    '충청남도 예산군': { lat: 36.6824, lng: 126.8489 },
-    '전북특별자치도 전주시': { lat: 35.8242, lng: 127.1480 },
-    '전북특별자치도 군산시': { lat: 35.9674, lng: 126.7366 },
-    '전북특별자치도 익산시': { lat: 35.9484, lng: 126.9578 },
-    '전북특별자치도 정읍시': { lat: 35.5699, lng: 126.8558 },
-    '전라남도 순천시': { lat: 34.9506, lng: 127.4871 },
-    '전라남도 나주시': { lat: 35.0156, lng: 126.7108 },
-    '전라남도 강진군': { lat: 34.6420, lng: 126.7670 },
-    '전라남도 장흥군': { lat: 34.6816, lng: 126.9069 },
-    '경상북도 포항시': { lat: 36.0190, lng: 129.3435 },
-    '경상북도 경산시': { lat: 35.8251, lng: 128.7414 },
-    '경상북도 구미시': { lat: 36.1195, lng: 128.3446 },
-    '경상북도 안동시': { lat: 36.5684, lng: 128.7296 },
-    '경상남도 창원시': { lat: 35.2286, lng: 128.6811 },
-    '경상남도 진주시': { lat: 35.1804, lng: 128.1076 },
-    '경상남도 김해시': { lat: 35.2343, lng: 128.8812 },
-    '경상남도 양산시': { lat: 35.3350, lng: 129.0373 },
-    '경상남도 창녕군': { lat: 35.5442, lng: 128.4916 },
-    '제주특별자치도 제주시': { lat: 33.4996, lng: 126.5312 },
-    '제주특별자치도 서귀포시': { lat: 33.2541, lng: 126.5600 }
-};
-
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     initMap();
-    loadCSVData();
+    loadFirmsData();
     setupEventListeners();
     populateDistrictFilter();
 });
 
-// Initialize the map
+// Initialize the map with transport layer (shows subway/transit)
 function initMap() {
     // Check if Leaflet is available
     if (typeof L !== 'undefined' && L !== null) {
         map = L.map('map').setView([36.5, 127.5], 7);
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 18
-        }).addTo(map);
+        // Use OpenStreetMap with HOT style (shows transit better)
+        // and add layer control for switching
+        const osmLayer = L.tileLayer(tileLayers.osm.url, {
+            attribution: tileLayers.osm.attribution,
+            maxZoom: 19
+        });
+        
+        const hotLayer = L.tileLayer(tileLayers.osmHot.url, {
+            attribution: tileLayers.osmHot.attribution,
+            maxZoom: 19
+        });
+        
+        // Default to HOT layer which shows public transit better
+        hotLayer.addTo(map);
+        currentTileLayer = hotLayer;
+        
+        // Add layer control
+        const baseLayers = {
+            "기본 지도": osmLayer,
+            "교통 지도 (지하철 표시)": hotLayer
+        };
+        
+        L.control.layers(baseLayers).addTo(map);
+        
     } else {
         // Fallback when Leaflet is not available
         document.getElementById('map').innerHTML = `
@@ -235,80 +126,27 @@ function initMap() {
     }
 }
 
-// Simple CSV parser (fallback for when PapaParse is not available)
-function parseCSV(csvText) {
-    const lines = csvText.split('\n');
-    const headers = lines[0].split(',');
-    const result = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-        if (lines[i].trim() === '') continue;
-        
-        const values = [];
-        let current = '';
-        let inQuotes = false;
-        
-        for (let j = 0; j < lines[i].length; j++) {
-            const char = lines[i][j];
-            if (char === '"') {
-                inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
-                values.push(current.trim());
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        values.push(current.trim());
-        
-        const obj = {};
-        headers.forEach((header, index) => {
-            obj[header.trim()] = values[index] || '';
-        });
-        result.push(obj);
-    }
-    
-    return result;
-}
-
-// Load CSV data
-function loadCSVData() {
-    // Try PapaParse first, fallback to fetch if not available
-    if (typeof Papa !== 'undefined') {
-        Papa.parse('2025_전문연구요원_인원배정.csv', {
-            download: true,
-            header: true,
-            encoding: 'UTF-8',
-            complete: function(results) {
-                allFirms = results.data.filter(firm => firm['업체명'] && firm['소재지']);
-                filteredFirms = [...allFirms];
-                updateDisplay();
-            },
-            error: function(error) {
-                console.error('Error loading CSV:', error);
-                loadCSVFallback();
-            }
-        });
+// Load firms data from pre-geocoded firms_data.js
+function loadFirmsData() {
+    // Check if firmsData is loaded from firms_data.js
+    if (typeof firmsData !== 'undefined' && firmsData.length > 0) {
+        // Transform firmsData to match the expected format
+        allFirms = firmsData.map(firm => ({
+            '업체명': firm.name,
+            '소재지': firm.address,
+            '업종구분': firm.type,
+            '25년 배정인원': firm.allocation,
+            '관할청': firm.jurisdiction,
+            'lat': firm.lat,
+            'lng': firm.lng
+        }));
+        filteredFirms = [...allFirms];
+        updateDisplay();
     } else {
-        loadCSVFallback();
+        console.error('Firms data not loaded! Make sure firms_data.js is included.');
+        document.getElementById('firmList').innerHTML = 
+            '<div class="loading">데이터 로딩 중 오류가 발생했습니다.</div>';
     }
-}
-
-// Fallback CSV loading using fetch
-function loadCSVFallback() {
-    fetch('2025_전문연구요원_인원배정.csv')
-        .then(response => response.text())
-        .then(csvText => {
-            const results = parseCSV(csvText);
-            allFirms = results.filter(firm => firm['업체명'] && firm['소재지']);
-            filteredFirms = [...allFirms];
-            updateDisplay();
-        })
-        .catch(error => {
-            console.error('Error loading CSV:', error);
-            document.getElementById('firmList').innerHTML = 
-                '<div class="loading">데이터 로딩 중 오류가 발생했습니다.</div>';
-        });
 }
 
 // Setup event listeners
@@ -462,19 +300,16 @@ function updateFirmList() {
             document.querySelectorAll('.firm-item').forEach(el => el.classList.remove('selected'));
             item.classList.add('selected');
             
-            // Zoom to firm location
-            if (map) {
-                const coords = getCoordinates(firm['소재지']);
-                if (coords) {
-                    map.setView([coords.lat, coords.lng], 15);
-                    
-                    // Open popup for matching marker
-                    markers.forEach(marker => {
-                        if (marker.firmData === firm) {
-                            marker.openPopup();
-                        }
-                    });
-                }
+            // Zoom to firm location using pre-geocoded coordinates
+            if (map && firm.lat && firm.lng) {
+                map.setView([firm.lat, firm.lng], 15);
+                
+                // Open popup for matching marker
+                markers.forEach(marker => {
+                    if (marker.firmData === firm) {
+                        marker.openPopup();
+                    }
+                });
             }
         });
         
@@ -490,11 +325,11 @@ function updateMarkers() {
     markers.forEach(marker => map.removeLayer(marker));
     markers = [];
     
-    // Add new markers
+    // Add new markers using pre-geocoded coordinates from firms_data.js
     filteredFirms.forEach(firm => {
-        const coords = getCoordinates(firm['소재지']);
-        if (coords) {
-            const marker = L.circleMarker([coords.lat, coords.lng], {
+        // Use pre-geocoded coordinates from firm data
+        if (firm.lat && firm.lng) {
+            const marker = L.circleMarker([firm.lat, firm.lng], {
                 radius: 8,
                 fillColor: '#3498db',
                 color: '#fff',
@@ -520,34 +355,4 @@ function updateMarkers() {
             markers.push(marker);
         }
     });
-}
-
-// Get coordinates for an address
-function getCoordinates(address) {
-    if (!address) return null;
-    
-    // Try to match with known locations
-    for (const [key, coords] of Object.entries(locationCoordinates)) {
-        if (address.includes(key.split(' ').slice(0, 2).join(' '))) {
-            // Add small random offset to prevent markers from stacking
-            return {
-                lat: coords.lat + (Math.random() - 0.5) * 0.01,
-                lng: coords.lng + (Math.random() - 0.5) * 0.01
-            };
-        }
-    }
-    
-    // Try to extract city/district from address and use generic coordinates
-    const parts = address.split(' ');
-    if (parts.length >= 2) {
-        const cityDistrict = parts[0] + ' ' + parts[1];
-        if (locationCoordinates[cityDistrict]) {
-            return {
-                lat: locationCoordinates[cityDistrict].lat + (Math.random() - 0.5) * 0.01,
-                lng: locationCoordinates[cityDistrict].lng + (Math.random() - 0.5) * 0.01
-            };
-        }
-    }
-    
-    return null;
 }
