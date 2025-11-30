@@ -76,15 +76,32 @@ function initMap() {
     
     map = L.map('map').setView([36.5, 127.5], 7);
     
-    // Base layer - CartoDB Voyager for cleaner look
+    // ÖPNVKarte transit layer - prominently shows subway stations
+    const transitLayer = L.tileLayer('https://tileserver.memomaps.de/tilegen/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://memomaps.de/">ÖPNVKarte</a>',
+        maxZoom: 18
+    });
+    
+    // Standard OSM layer
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    });
+    
+    const osmHotLayer = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/">Humanitarian OSM Team</a>',
+        maxZoom: 19
+    });
+    
     const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
         maxZoom: 19
     });
     
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    const cartoDarkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
         maxZoom: 19
     });
     
@@ -95,18 +112,20 @@ function initMap() {
         opacity: 0.8
     });
     
-    // Add base layer and railway overlay
-    cartoLayer.addTo(map);
-    railwayOverlay.addTo(map);
+    // Default to ÖPNVKarte transit map (prominently shows subway stations)
+    transitLayer.addTo(map);
     
-    // Layer control
+    // Layer control with map options
     const baseLayers = {
-        "CartoDB Voyager (지하철 표시)": cartoLayer,
-        "기본 지도": osmLayer
+        "🚇 대중교통 지도 (지하철역 강조)": transitLayer,
+        "🗺️ 기본 지도 (OSM)": osmLayer,
+        "🌡️ OSM HOT (고대비 지도)": osmHotLayer,
+        "🏙️ CartoDB Voyager": cartoLayer,
+        "🌙 CartoDB 다크 모드": cartoDarkLayer
     };
     
     const overlays = {
-        "지하철/철도 노선": railwayOverlay
+        "🚃 철도/지하철 노선 오버레이": railwayOverlay
     };
     
     L.control.layers(baseLayers, overlays).addTo(map);
