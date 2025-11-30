@@ -6,7 +6,13 @@ This script generates a firms_data.js file with geocoded coordinates.
 
 import csv
 import json
-import re
+import os
+import random
+
+# Get the parent directory (project root)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+WEBAPP_DIR = os.path.join(PROJECT_ROOT, "webapp")
 
 # Approximate coordinates for major cities/regions in Korea
 # These are representative coordinates for each area
@@ -116,83 +122,83 @@ def get_coordinates(address):
     """Get approximate coordinates for an address."""
     if not address:
         return None, None
-    
+
     # Try to match specific district first
     for region, coords in REGION_COORDS.items():
         if address.startswith(region):
             # Add small random offset to prevent overlapping markers
-            import random
             lat_offset = (random.random() - 0.5) * 0.008
             lng_offset = (random.random() - 0.5) * 0.008
             return coords[0] + lat_offset, coords[1] + lng_offset
-    
+
     # Try partial match
     for region, coords in REGION_COORDS.items():
         if region in address or any(part in address for part in region.split()):
-            import random
             lat_offset = (random.random() - 0.5) * 0.01
             lng_offset = (random.random() - 0.5) * 0.01
             return coords[0] + lat_offset, coords[1] + lng_offset
-    
+
     # Extract city/province from address and try to match
     parts = address.split()
     if parts:
         for region, coords in REGION_COORDS.items():
             if parts[0] in region:
-                import random
                 lat_offset = (random.random() - 0.5) * 0.02
                 lng_offset = (random.random() - 0.5) * 0.02
                 return coords[0] + lat_offset, coords[1] + lng_offset
-    
+
     return None, None
+
 
 def main():
     firms = []
-    
+
     # Read CSV file
-    with open('2025_전문연구요원_인원배정.csv', 'r', encoding='utf-8') as f:
+    input_file = os.path.join(DATA_DIR, "2025_전문연구요원_인원배정.csv")
+    with open(input_file, "r", encoding="utf-8") as f:
         reader = csv.reader(f)
         header = next(reader)  # Skip header
-        
+
         for row in reader:
             if len(row) >= 6:
                 firm = {
-                    'id': row[0].strip() if row[0] else '',
-                    'type': row[1].strip() if row[1] else '',
-                    'name': row[2].strip() if row[2] else '',
-                    'address': row[3].strip() if row[3] else '',
-                    'allocation': row[4].strip() if row[4] else '',
-                    'jurisdiction': row[5].strip() if row[5] else ''
+                    "id": row[0].strip() if row[0] else "",
+                    "type": row[1].strip() if row[1] else "",
+                    "name": row[2].strip() if row[2] else "",
+                    "address": row[3].strip() if row[3] else "",
+                    "allocation": row[4].strip() if row[4] else "",
+                    "jurisdiction": row[5].strip() if row[5] else "",
                 }
-                
+
                 # Get coordinates
-                lat, lng = get_coordinates(firm['address'])
-                firm['lat'] = lat
-                firm['lng'] = lng
-                
+                lat, lng = get_coordinates(firm["address"])
+                firm["lat"] = lat
+                firm["lng"] = lng
+
                 firms.append(firm)
-    
+
     # Write JavaScript file
-    with open('firms_data.js', 'w', encoding='utf-8') as f:
-        f.write('// Auto-generated firms data from CSV\n')
-        f.write('// Generated for 2025 전문연구요원 인원배정 업체 현황\n\n')
-        f.write('const firmsData = ')
+    output_file = os.path.join(WEBAPP_DIR, "static", "js", "firms_data.js")
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write("// Auto-generated firms data from CSV\n")
+        f.write("// Generated for 2025 전문연구요원 인원배정 업체 현황\n\n")
+        f.write("const firmsData = ")
         f.write(json.dumps(firms, ensure_ascii=False, indent=2))
-        f.write(';\n')
-    
-    print(f'Generated firms_data.js with {len(firms)} firms')
-    
+        f.write(";\n")
+
+    print(f"Generated {output_file} with {len(firms)} firms")
+
     # Print statistics
     regions = {}
     for firm in firms:
-        region = firm['jurisdiction']
+        region = firm["jurisdiction"]
         if region not in regions:
             regions[region] = 0
         regions[region] += 1
-    
-    print('\nFirms by region:')
+
+    print("\nFirms by region:")
     for region, count in sorted(regions.items(), key=lambda x: -x[1]):
-        print(f'  {region}: {count}')
+        print(f"  {region}: {count}")
 
 if __name__ == '__main__':
     main()

@@ -28,8 +28,12 @@ openai_client = OpenAI(
     api_key=GITHUB_TOKEN,
 )
 
-INPUT_FILE = "seoul_firms.csv"
-OUTPUT_DIR = "firm_results"
+# Get the parent directory (project root)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+
+INPUT_FILE = os.path.join(DATA_DIR, "seoul_firms.csv")
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "firm_results")
 
 if not os.path.exists(INPUT_FILE):
     print(f"Error: {INPUT_FILE} not found. Run 1_filter_seoul.py first.")
