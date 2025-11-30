@@ -1,0 +1,59 @@
+{
+  "filters": {
+    "location": {
+      "enabled": true,
+      "type": "contains",
+      "values": ["서울"],
+      "column": "소재지"
+    }
+  },
+  "categories": [
+    {
+      "id": "finance",
+      "name": "Finance/Quant",
+      "description": "Finance, Financial Services, Quant Trading",
+      "keywords": ["금융", "투자", "자산운용", "핀테크", "fintech", "quant", "trading"],
+      "color": "#4CAF50"
+    },
+    {
+      "id": "healthcare",
+      "name": "Healthcare/Bio",
+      "description": "Healthcare, Biotechnology, Medical",
+      "keywords": ["의료", "바이오", "헬스케어", "제약", "병원", "의학"],
+      "color": "#2196F3"
+    },
+    {
+      "id": "ai_ml",
+      "name": "AI/Machine Learning",
+      "description": "Artificial Intelligence, Machine Learning, Deep Learning",
+      "keywords": ["인공지능", "AI", "머신러닝", "딥러닝", "자연어처리", "NLP"],
+      "color": "#9C27B0"
+    },
+    {
+      "id": "general",
+      "name": "General",
+      "description": "Other industries",
+      "keywords": [],
+      "color": "#607D8B"
+    }
+  ],
+  "summary": {
+    "language": "Korean",
+    "focus_areas": [
+      "business_areas",
+      "research_technologies",
+      "job_openings"
+    ],
+    "custom_prompt": "",
+    "output_format": "markdown"
+  },
+  "search": {
+    "query_template": "{firm_name} 채용 연구분야 사업내용",
+    "search_depth": "advanced",
+    "max_results": 5
+  },
+  "output": {
+    "directory": "firm_results",
+    "create_csv_summary": true
+  }
+}
