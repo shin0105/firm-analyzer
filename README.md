@@ -67,6 +67,13 @@ cd webapp
 python app.py
 ```
 
+For development with debug mode enabled:
+
+```bash
+cd webapp
+FLASK_DEBUG=1 python app.py
+```
+
 Then open your browser to:
 - `http://localhost:5000/` - Main firms viewer
 - `http://localhost:5000/firm-viewer` - Alternative firm viewer
