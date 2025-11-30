@@ -3,12 +3,17 @@ from tavily import TavilyClient
 import time
 import os
 
+# Get the parent directory (project root)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+
 # Set your Tavily API key (get a free key at https://app.tavily.com/)
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "YOUR_TAVILY_API_KEY")
 client = TavilyClient(api_key=TAVILY_API_KEY)
 
 # Load CSV and filter for Seoul
-firms = pd.read_csv("firms_sample.csv")
+input_file = os.path.join(DATA_DIR, "firms_sample.csv")
+firms = pd.read_csv(input_file)
 seoul_firms = firms[firms["주소"].str.contains("서울")]
 
 results = []
@@ -23,5 +28,6 @@ for idx, row in seoul_firms.iterrows():
     time.sleep(1)  # avoid rate limits
 
 result_df = pd.DataFrame(results)
-result_df.to_csv("seoul_firms_with_info.csv", index=False, encoding="utf-8-sig")
+output_file = os.path.join(DATA_DIR, "seoul_firms_with_info.csv")
+result_df.to_csv(output_file, index=False, encoding="utf-8-sig")
 print(result_df)
