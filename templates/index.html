@@ -249,7 +249,7 @@
         }
 
         .result-card {
-            background: linear-gradient(135deg, var(--card-color, #667eea) 0%, color-mix(in srgb, var(--card-color, #667eea) 70%, black) 100%);
+            background: linear-gradient(135deg, var(--card-color, #667eea) 0%, var(--card-color-dark, #4a5caa) 100%);
             color: white;
             padding: 25px;
             border-radius: 12px;
@@ -867,6 +867,16 @@
             }
         }
 
+        function darkenColor(color, percent) {
+            // Simple color darkening function for CSS fallback
+            const num = parseInt(color.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = Math.max(0, (num >> 16) - amt);
+            const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
+            const B = Math.max(0, (num & 0x0000FF) - amt);
+            return '#' + ((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1);
+        }
+
         function renderResultsGrid(summary) {
             const grid = document.getElementById('results-grid');
             grid.innerHTML = '';
@@ -875,6 +885,7 @@
             const totalCard = document.createElement('div');
             totalCard.className = 'result-card';
             totalCard.style.setProperty('--card-color', '#1e3c72');
+            totalCard.style.setProperty('--card-color-dark', darkenColor('#1e3c72', 30));
             totalCard.innerHTML = `
                 <div class="result-count">${summary.total || 0}</div>
                 <div class="result-label">전체 처리됨</div>
@@ -886,7 +897,9 @@
                 if (key !== 'total' && typeof value === 'object') {
                     const card = document.createElement('div');
                     card.className = 'result-card';
-                    card.style.setProperty('--card-color', value.color || '#607D8B');
+                    const cardColor = value.color || '#607D8B';
+                    card.style.setProperty('--card-color', cardColor);
+                    card.style.setProperty('--card-color-dark', darkenColor(cardColor, 30));
                     card.innerHTML = `
                         <div class="result-count">${value.count}</div>
                         <div class="result-label">${value.name}</div>

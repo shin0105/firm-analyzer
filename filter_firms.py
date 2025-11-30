@@ -9,6 +9,7 @@ Filters can be customized via config.json or command-line arguments.
 import argparse
 import json
 import os
+import re
 import sys
 
 import pandas as pd
@@ -32,15 +33,18 @@ def filter_by_location(
     if not values:
         return df
 
+    # Escape regex special characters to prevent injection
+    escaped_values = [re.escape(v) for v in values]
+
     if filter_type == "contains":
-        mask = df[column].str.contains("|".join(values), na=False, regex=True)
+        mask = df[column].str.contains("|".join(escaped_values), na=False, regex=True)
     elif filter_type == "exact":
         mask = df[column].isin(values)
     elif filter_type == "startswith":
-        pattern = "|".join([f"^{v}" for v in values])
+        pattern = "|".join([f"^{v}" for v in escaped_values])
         mask = df[column].str.match(pattern, na=False)
     else:
-        mask = df[column].str.contains("|".join(values), na=False, regex=True)
+        mask = df[column].str.contains("|".join(escaped_values), na=False, regex=True)
 
     return df[mask]
 

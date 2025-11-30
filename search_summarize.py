@@ -262,6 +262,7 @@ def main():
     # Get API keys
     tavily_api_key = os.getenv("TAVILY_API_KEY")
     github_token = os.getenv("GITHUB_TOKEN")
+    openai_base_url = os.getenv("OPENAI_BASE_URL", "https://models.github.ai/inference")
 
     if not args.dry_run:
         if not tavily_api_key:
@@ -275,7 +276,7 @@ def main():
     if not args.dry_run:
         tavily_client = TavilyClient(api_key=tavily_api_key)
         openai_client = OpenAI(
-            base_url="https://models.github.ai/inference",
+            base_url=openai_base_url,
             api_key=github_token,
         )
     else:
