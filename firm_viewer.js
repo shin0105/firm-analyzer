@@ -29,22 +29,22 @@ const regionCenters = {
     '세종': { lat: 36.4800, lng: 127.2890, zoom: 12 }
 };
 
-// Map tile layers - using OpenStreetMap Transport layer for subway visibility
+// Map tile layers - using various layers for better subway/transit visibility
 const tileLayers = {
-    transport: {
-        url: 'https://tile.thunderforest.com/transport/{z}/{x}/{y}.png?apikey=6170aad10dfd42a38d4d8c709a536f38',
-        attribution: '© <a href="https://www.thunderforest.com/">Thunderforest</a>, © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        name: '교통 지도'
-    },
     osm: {
         url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         name: '기본 지도'
     },
-    osmHot: {
-        url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/">HOT</a>',
-        name: 'HOT 지도'
+    cartoDB: {
+        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+        name: 'CartoDB Voyager'
+    },
+    openRailway: {
+        url: 'https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Style: <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA 2.0</a> <a href="http://www.openrailwaymap.org/">OpenRailwayMap</a>',
+        name: '철도 지도 오버레이'
     }
 };
 
@@ -91,29 +91,42 @@ function initMap() {
     if (typeof L !== 'undefined' && L !== null) {
         map = L.map('map').setView([36.5, 127.5], 7);
         
-        // Use OpenStreetMap with HOT style (shows transit better)
-        // and add layer control for switching
+        // Base layers
         const osmLayer = L.tileLayer(tileLayers.osm.url, {
             attribution: tileLayers.osm.attribution,
             maxZoom: 19
         });
         
-        const hotLayer = L.tileLayer(tileLayers.osmHot.url, {
-            attribution: tileLayers.osmHot.attribution,
-            maxZoom: 19
+        const cartoLayer = L.tileLayer(tileLayers.cartoDB.url, {
+            attribution: tileLayers.cartoDB.attribution,
+            maxZoom: 19,
+            subdomains: 'abcd'
         });
         
-        // Default to HOT layer which shows public transit better
-        hotLayer.addTo(map);
-        currentTileLayer = hotLayer;
+        // OpenRailwayMap overlay layer for subway/railway visibility
+        const railwayOverlay = L.tileLayer(tileLayers.openRailway.url, {
+            attribution: tileLayers.openRailway.attribution,
+            maxZoom: 19,
+            opacity: 0.8
+        });
+        
+        // Default to CartoDB Voyager (cleaner look, better for overlay)
+        cartoLayer.addTo(map);
+        // Add railway overlay by default for subway visibility
+        railwayOverlay.addTo(map);
+        currentTileLayer = cartoLayer;
         
         // Add layer control
         const baseLayers = {
-            "기본 지도": osmLayer,
-            "교통 지도 (지하철 표시)": hotLayer
+            "CartoDB Voyager (지하철 표시)": cartoLayer,
+            "기본 지도": osmLayer
         };
         
-        L.control.layers(baseLayers).addTo(map);
+        const overlays = {
+            "지하철/철도 노선": railwayOverlay
+        };
+        
+        L.control.layers(baseLayers, overlays).addTo(map);
         
     } else {
         // Fallback when Leaflet is not available
