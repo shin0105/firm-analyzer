@@ -45,6 +45,21 @@ TAVILY_API_KEY=your_tavily_api_key
 GITHUB_TOKEN=your_github_token
 ```
 
+#### Optional Environment Variables
+
+```bash
+# Custom OpenAI-compatible endpoint (default: GitHub Models)
+export OPENAI_BASE_URL="https://api.openai.com/v1"
+
+# Enable Flask debug mode (default: false, for development only)
+export FLASK_DEBUG="true"
+
+# Script timeout settings (in seconds)
+export FILTER_SCRIPT_TIMEOUT="60"
+export SUMMARIZE_SCRIPT_TIMEOUT="300"
+export DRY_RUN_TIMEOUT="60"
+```
+
 ### 3. Run the Web Interface
 
 ```bash

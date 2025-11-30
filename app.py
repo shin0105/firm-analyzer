@@ -21,6 +21,11 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 CONFIG_PATH = "config.json"
 DEFAULT_INPUT_CSV = "2025_전문연구요원_인원배정.csv"
 
+# Configurable timeout values (in seconds)
+FILTER_SCRIPT_TIMEOUT = int(os.getenv("FILTER_SCRIPT_TIMEOUT", "60"))
+SUMMARIZE_SCRIPT_TIMEOUT = int(os.getenv("SUMMARIZE_SCRIPT_TIMEOUT", "300"))
+DRY_RUN_TIMEOUT = int(os.getenv("DRY_RUN_TIMEOUT", "60"))
+
 
 def load_config():
     """Load configuration from JSON file."""
@@ -221,7 +226,7 @@ def run_filter():
             [sys.executable, "filter_firms.py"],
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=FILTER_SCRIPT_TIMEOUT
         )
         return jsonify({
             "success": result.returncode == 0,
@@ -248,11 +253,12 @@ def run_summarize():
         if limit:
             cmd.extend(["--limit", str(limit)])
 
+        timeout = DRY_RUN_TIMEOUT if dry_run else SUMMARIZE_SCRIPT_TIMEOUT
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            timeout=300 if not dry_run else 60
+            timeout=timeout
         )
         return jsonify({
             "success": result.returncode == 0,
@@ -283,6 +289,10 @@ def create_templates():
 
 if __name__ == "__main__":
     create_templates()
+    # Debug mode is controlled by FLASK_DEBUG environment variable for security
+    debug_mode = os.getenv("FLASK_DEBUG", "false").lower() == "true"
     print("Starting Firm Analyzer Web Application...")
     print("Open http://localhost:5000 in your browser")
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    if debug_mode:
+        print("WARNING: Debug mode is enabled. Do not use in production.")
+    app.run(debug=debug_mode, host="0.0.0.0", port=5000)
