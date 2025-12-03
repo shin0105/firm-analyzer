@@ -1,0 +1,45 @@
+{
+  "query": "서울대학교 정밀기계설계공동연구소 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://iamd.snu.ac.kr/%ED%95%99%EA%B3%BC%EC%86%8C%EA%B0%9C/",
+      "title": "연구소소개 - 서울대 정밀기계설계공동연구소",
+      "content": "정밀기계설계공동연구소는 핵심기계 기초기술과 첨단화된 고등기계 기술의 개발에 대한 필요성을 인식하여, 산업체와 대학이 연계하여 창의적인 고도의 설계 및 생산",
+      "score": 0.6721816,
+      "raw_content": null
+    },
+    {
+      "url": "https://my.snu.ac.kr/ctt/bb/bulletin?b=1&ls=20&ln=1&dm=r&p=22538",
+      "title": "정밀기계설계공동연구소 기간제 직원(육아휴직 대체인력) 채용 ...",
+      "content": "서울대학교 정밀기계설계공동연구소 기간제 직원(육아휴직 대체인력) 채용을 다음과 같이 공고합니다. 1. 채용내용. 직명. 인원. 담당",
+      "score": 0.6320719,
+      "raw_content": null
+    },
+    {
+      "url": "https://iamd.snu.ac.kr/category/board-294-bl-s0qd8t76-20241031160658/",
+      "title": "연구분야 - 서울대 정밀기계설계공동연구소",
+      "content": "ㅁ제어 및 인공지능 머신러닝을 통한 지능형 알고리즘을 탑재한 로봇 시스템 개발. ㅁ소프트 로봇 유연 재료를 이용한 인공 피부 또는 인공 근육을 개발함으로써 사람과",
+      "score": 0.5405607,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.jobkorea.co.kr/Recruit/GI_Read/47926737",
+      "title": "서울대 정밀기계설계공동연구소 시설직(청소) 채용 공고",
+      "content": "서울대 정밀기계설계공동연구소 시설직(청소) 채용 공고 · 환경미화원 더보기. 환경미화원 · 경력무관 · 연봉 2,850만원 이상 · ~ 11/4(화).",
+      "score": 0.5271467,
+      "raw_content": null
+    },
+    {
+      "url": "https://iamd.snu.ac.kr/",
+      "title": "정밀기계설계공동연구소 - 서울대학교",
+      "content": "서울대학교 서울대 정밀기계설계공동연구소. 소개openopen. 인사말 · 연구소소개 · IAP 멤버십 · 구성원openopen. 교수진 · 교직원 · 방문안내 · 연구분야 · 알림광장open",
+      "score": 0.5106191,
+      "raw_content": null
+    }
+  ],
+  "response_time": 4.01,
+  "request_id": "8eefa8b9-3747-4c02-b43b-0b43ffdfdae0"
+}
