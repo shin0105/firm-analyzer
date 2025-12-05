@@ -1,0 +1,45 @@
+{
+  "query": "한국기초과학지원연구원서울서부센터 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://www.kbsi.re.kr/board/view?pageNum=104&rowCnt=10&menuId=MENU002051102000000&boardId=BOARD00086&schType=0&schText=&categoryId=&continent=&country=&boardStyle=&titleId=KZSP64lJBq",
+      "title": "채용공고 게시판 - 한국기초과학지원연구원",
+      "content": "정부출연연구기관인 한국기초과학지원연구원(KBSI) 서울서부센터에서는 인턴직원을. 다음과 같이 모집 합니다. □ 자격요건. ○ 이공계 학사 또는 석사학위 취득자.",
+      "score": 0.72207695,
+      "raw_content": null
+    },
+    {
+      "url": "https://kbsi.recruiter.co.kr/",
+      "title": "한국기초과학지원연구원(KBSI) 채용",
+      "content": "채용공고 ; 2025.09.29 ~ 2025.10.13 2025년 제4차 박사후연구원(YS) (출연(연) 맞춤형 인력양성사업 참여자) 공개채용 ; 2025.09.29 ~ 2025.10.13 2025년 제3차 기간제 공개",
+      "score": 0.5829428,
+      "raw_content": null
+    },
+    {
+      "url": "https://kbsi.recruiter.co.kr/app/jobnotice/list",
+      "title": "채용공고 | 채용정보 | 한국기초과학지원연구원",
+      "content": "한국기초과학지원연구원은 과학기술의 미래를 이끌어갈 진취적이고 열정적인 인재를 모집합니다. 전체; 공채; 특별채용; 학생연구원; 박사후연구원; 기간제; 연수직",
+      "score": 0.5363378,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.kbsi.re.kr/",
+      "title": "한국기초과학지원연구원",
+      "content": "한국기초과학지원연구원(KBSI)은 첨단 연구장비를 통한 과학 분석지원과 융합연구를 수행하는 국가 연구기관입니다. 바이오, 소재, 지구환경, 에너지 등 다양한 분야의",
+      "score": 0.49992734,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.kbsi.re.kr/fileDownload?fileKey=Y0f7Qfrih1&fileId=1&fileDownType=C&paramMenuId=MENU002051102000000",
+      "title": "[HWP] https://www.kbsi.re.kr/fileDownload?fileKey=Y0f7Qf...",
+      "content": "... 내용 도출KBSI 임무▫ 국가 과학기술 발전에 기반이 되는 기초과학 진흥을 위한 연구시설·장비 및 분석과학기술 관련 연구개발, 연구지원 및 공동연구 수행 KBSI 주요",
+      "score": 0.4556594,
+      "raw_content": null
+    }
+  ],
+  "response_time": 4.08,
+  "request_id": "ca940fa0-2542-4eda-beef-fab976d5e819"
+}
