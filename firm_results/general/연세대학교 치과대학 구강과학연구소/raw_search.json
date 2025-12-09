@@ -1,0 +1,45 @@
+{
+  "query": "연세대학교 치과대학 구강과학연구소 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://jobs.ac.kr/recruit-detail/1746235",
+      "title": "[연세대학교] 치과대학 구강과학연구소 박사후연구원 모집공고",
+      "content": "연세대학교 - [연세대 치과대학 구강과학연구소에서 박사후연구원 포지션 모집; 영상치의학 분야, 1명, 임용기간 2025-09-01 ~ 2026-02-28],",
+      "score": 0.9993487,
+      "raw_content": null
+    },
+    {
+      "url": "https://dentistry.yonsei.ac.kr/dentistry/research/center/oral-science.do",
+      "title": "구강과학연구소 - 치과대학 - 연세대학교",
+      "content": "국민구강보건의 유지증진을 위하여 치의학계의 새로운 연구영역을 개발함으로써 일반의료와 치과의료체계를 확립하고 치의학계 수준향상을 위한 연구와 교육을 목적으로",
+      "score": 0.99860066,
+      "raw_content": null
+    },
+    {
+      "url": "https://dentistry.yonsei.ac.kr/dentistry/news/recruit.do?mode=list&article.offset=0",
+      "title": "채용공고 - 연세대학교 치과대학",
+      "content": "연세대학교 치과대학. 주메뉴. 소개. YONSEI,. The truth will ... 채용공고. 검색. 2020년 강사(보철과) 초빙 공고. 2020-03-30 · 2020년 연구교수, 강사, 임상교수 초빙",
+      "score": 0.8322367,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.kci.go.kr/kciportal/po/search/poInsiSearReinView.kci?insiGeneInfoBean.insiId=INS000004887",
+      "title": "대학부설연구소 정보 - 한국학술지인용색인",
+      "content": "국민구강보건의 유지증진을 위하여 치의학계의 새로운 연구영역을 개발함으로써 일반의료와 치과의료체계를 확립하고 치의학계 수준향상을 위한 연구와 교육을 목적으로",
+      "score": 0.25238404,
+      "raw_content": null
+    },
+    {
+      "url": "https://faculty.yonsei.ac.kr/recruit/index.php?mid=K01&lang=ko&uid=2&act=view",
+      "title": "연세대학교 채용지원 및 POOL 등록 시스템 - Yonsei University",
+      "content": "11) (원주의과대학 정밀의학과 비정년트랙 연구전담) 산학협력실적증명, 산학협력실적목록, 산학협력업무계획서\n\n나. 2차 심사 제출서류 (1차 심사 합격자에 한하여 제출)\n\n1) 졸업증명서 및 성적증명서 원본 (학사, 석사, 박사 각 학위과정 별)\n\n2) 2017년 3월 이후 연구실적물 전체 (채용시스템에 추가 업로드)\n\n + 의과대학 및 간호대학은 2018년 1월 이후, 보건대학원은 2017년 1월 이후, 치과대학은 2017년 6월 이후 연구실적물 전체\n\n3) 추천서 (동일 전공분야 교수 또는 전문인 최대 2인) 각 1부 [...] 1-2. 의료원 [...] |  |  |  |  |  |\n ---  --- \n| 대학(원) | 학과(부) | 초빙분야 | 인원 | 추가자격조건/기타 |\n| 의과대학 | 해부학 | 신경과학 | 1 | M.D. or nM.D. 박사학위 소지자 |\n| 세포생물학 및 발생생물학 | 1 | M.D. or nM.D. 박사학위 소지자 |\n| 생리학 | 신경생리학 | 1 | M.D. or nM.D. 박사학위 소지자 |\n| 약리학 | 신경약리학 | 2 | M.D. or nM.D. 박사학위 소지자 |\n| 환경의생물학 | 기생충학·열대의학 | 1 | M.D. 박사학위 소지자 |\n| 예방의학 | 역학 | 1 | M.D. 박사학위 소지자 |\n| 환경역학 | 1 | M.D. 박사학위 소지자 |\n| 의학공학 | 의공학 | 1 | M.D. or nM.D. 박사학위 소지자, 용인 |\n| 의생명시스템정보학 | 의학통계 | 1 | nM.D. 박사학위 소지자, 강남 |",
+      "score": 0.12940273,
+      "raw_content": null
+    }
+  ],
+  "response_time": 3.27,
+  "request_id": "994da465-4cf6-4631-9517-61644f4e6dc2"
+}
