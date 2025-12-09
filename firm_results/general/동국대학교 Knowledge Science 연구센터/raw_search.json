@@ -1,0 +1,45 @@
+{
+  "query": "동국대학교 Knowledge Science 연구센터 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://www.dongguk.edu/article/PROFHIRE/detail/26758389",
+      "title": "동국대학교 - 대학안내 - 채용 - 교원채용 - 상세",
+      "content": "동국대학교 Knowledge Science 연구센터는 인공지능융합혁신인재양성 사업을 담당할 산학협력초빙교수 채용을 다음과 같이 공고 합니다.",
+      "score": 0.99996924,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.dongguk.edu/article/PROFHIRE/list?pageIndex=9&",
+      "title": "동국대학교 - 대학안내 - 채용 - 교원채용",
+      "content": "212. 2024학년도 1학기 이과대학 강사 채용 공고. 2024.02.14. 조회 1078. 211. 동국대학교 Knowledge Science 연구센터 산학협력초빙교수 채용 공고 (2024.02.06~2024.02",
+      "score": 0.99980444,
+      "raw_content": null
+    },
+    {
+      "url": "https://ksrc.dongguk.edu/ksrc2_1?sca=%EA%B8%B0%EB%8C%80%ED%9A%A8%EA%B3%BC",
+      "title": "연구소개 - 동국대학교 KSRC(Knowledge Science Research Center)",
+      "content": "연구목표 카테고리 · 국내 지식과학 교육의 선진화를 통한 위상 제고 및 리더십 확보 · 지식 과학 분야 교육의 내실화를 달성하여 국제 지식 과학 커뮤니티에서 인정받는",
+      "score": 0.9997063,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.dongguk.edu/article/EMPLHIRE/list?pageIndex=14&",
+      "title": "동국대학교 - 대학안내 - 채용 - 직원채용",
+      "content": "직원채용. [공지] 2025학년도 하반기 동국대학교 직원(한시계약직) 상시채용 안내채용공고 바로가기 ... Knowledge Science 연구센터 프로젝트 계약직 채용 공고 (2024.06.03",
+      "score": 0.9985562,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.dongguk.edu/article/EMPLHIRE/detail/26753178",
+      "title": "직원채용 - 동국대학교",
+      "content": "직원채용 ; 서류 전형, 2023. 12. 11.(월) 예정, 본교 채용시스템(Udrims), 개별연락 ; 면접 전형, 2023. 12. 12.(화) 10:00 예정, 동국대학교 서울캠퍼스 산학협력단 산학",
+      "score": 0.95695716,
+      "raw_content": null
+    }
+  ],
+  "response_time": 2.91,
+  "request_id": "7fc35514-abb5-4d15-b6da-a7b6b5799ad6"
+}

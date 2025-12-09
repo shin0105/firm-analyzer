@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025 전문연구요원 인원배정 업체 현황</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+          onerror="console.log('Leaflet CSS failed to load')"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/firms_viewer.css') }}">
+    <style>
+        /* Fallback Leaflet styles if CDN fails */
+        .leaflet-container {
+            height: 100%;
+            width: 100%;
+            background: #f0f0f0;
+        }
+        .no-map-message {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #666;
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>2025 전문연구요원 인원배정 업체 현황</h1>
+            <p class="subtitle">지역별 연구기관 및 업체 정보</p>
+        </header>
+
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-btn active" data-region="all">전체</button>
+                <button class="tab-btn" data-region="서울">서울</button>
+                <button class="tab-btn" data-region="경인">경인</button>
+                <button class="tab-btn" data-region="인천">인천</button>
+                <button class="tab-btn" data-region="대전.충남">대전/충남</button>
+                <button class="tab-btn" data-region="부산.울산">부산/울산</button>
+                <button class="tab-btn" data-region="대구.경북">대구/경북</button>
+                <button class="tab-btn" data-region="광주.전남">광주/전남</button>
+                <button class="tab-btn" data-region="충북">충북</button>
+                <button class="tab-btn" data-region="경남">경남</button>
+                <button class="tab-btn" data-region="강원">강원</button>
+                <button class="tab-btn" data-region="전북">전북</button>
+                <button class="tab-btn" data-region="제주">제주</button>
+            </div>
+        </div>
+
+        <!-- Seoul Gu Filter (shown only when Seoul is selected) -->
+        <div id="seoul-filter" class="seoul-filter hidden">
+            <label for="gu-select">서울시 구 선택:</label>
+            <select id="gu-select">
+                <option value="all">전체</option>
+                <option value="강남구">강남구</option>
+                <option value="강동구">강동구</option>
+                <option value="강서구">강서구</option>
+                <option value="관악구">관악구</option>
+                <option value="광진구">광진구</option>
+                <option value="구로구">구로구</option>
+                <option value="금천구">금천구</option>
+                <option value="노원구">노원구</option>
+                <option value="도봉구">도봉구</option>
+                <option value="동대문구">동대문구</option>
+                <option value="동작구">동작구</option>
+                <option value="마포구">마포구</option>
+                <option value="서대문구">서대문구</option>
+                <option value="서초구">서초구</option>
+                <option value="성동구">성동구</option>
+                <option value="성북구">성북구</option>
+                <option value="송파구">송파구</option>
+                <option value="양천구">양천구</option>
+                <option value="영등포구">영등포구</option>
+                <option value="용산구">용산구</option>
+                <option value="은평구">은평구</option>
+                <option value="종로구">종로구</option>
+                <option value="중구">중구</option>
+            </select>
+        </div>
+
+        <div class="content-wrapper">
+            <div id="map"></div>
+            <div class="info-panel">
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">총 업체 수</span>
+                        <span id="total-count" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">현재 표시</span>
+                        <span id="filtered-count" class="stat-value">0</span>
+                    </div>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="업체명 검색...">
+                </div>
+                <div id="firms-list" class="firms-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+            onerror="window.leafletFailed = true"></script>
+    <script src="{{ url_for('static', filename='js/firms_data.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/firms_viewer.js') }}"></script>
+</body>
+</html>

@@ -1,11 +1,28 @@
-
+# IDE and editor files
 .vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+env/
+
+# Database
 *.sqlite3
+
+# Logs
 *.log
+
+# OS files
 .DS_Store
 .idea/
 .env
@@ -14,3 +31,5 @@ __pycache__/
 *_firms.csv
 !seoul_firms.csv
 
+# Flask
+instance/
