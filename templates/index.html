@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firm Analyzer - 기업 분석 도구</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        header .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: #e8e8e8;
+        }
+
+        .tab.active {
+            color: #1e3c72;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #1e3c72;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* Categories Editor */
+        .categories-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .category-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid var(--category-color, #607D8B);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .category-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .category-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .category-actions button {
+            padding: 5px 10px;
+            font-size: 0.85rem;
+        }
+
+        .keywords-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            min-height: 50px;
+        }
+
+        .keyword-tag {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .keyword-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Results Dashboard */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, var(--card-color, #667eea) 0%, var(--card-color-dark, #4a5caa) 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .result-count {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .result-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        /* Firms List */
+        .firms-list {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .firm-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .firm-item:hover {
+            background: #f5f5f5;
+        }
+
+        .firm-item:last-child {
+            border-bottom: none;
+        }
+
+        .firm-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Focus Areas */
+        .focus-areas {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .focus-area-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .focus-area-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+            padding: 30px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        /* Output Log */
+        .output-log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Status Messages */
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .status.info {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .tabs {
+                flex-wrap: wrap;
+            }
+            .tab {
+                flex: 1;
+                min-width: 100px;
+                text-align: center;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Firm Analyzer</h1>
+            <p class="subtitle">기업 필터링 및 분석 도구 - Configurable Firm Search & Summary</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="dashboard">📊 대시보드</button>
+            <button class="tab" data-tab="filters">🔧 필터 설정</button>
+            <button class="tab" data-tab="categories">📁 카테고리 관리</button>
+            <button class="tab" data-tab="summary">📝 요약 설정</button>
+            <button class="tab" data-tab="run">▶️ 실행</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="section">
+                <h2 class="section-title">처리 결과 현황</h2>
+                <div id="results-grid" class="results-grid">
+                    <!-- Results will be loaded here -->
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">카테고리별 기업 목록</h2>
+                <select id="category-select" class="form-group" style="max-width: 300px; margin-bottom: 15px;">
+                    <option value="">카테고리 선택...</option>
+                </select>
+                <div id="firms-list" class="firms-list" style="display: none;">
+                    <!-- Firms will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Tab -->
+        <div id="filters" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">위치 필터 설정</h2>
+                <p style="margin-bottom: 20px; color: #666;">기업을 필터링할 위치/지역을 설정합니다. 여러 지역을 선택하려면 쉼표로 구분하세요.</p>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="filter-column">필터링 컬럼</label>
+                        <select id="filter-column">
+                            <option value="소재지">소재지</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-type">필터 유형</label>
+                        <select id="filter-type">
+                            <option value="contains">포함 (contains)</option>
+                            <option value="exact">정확히 일치 (exact)</option>
+                            <option value="startswith">시작 (startswith)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="filter-values">필터 값 (쉼표로 구분)</label>
+                    <input type="text" id="filter-values" placeholder="서울, 경기, 부산">
+                    <small style="color: #666; display: block; margin-top: 5px;">예: "서울" 또는 "서울, 경기, 인천"</small>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="filter-enabled" checked> 필터 활성화
+                    </label>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">검색 설정</h2>
+                <div class="form-group">
+                    <label for="query-template">검색 쿼리 템플릿</label>
+                    <input type="text" id="query-template" placeholder="{firm_name} 채용 연구분야 사업내용">
+                    <small style="color: #666; display: block; margin-top: 5px;">{firm_name}은 기업명으로 자동 대체됩니다</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="search-depth">검색 깊이</label>
+                        <select id="search-depth">
+                            <option value="basic">기본 (Basic)</option>
+                            <option value="advanced">상세 (Advanced)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="max-results">최대 결과 수</label>
+                        <input type="number" id="max-results" value="5" min="1" max="20">
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="saveFiltersConfig()">💾 설정 저장</button>
+                <button class="btn btn-secondary" onclick="loadConfig()">🔄 설정 새로고침</button>
+            </div>
+        </div>
+
+        <!-- Categories Tab -->
+        <div id="categories" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">분류 카테고리 관리</h2>
+                <p style="margin-bottom: 20px; color: #666;">기업을 분류할 카테고리를 정의합니다. 키워드를 기반으로 자동 분류됩니다.</p>
+
+                <div id="categories-list" class="categories-list">
+                    <!-- Categories will be loaded here -->
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-success" onclick="addCategory()">➕ 카테고리 추가</button>
+                    <button class="btn btn-primary" onclick="saveCategoriesConfig()">💾 설정 저장</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Tab -->
+        <div id="summary" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">요약 생성 설정</h2>
+
+                <div class="form-group">
+                    <label for="summary-language">요약 언어</label>
+                    <select id="summary-language">
+                        <option value="Korean">한국어 (Korean)</option>
+                        <option value="English">영어 (English)</option>
+                        <option value="Japanese">일본어 (Japanese)</option>
+                        <option value="Chinese">중국어 (Chinese)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>요약 포함 항목</label>
+                    <div class="focus-areas" id="focus-areas">
+                        <label class="focus-area-item">
+                            <input type="checkbox" value="business_areas" checked> 사업 영역
+                        </label>
+                        <label class="focus-area-item">
+                            <input type="checkbox" value="research_technologies" checked> 연구/기술 분야
+                        </label>
+                        <label class="focus-area-item">
+                            <input type="checkbox" value="job_openings" checked> 채용 정보
+                        </label>
+                        <label class="focus-area-item">
+                            <input type="checkbox" value="company_culture"> 기업 문화
+                        </label>
+                        <label class="focus-area-item">
+                            <input type="checkbox" value="products_services"> 제품/서비스
+                        </label>
+                        <label class="focus-area-item">
+                            <input type="checkbox" value="funding_investors"> 투자/펀딩 정보
+                        </label>
+                        <label class="focus-area-item">
+                            <input type="checkbox" value="team_leadership"> 팀/리더십
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="custom-prompt">커스텀 프롬프트 (선택사항)</label>
+                    <textarea id="custom-prompt" placeholder="기본 프롬프트를 사용하려면 비워두세요. 커스텀 프롬프트에서 사용 가능한 변수: {firm_name}, {language}, {focus_areas}, {categories}, {search_results}"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="output-format">출력 형식</label>
+                    <select id="output-format">
+                        <option value="markdown">Markdown</option>
+                        <option value="json">JSON</option>
+                        <option value="html">HTML</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="saveSummaryConfig()">💾 설정 저장</button>
+                <button class="btn btn-secondary" onclick="loadConfig()">🔄 설정 새로고침</button>
+            </div>
+        </div>
+
+        <!-- Run Tab -->
+        <div id="run" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">스크립트 실행</h2>
+
+                <div class="status info" id="run-status" style="display: none;"></div>
+
+                <div class="form-row" style="margin-bottom: 30px;">
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                        <h3 style="margin-bottom: 10px;">1️⃣ 필터 실행</h3>
+                        <p style="color: #666; margin-bottom: 15px;">설정된 필터에 따라 기업 목록을 필터링합니다.</p>
+                        <button class="btn btn-primary" onclick="runFilter()" id="btn-filter">▶️ 필터 실행</button>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                        <h3 style="margin-bottom: 10px;">2️⃣ 검색 및 요약</h3>
+                        <p style="color: #666; margin-bottom: 15px;">필터링된 기업의 정보를 검색하고 요약합니다.</p>
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <label for="run-limit">처리할 기업 수 (테스트용)</label>
+                            <input type="number" id="run-limit" value="5" min="1" max="100" style="max-width: 100px;">
+                        </div>
+                        <label style="display: block; margin-bottom: 10px;">
+                            <input type="checkbox" id="dry-run" checked> 드라이런 (API 호출 없이 테스트)
+                        </label>
+                        <button class="btn btn-primary" onclick="runSummarize()" id="btn-summarize">▶️ 검색/요약 실행</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>실행 로그</label>
+                    <div id="output-log" class="output-log">실행 결과가 여기에 표시됩니다...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firm Detail Modal -->
+    <div id="firm-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-firm-name">기업명</h2>
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modal-content">
+                <!-- Firm details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentConfig = {};
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Load configuration on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            loadResultsSummary();
+        });
+
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                currentConfig = await response.json();
+                populateConfigUI(currentConfig);
+            } catch (error) {
+                console.error('Error loading config:', error);
+            }
+        }
+
+        function populateConfigUI(config) {
+            // Filters
+            const filters = config.filters?.location || {};
+            document.getElementById('filter-column').value = filters.column || '소재지';
+            document.getElementById('filter-type').value = filters.type || 'contains';
+            document.getElementById('filter-values').value = (filters.values || []).join(', ');
+            document.getElementById('filter-enabled').checked = filters.enabled !== false;
+
+            // Search
+            const search = config.search || {};
+            document.getElementById('query-template').value = search.query_template || '{firm_name} 채용 연구분야 사업내용';
+            document.getElementById('search-depth').value = search.search_depth || 'advanced';
+            document.getElementById('max-results').value = search.max_results || 5;
+
+            // Summary
+            const summary = config.summary || {};
+            document.getElementById('summary-language').value = summary.language || 'Korean';
+            document.getElementById('custom-prompt').value = summary.custom_prompt || '';
+            document.getElementById('output-format').value = summary.output_format || 'markdown';
+
+            // Focus areas
+            const focusAreas = summary.focus_areas || [];
+            document.querySelectorAll('#focus-areas input[type="checkbox"]').forEach(cb => {
+                cb.checked = focusAreas.includes(cb.value);
+            });
+
+            // Categories
+            renderCategories(config.categories || []);
+
+            // Category select for dashboard
+            const categorySelect = document.getElementById('category-select');
+            categorySelect.innerHTML = '<option value="">카테고리 선택...</option>';
+            (config.categories || []).forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                categorySelect.appendChild(option);
+            });
+        }
+
+        function renderCategories(categories) {
+            const container = document.getElementById('categories-list');
+            container.innerHTML = '';
+
+            categories.forEach((cat, index) => {
+                const div = document.createElement('div');
+                div.className = 'category-item';
+                div.style.setProperty('--category-color', cat.color || '#607D8B');
+                div.innerHTML = `
+                    <div class="category-header">
+                        <div>
+                            <input type="text" value="${cat.name}" class="category-name-input" 
+                                   style="font-weight: 600; border: none; background: transparent; font-size: 1.1rem;"
+                                   data-index="${index}" data-field="name">
+                            <input type="text" value="${cat.id}" class="category-id-input" 
+                                   style="font-size: 0.85rem; color: #666; border: none; background: transparent;"
+                                   data-index="${index}" data-field="id" placeholder="ID">
+                        </div>
+                        <div class="category-actions">
+                            <input type="color" value="${cat.color || '#607D8B'}" 
+                                   data-index="${index}" data-field="color" title="카테고리 색상">
+                            <button class="btn btn-danger" onclick="removeCategory(${index})" style="padding: 5px 10px;">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <input type="text" value="${cat.description || ''}" placeholder="카테고리 설명"
+                               data-index="${index}" data-field="description">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-size: 0.85rem;">키워드 (쉼표로 구분)</label>
+                        <input type="text" value="${(cat.keywords || []).join(', ')}" placeholder="금융, 투자, 핀테크"
+                               data-index="${index}" data-field="keywords">
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addCategory() {
+            const categories = currentConfig.categories || [];
+            categories.push({
+                id: 'new_category_' + Date.now(),
+                name: '새 카테고리',
+                description: '',
+                keywords: [],
+                color: '#607D8B'
+            });
+            currentConfig.categories = categories;
+            renderCategories(categories);
+        }
+
+        function removeCategory(index) {
+            if (confirm('이 카테고리를 삭제하시겠습니까?')) {
+                currentConfig.categories.splice(index, 1);
+                renderCategories(currentConfig.categories);
+            }
+        }
+
+        function gatherCategoriesFromUI() {
+            const categories = [];
+            const items = document.querySelectorAll('.category-item');
+            items.forEach((item, index) => {
+                const cat = {
+                    id: item.querySelector('[data-field="id"]').value,
+                    name: item.querySelector('[data-field="name"]').value,
+                    description: item.querySelector('[data-field="description"]').value,
+                    keywords: item.querySelector('[data-field="keywords"]').value.split(',').map(k => k.trim()).filter(k => k),
+                    color: item.querySelector('[data-field="color"]').value
+                };
+                categories.push(cat);
+            });
+            return categories;
+        }
+
+        async function saveFiltersConfig() {
+            currentConfig.filters = currentConfig.filters || {};
+            currentConfig.filters.location = {
+                enabled: document.getElementById('filter-enabled').checked,
+                type: document.getElementById('filter-type').value,
+                column: document.getElementById('filter-column').value,
+                values: document.getElementById('filter-values').value.split(',').map(v => v.trim()).filter(v => v)
+            };
+
+            currentConfig.search = {
+                query_template: document.getElementById('query-template').value,
+                search_depth: document.getElementById('search-depth').value,
+                max_results: parseInt(document.getElementById('max-results').value)
+            };
+
+            await saveConfig();
+        }
+
+        async function saveCategoriesConfig() {
+            currentConfig.categories = gatherCategoriesFromUI();
+            await saveConfig();
+        }
+
+        async function saveSummaryConfig() {
+            const focusAreas = [];
+            document.querySelectorAll('#focus-areas input[type="checkbox"]:checked').forEach(cb => {
+                focusAreas.push(cb.value);
+            });
+
+            currentConfig.summary = {
+                language: document.getElementById('summary-language').value,
+                focus_areas: focusAreas,
+                custom_prompt: document.getElementById('custom-prompt').value,
+                output_format: document.getElementById('output-format').value
+            };
+
+            await saveConfig();
+        }
+
+        async function saveConfig() {
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentConfig)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showStatus('설정이 저장되었습니다.', 'success');
+                } else {
+                    showStatus('설정 저장 실패: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('설정 저장 실패: ' + error.message, 'error');
+            }
+        }
+
+        async function loadResultsSummary() {
+            try {
+                const response = await fetch('/api/results/summary');
+                const summary = await response.json();
+                renderResultsGrid(summary);
+            } catch (error) {
+                console.error('Error loading results:', error);
+            }
+        }
+
+        function darkenColor(color, percent) {
+            // Simple color darkening function for CSS fallback
+            const num = parseInt(color.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = Math.max(0, (num >> 16) - amt);
+            const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
+            const B = Math.max(0, (num & 0x0000FF) - amt);
+            return '#' + ((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1);
+        }
+
+        function renderResultsGrid(summary) {
+            const grid = document.getElementById('results-grid');
+            grid.innerHTML = '';
+
+            // Total card
+            const totalCard = document.createElement('div');
+            totalCard.className = 'result-card';
+            totalCard.style.setProperty('--card-color', '#1e3c72');
+            totalCard.style.setProperty('--card-color-dark', darkenColor('#1e3c72', 30));
+            totalCard.innerHTML = `
+                <div class="result-count">${summary.total || 0}</div>
+                <div class="result-label">전체 처리됨</div>
+            `;
+            grid.appendChild(totalCard);
+
+            // Category cards
+            Object.entries(summary).forEach(([key, value]) => {
+                if (key !== 'total' && typeof value === 'object') {
+                    const card = document.createElement('div');
+                    card.className = 'result-card';
+                    const cardColor = value.color || '#607D8B';
+                    card.style.setProperty('--card-color', cardColor);
+                    card.style.setProperty('--card-color-dark', darkenColor(cardColor, 30));
+                    card.innerHTML = `
+                        <div class="result-count">${value.count}</div>
+                        <div class="result-label">${value.name}</div>
+                    `;
+                    card.onclick = () => loadFirmsByCategory(key);
+                    grid.appendChild(card);
+                }
+            });
+        }
+
+        document.getElementById('category-select').addEventListener('change', function() {
+            if (this.value) {
+                loadFirmsByCategory(this.value);
+            }
+        });
+
+        async function loadFirmsByCategory(categoryId) {
+            try {
+                const response = await fetch(`/api/results/${categoryId}`);
+                const data = await response.json();
+                renderFirmsList(data.firms);
+            } catch (error) {
+                console.error('Error loading firms:', error);
+            }
+        }
+
+        function renderFirmsList(firms) {
+            const list = document.getElementById('firms-list');
+            list.style.display = 'block';
+            list.innerHTML = '';
+
+            if (firms.length === 0) {
+                list.innerHTML = '<div class="firm-item">이 카테고리에 기업이 없습니다.</div>';
+                return;
+            }
+
+            firms.forEach(firm => {
+                const item = document.createElement('div');
+                item.className = 'firm-item';
+                item.innerHTML = `<div class="firm-name">${firm.name}</div>`;
+                item.onclick = () => showFirmDetail(firm);
+                list.appendChild(item);
+            });
+        }
+
+        function showFirmDetail(firm) {
+            document.getElementById('modal-firm-name').textContent = firm.name;
+            document.getElementById('modal-content').innerHTML = `<div style="white-space: pre-wrap;">${firm.summary || '요약 정보 없음'}</div>`;
+            document.getElementById('firm-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('firm-modal').classList.remove('active');
+        }
+
+        async function runFilter() {
+            const btn = document.getElementById('btn-filter');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> 실행 중...';
+
+            try {
+                const response = await fetch('/api/run/filter', { method: 'POST' });
+                const result = await response.json();
+                document.getElementById('output-log').textContent = 
+                    (result.stdout || '') + '\n' + (result.stderr || '');
+                showStatus(result.success ? '필터 실행 완료!' : '필터 실행 실패', result.success ? 'success' : 'error');
+            } catch (error) {
+                document.getElementById('output-log').textContent = 'Error: ' + error.message;
+                showStatus('실행 오류: ' + error.message, 'error');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '▶️ 필터 실행';
+        }
+
+        async function runSummarize() {
+            const btn = document.getElementById('btn-summarize');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> 실행 중...';
+
+            const dryRun = document.getElementById('dry-run').checked;
+            const limit = parseInt(document.getElementById('run-limit').value);
+
+            try {
+                const response = await fetch('/api/run/summarize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dry_run: dryRun, limit: limit })
+                });
+                const result = await response.json();
+                document.getElementById('output-log').textContent = 
+                    (result.stdout || '') + '\n' + (result.stderr || '');
+                showStatus(result.success ? '검색/요약 실행 완료!' : '검색/요약 실행 실패', result.success ? 'success' : 'error');
+                loadResultsSummary();
+            } catch (error) {
+                document.getElementById('output-log').textContent = 'Error: ' + error.message;
+                showStatus('실행 오류: ' + error.message, 'error');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '▶️ 검색/요약 실행';
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('run-status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+            status.style.display = 'block';
+            setTimeout(() => { status.style.display = 'none'; }, 5000);
+        }
+
+        // Close modal on outside click
+        document.getElementById('firm-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>
