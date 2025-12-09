@@ -68,7 +68,8 @@
   "search": {
     "query_template": "{firm_name} 채용 연구분야 사업내용",
     "search_depth": "advanced",
-    "max_results": 5
+    "max_results": 5,
+    "context": ""
   },
   "summary": {
     "custom_prompt": "",
@@ -78,6 +79,7 @@
       "job_openings"
     ],
     "language": "Korean",
-    "output_format": "markdown"
+    "output_format": "markdown",
+    "system_prompt": "You are a helpful assistant that summarizes company information in JSON format."
   }
 }
