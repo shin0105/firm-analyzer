@@ -1,0 +1,45 @@
+{
+  "query": "서울대학교 의학연구원 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "http://snumrc.snu.ac.kr/",
+      "title": "서울대학교 의학연구원",
+      "content": "공지사항 · 2026년도 제2차(2026.2.1.자) 비전임(연구)교원 채용 공고[신경과학연구소] · 2026년도 제2차(2026.2.1.자) 비전임(연구)교원 채용 공고[의료빅데이터연구센터]",
+      "score": 0.9988213,
+      "raw_content": null
+    },
+    {
+      "url": "http://snumrc.snu.ac.kr/community/notice?md=v&bbsidx=5838",
+      "title": "2025년도 제11차(2025.11.1.자) 비전임(연구)교원 채용 공고[의료빅 ...",
+      "content": "근무기관, 모집분야, 담당업무, 채용직급, 채용 인원, 비고. 의학연구원 의료빅데이터연구센터, 암역학 식이역학, -연구과제 참여",
+      "score": 0.9965436,
+      "raw_content": null
+    },
+    {
+      "url": "https://my.snu.ac.kr/ctt/bb/bulletin?b=1&ls=20&ln=1&dm=r&p=23350",
+      "title": "[서울대학교 의과대학 의료관리학 연구소] 연구원 채용 공고: 생애초기 ...",
+      "content": "1. 모집 인원 : 연구원 1명(교수님 개별 고용) · 2. 지원 자격 · 3. 업무 내용 : DB활용후속연구 과제 관련 업무 · 4. 근무조건 · 5. 모집 기간 및 방법.",
+      "score": 0.9939964,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.prevmed.or.kr/board_community_recruit01/view.php?tn=board_community_recruit01&list_count_s=&G_state=Y&pm=5.1&part_part_s=&subject_s=&content_s=&name_s=&writedate_s=&keyfield_s=&search_word_s=&uid=176&gid=173&cpage=11&spage=11",
+      "title": "[서울대학교] 의학연구원 환경보건센터 채용공고 - 대한예방의학회",
+      "content": "| 180 | [[한국원자력의학원] 국가방사선비상진료센터 역학 통계 보건 분야 연구원 채용 (2023.2)](./view.php?tn=board_community_recruit01&list_count_s=&G_state=Y&pm=5.1&part_part_s=&subject_s=&content_s=&name_s=&writedate_s=&keyfield_s=&search_word_s=&uid=195&gid=192&cpage=11&spage=11 \"[한국원자력의학원] 국가방사선비상진료센터 역학 통계 보건 분야 연구원 채용 (2023.2)\") | 관리자 | 2023.03.03 | 459 | [...] | 번호 | 제목 | 작성자 | 작성일 | 파일 | 조회수 |\n| 181 | [[국립중앙의료원] 중앙치매센터 예방의학전문의 채용안내](./view.php?tn=board_community_recruit01&list_count_s=&G_state=Y&pm=5.1&part_part_s=&subject_s=&content_s=&name_s=&writedate_s=&keyfield_s=&search_word_s=&uid=196&gid=193&cpage=11&spage=11 \"[국립중앙의료원] 중앙치매센터 예방의학전문의 채용안내\") | 관리자 | 2023.03.07 | 582 | [...] | 175 | [[서울시 대사증후군관리사업지원단] 채용 공고](./view.php?tn=board_community_recruit01&list_count_s=&G_state=Y&pm=5.1&part_part_s=&subject_s=&content_s=&name_s=&writedate_s=&keyfield_s=&search_word_s=&uid=190&gid=187&cpage=11&spage=11 \"[서울시 대사증후군관리사업지원단] 채용 공고\") | 관리자 | 2023.01.17 | 635 |",
+      "score": 0.9908035,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.jobkorea.co.kr/recruit/co_read/recruit/c/snumrc",
+      "title": "서울대학교의학연구원 채용 - 2025년 진행 중인 공고 확인하기",
+      "content": "진행중인 채용정보 ... * 최근 3년 이내, 최대 100개의 채용정보를 확인할 수 있습니다. * 최근 1년 이내의 공고에 대해서만 상세 내용을 확인 할 수 있습니다.",
+      "score": 0.9780517,
+      "raw_content": null
+    }
+  ],
+  "response_time": 3.16,
+  "request_id": "d5527dc0-5282-4502-98f6-039f2b715c3a"
+}
