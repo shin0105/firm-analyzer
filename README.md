@@ -66,7 +66,7 @@ export DRY_RUN_TIMEOUT="60"
 python app.py
 ```
 
-Open http://localhost:5000 in your browser.
+Open http://localhost:8001 in your browser.
 
 ## Command Line Usage
 
