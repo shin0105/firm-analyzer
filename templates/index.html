@@ -508,6 +508,12 @@
                     <small style="color: #666; display: block; margin-top: 5px;">{firm_name}은 기업명으로 자동 대체됩니다</small>
                 </div>
 
+                <div class="form-group">
+                    <label for="search-context">추가 검색 컨텍스트</label>
+                    <textarea id="search-context" placeholder="타빌리 검색에 항상 포함할 배경 정보를 입력하세요. 예: 최신 연구 동향, 기술 스택, 채용 키워드 등"></textarea>
+                    <small style="color: #666; display: block; margin-top: 5px;">쿼리 템플릿 뒤에 자동으로 덧붙여져 더 정확한 검색을 수행합니다.</small>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="search-depth">검색 깊이</label>
@@ -589,8 +595,13 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="system-prompt">시스템 프롬프트</label>
+                    <textarea id="system-prompt" placeholder="LLM에게 전달할 기본 역할/톤을 정의하세요. 비워두면 기본 시스템 프롬프트를 사용합니다."></textarea>
+                </div>
+
+                <div class="form-group">
                     <label for="custom-prompt">커스텀 프롬프트 (선택사항)</label>
-                    <textarea id="custom-prompt" placeholder="기본 프롬프트를 사용하려면 비워두세요. 커스텀 프롬프트에서 사용 가능한 변수: {firm_name}, {language}, {focus_areas}, {categories}, {search_results}"></textarea>
+                    <textarea id="custom-prompt" placeholder="사용 가능 변수: {firm_name}, {language}, {focus_areas}, {categories}, {category_ids}, {output_format}, {search_results}, {search_context}"></textarea>
                 </div>
 
                 <div class="form-group">
@@ -699,12 +710,14 @@
             document.getElementById('query-template').value = search.query_template || '{firm_name} 채용 연구분야 사업내용';
             document.getElementById('search-depth').value = search.search_depth || 'advanced';
             document.getElementById('max-results').value = search.max_results || 5;
+            document.getElementById('search-context').value = search.context || '';
 
             // Summary
             const summary = config.summary || {};
             document.getElementById('summary-language').value = summary.language || 'Korean';
             document.getElementById('custom-prompt').value = summary.custom_prompt || '';
             document.getElementById('output-format').value = summary.output_format || 'markdown';
+            document.getElementById('system-prompt').value = summary.system_prompt || '';
 
             // Focus areas
             const focusAreas = summary.focus_areas || [];
@@ -812,7 +825,8 @@
             currentConfig.search = {
                 query_template: document.getElementById('query-template').value,
                 search_depth: document.getElementById('search-depth').value,
-                max_results: parseInt(document.getElementById('max-results').value)
+                max_results: parseInt(document.getElementById('max-results').value),
+                context: document.getElementById('search-context').value.trim()
             };
 
             await saveConfig();
@@ -833,7 +847,8 @@
                 language: document.getElementById('summary-language').value,
                 focus_areas: focusAreas,
                 custom_prompt: document.getElementById('custom-prompt').value,
-                output_format: document.getElementById('output-format').value
+                output_format: document.getElementById('output-format').value,
+                system_prompt: document.getElementById('system-prompt').value.trim()
             };
 
             await saveConfig();

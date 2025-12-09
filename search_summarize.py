@@ -23,6 +23,10 @@ from tavily import TavilyClient
 # Load environment variables
 load_dotenv()
 
+DEFAULT_SYSTEM_PROMPT = (
+    "You are a helpful assistant that summarizes company information in JSON format."
+)
+
 
 def load_config(config_path: str = "config.json") -> dict:
     """Load configuration from JSON file."""
@@ -54,11 +58,13 @@ def get_default_config() -> dict:
             "focus_areas": ["business_areas", "research_technologies", "job_openings"],
             "custom_prompt": "",
             "output_format": "markdown",
+            "system_prompt": DEFAULT_SYSTEM_PROMPT,
         },
         "search": {
             "query_template": "{firm_name} 채용 연구분야 사업내용",
             "search_depth": "advanced",
             "max_results": 5,
+            "context": "",
         },
         "output": {
             "directory": "firm_results",
@@ -79,11 +85,14 @@ def build_summary_prompt(
 ) -> str:
     """Build the summary prompt based on configuration."""
     summary_config = config.get("summary", {})
+    search_config = config.get("search", {})
     categories = config.get("categories", [])
 
     language = summary_config.get("language", "Korean")
     focus_areas = summary_config.get("focus_areas", [])
     custom_prompt = summary_config.get("custom_prompt", "")
+    output_format = summary_config.get("output_format", "markdown")
+    search_context = (search_config.get("context") or "").strip()
 
     # Build focus areas description
     focus_descriptions = {
@@ -126,6 +135,8 @@ def build_summary_prompt(
             categories=categories_text,
             category_ids=json.dumps(category_ids),
             search_results=json.dumps(search_results, ensure_ascii=False),
+            output_format=output_format,
+            search_context=search_context,
         )
     else:
         prompt = f"""
@@ -133,7 +144,7 @@ You are a helpful assistant. Analyze the search results for the firm '{firm_name
 
 1. Summarize the information in **{language}**.
    - Focus on: {focus_text}.
-   - Format the summary in Markdown.
+   - Format the summary in {output_format}.
 
 2. Classify the firm into ONE of these categories:
 {categories_text}
@@ -146,6 +157,9 @@ Return your response in the following JSON format:
 
 Search Results:
 {json.dumps(search_results, ensure_ascii=False)}
+
+Additional search context from user:
+{search_context or "N/A"}
 """
 
     return prompt
@@ -174,6 +188,8 @@ def summarize_firm(
     config: dict,
 ) -> Optional[dict]:
     """Summarize firm information using LLM."""
+    summary_config = config.get("summary", {})
+    system_prompt = summary_config.get("system_prompt") or DEFAULT_SYSTEM_PROMPT
     prompt = build_summary_prompt(firm_name, search_results, config)
 
     try:
@@ -182,7 +198,7 @@ def summarize_firm(
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a helpful assistant that summarizes company information in JSON format.",
+                    "content": system_prompt,
                 },
                 {"role": "user", "content": prompt},
             ],
@@ -303,6 +319,7 @@ def main():
     query_template = search_config.get("query_template", "{firm_name} 채용 연구분야 사업내용")
     search_depth = search_config.get("search_depth", "advanced")
     max_results = search_config.get("max_results", 5)
+    search_context = (search_config.get("context") or "").strip()
 
     # Track processed firms
     processed_folders = set()
@@ -339,13 +356,15 @@ def main():
 
         print(f"Processing [{row_number}/{len(firms_to_process)}] {firm_name}...")
 
+        base_query = query_template.format(firm_name=firm_name)
+        query = f"{base_query} {search_context}" if search_context else base_query
+
         if args.dry_run:
-            print(f"  -> Would search: {query_template.format(firm_name=firm_name)}")
+            print(f"  -> Would search: {query}")
             continue
 
         # Search
         try:
-            query = query_template.format(firm_name=firm_name)
             search_response = tavily_client.search(
                 query=query,
                 search_depth=search_depth,

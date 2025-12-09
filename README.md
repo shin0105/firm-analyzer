@@ -14,10 +14,15 @@ A configurable web-based tool for filtering, searching, and summarizing firm/com
 - **Keyword-based classification**: AI automatically classifies firms based on your keywords
 - **Color-coded**: Visual distinction between categories
 
+### 🔎 Search Controls
+- **Persistent context**: Append reusable Tavily search context to every query for better recall
+- **Depth & limits**: Choose search depth and max result count
+
 ### 📝 Customizable Summaries
 - **Language selection**: Korean, English, Japanese, or Chinese
 - **Focus areas**: Choose what information to include (business, research, jobs, culture, etc.)
 - **Custom prompts**: Write your own LLM prompts for specific needs
+- **System prompt control**: Tune the assistant role/persona used for summary generation
 
 ### 🌐 Web Interface
 - **Visual configuration**: No need to edit JSON files
@@ -135,12 +140,14 @@ All settings are stored in `config.json`. You can edit this file directly or use
   "summary": {
     "language": "Korean",
     "focus_areas": ["business_areas", "research_technologies", "job_openings"],
-    "custom_prompt": ""
+    "custom_prompt": "",
+    "system_prompt": "You are a helpful assistant that summarizes company information in JSON format."
   },
   "search": {
     "query_template": "{firm_name} 채용 연구분야 사업내용",
     "search_depth": "advanced",
-    "max_results": 5
+    "max_results": 5,
+    "context": "채용, 연구 분야, 주요 기술 스택을 중심으로 검색"
   }
 }
 ```
