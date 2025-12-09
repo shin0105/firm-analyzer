@@ -49,7 +49,7 @@ def get_default_config():
                 "enabled": True,
                 "type": "contains",
                 "values": ["서울"],
-                "column": "소재지"
+                "column": "소재지",
             }
         },
         "categories": [
@@ -58,45 +58,49 @@ def get_default_config():
                 "name": "Finance/Quant",
                 "description": "Finance, Financial Services, Quant Trading",
                 "keywords": ["금융", "투자", "자산운용", "핀테크", "fintech", "quant"],
-                "color": "#4CAF50"
+                "color": "#4CAF50",
             },
             {
                 "id": "healthcare",
                 "name": "Healthcare/Bio",
                 "description": "Healthcare, Biotechnology, Medical",
                 "keywords": ["의료", "바이오", "헬스케어", "제약", "병원", "의학"],
-                "color": "#2196F3"
+                "color": "#2196F3",
             },
             {
                 "id": "ai_ml",
                 "name": "AI/Machine Learning",
                 "description": "Artificial Intelligence, Machine Learning, Deep Learning",
-                "keywords": ["인공지능", "AI", "머신러닝", "딥러닝", "자연어처리", "NLP"],
-                "color": "#9C27B0"
+                "keywords": [
+                    "인공지능",
+                    "AI",
+                    "머신러닝",
+                    "딥러닝",
+                    "자연어처리",
+                    "NLP",
+                ],
+                "color": "#9C27B0",
             },
             {
                 "id": "general",
                 "name": "General",
                 "description": "Other industries",
                 "keywords": [],
-                "color": "#607D8B"
-            }
+                "color": "#607D8B",
+            },
         ],
         "summary": {
             "language": "Korean",
             "focus_areas": ["business_areas", "research_technologies", "job_openings"],
             "custom_prompt": "",
-            "output_format": "markdown"
+            "output_format": "markdown",
         },
         "search": {
             "query_template": "{firm_name} 채용 연구분야 사업내용",
             "search_depth": "advanced",
-            "max_results": 5
+            "max_results": 5,
         },
-        "output": {
-            "directory": "firm_results",
-            "create_csv_summary": True
-        }
+        "output": {"directory": "firm_results", "create_csv_summary": True},
     }
 
 
@@ -112,18 +116,24 @@ def get_results_summary():
     for cat in categories:
         cat_path = os.path.join(output_dir, cat["id"])
         if os.path.isdir(cat_path):
-            count = len([d for d in os.listdir(cat_path) if os.path.isdir(os.path.join(cat_path, d))])
+            count = len(
+                [
+                    d
+                    for d in os.listdir(cat_path)
+                    if os.path.isdir(os.path.join(cat_path, d))
+                ]
+            )
             summary[cat["id"]] = {
                 "name": cat["name"],
                 "count": count,
-                "color": cat.get("color", "#607D8B")
+                "color": cat.get("color", "#607D8B"),
             }
             total += count
         else:
             summary[cat["id"]] = {
                 "name": cat["name"],
                 "count": 0,
-                "color": cat.get("color", "#607D8B")
+                "color": cat.get("color", "#607D8B"),
             }
 
     summary["total"] = total
@@ -147,11 +157,9 @@ def get_firms_by_category(category_id):
                     with open(summary_path, "r", encoding="utf-8") as f:
                         summary_content = f.read()
 
-                firms.append({
-                    "name": firm_dir,
-                    "summary": summary_content,
-                    "path": firm_path
-                })
+                firms.append(
+                    {"name": firm_dir, "summary": summary_content, "path": firm_path}
+                )
 
     return sorted(firms, key=lambda x: x["name"])
 
@@ -160,6 +168,7 @@ def get_available_columns():
     """Get available columns from input CSV."""
     if os.path.exists(DEFAULT_INPUT_CSV):
         import pandas as pd
+
         df = pd.read_csv(DEFAULT_INPUT_CSV, nrows=0)
         return list(df.columns)
     return []
@@ -226,13 +235,15 @@ def run_filter():
             [sys.executable, "filter_firms.py"],
             capture_output=True,
             text=True,
-            timeout=FILTER_SCRIPT_TIMEOUT
+            timeout=FILTER_SCRIPT_TIMEOUT,
         )
-        return jsonify({
-            "success": result.returncode == 0,
-            "stdout": result.stdout,
-            "stderr": result.stderr
-        })
+        return jsonify(
+            {
+                "success": result.returncode == 0,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+            }
+        )
     except subprocess.TimeoutExpired:
         return jsonify({"success": False, "error": "Script timed out"}), 408
     except Exception as e:
@@ -254,17 +265,14 @@ def run_summarize():
             cmd.extend(["--limit", str(limit)])
 
         timeout = DRY_RUN_TIMEOUT if dry_run else SUMMARIZE_SCRIPT_TIMEOUT
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return jsonify(
+            {
+                "success": result.returncode == 0,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+            }
         )
-        return jsonify({
-            "success": result.returncode == 0,
-            "stdout": result.stdout,
-            "stderr": result.stderr
-        })
     except subprocess.TimeoutExpired:
         return jsonify({"success": False, "error": "Script timed out"}), 408
     except Exception as e:
@@ -292,7 +300,7 @@ if __name__ == "__main__":
     # Debug mode is controlled by FLASK_DEBUG environment variable for security
     debug_mode = os.getenv("FLASK_DEBUG", "false").lower() == "true"
     print("Starting Firm Analyzer Web Application...")
-    print("Open http://localhost:5000 in your browser")
+    print("Open http://localhost:8001 in your browser")
     if debug_mode:
         print("WARNING: Debug mode is enabled. Do not use in production.")
-    app.run(debug=debug_mode, host="0.0.0.0", port=5000)
+    app.run(debug=debug_mode, host="0.0.0.0", port=8001)

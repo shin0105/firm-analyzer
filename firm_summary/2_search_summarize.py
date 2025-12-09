@@ -88,7 +88,7 @@ def summarize_firm(firm_name, search_results):
       "summary": "Markdown string in Korean...",
       "is_finance_quant": true/false
     }}
-    
+
     Search Results:
     {json.dumps(search_results, ensure_ascii=False)}
     """
@@ -135,98 +135,163 @@ def summarize_firm(firm_name, search_results):
 firms_to_process = df
 
 finance_firms_list = []
+errors_encountered = []
 
-for row_number, (_, row) in enumerate(firms_to_process.iterrows(), start=1):
-    firm_name = row["업체명"]
-    address = row["소재지"]
+try:
+    for row_number, (_, row) in enumerate(firms_to_process.iterrows(), start=1):
+        firm_name = row["업체명"]
+        address = row["소재지"]
 
-    # Check if already processed
-    safe_name = sanitize_filename(firm_name)
-    finance_path = os.path.join(OUTPUT_DIR, "finance", safe_name)
-    general_path = os.path.join(OUTPUT_DIR, "general", safe_name)
+        # Check if already processed
+        safe_name = sanitize_filename(firm_name)
+        finance_path = os.path.join(OUTPUT_DIR, "finance", safe_name)
+        general_path = os.path.join(OUTPUT_DIR, "general", safe_name)
 
-    if (
-        safe_name in PROCESSED_FOLDERS
-        or os.path.exists(finance_path)
-        or os.path.exists(general_path)
-    ):
-        print(f"Skipping {firm_name} (already processed).")
-        continue
+        if (
+            safe_name in PROCESSED_FOLDERS
+            or os.path.exists(finance_path)
+            or os.path.exists(general_path)
+        ):
+            print(f"Skipping {firm_name} (already processed).")
+            continue
 
-    print(f"Processing [{row_number}/{len(df)}] {firm_name}...")
+        print(f"Processing [{row_number}/{len(df)}] {firm_name}...")
 
-    # 1. Search
-    try:
-        query = f"{firm_name} 채용 연구분야 사업내용"
-        search_response = tavily_client.search(
-            query=query, search_depth="advanced", max_results=5
-        )
-    except Exception as e:
-        print(f"Error searching for {firm_name}: {e}")
-        continue
+        # 1. Search
+        try:
+            query = f"{firm_name} 채용 연구분야 사업내용"
+            search_response = tavily_client.search(
+                query=query, search_depth="advanced", max_results=5
+            )
+        except Exception as e:
+            error_msg = f"Search error for {firm_name}: {e}"
+            print(f"ERROR: {error_msg}")
+            errors_encountered.append(error_msg)
+            continue
 
-    # 2. Summarize and Classify
-    try:
-        result_data = summarize_firm(firm_name, search_response.get("results", []))
-    except Exception as err:
-        print(f"Stopping execution: {err}")
-        raise SystemExit(1) from err
+        # 2. Summarize and Classify
+        try:
+            result_data = summarize_firm(firm_name, search_response.get("results", []))
+        except Exception as err:
+            error_msg = f"Summarization error for {firm_name}: {err}"
+            print(f"CRITICAL ERROR: {error_msg}")
+            errors_encountered.append(error_msg)
+            raise SystemExit(1) from err
 
-    if result_data is None:
-        raise RuntimeError(f"Summarization failed for {firm_name}.")
+        if result_data is None:
+            error_msg = f"Summarization failed for {firm_name} (returned None)"
+            print(f"ERROR: {error_msg}")
+            errors_encountered.append(error_msg)
+            raise RuntimeError(error_msg)
 
-    summary = result_data.get("summary", "")
-    is_finance = result_data.get("is_finance_quant", False)
+        summary = result_data.get("summary", "")
+        is_finance = result_data.get("is_finance_quant", False)
 
-    # Determine folder
-    category_folder = "finance" if is_finance else "general"
-    safe_name = sanitize_filename(firm_name)
-    firm_dir = os.path.join(OUTPUT_DIR, category_folder, safe_name)
+        # Determine folder
+        category_folder = "finance" if is_finance else "general"
+        safe_name = sanitize_filename(firm_name)
+        firm_dir = os.path.join(OUTPUT_DIR, category_folder, safe_name)
 
-    if not os.path.exists(firm_dir):
-        os.makedirs(firm_dir)
+        if not os.path.exists(firm_dir):
+            os.makedirs(firm_dir)
 
-    PROCESSED_FOLDERS.add(safe_name)
+        PROCESSED_FOLDERS.add(safe_name)
 
-    # Save raw search
-    with open(os.path.join(firm_dir, "raw_search.json"), "w", encoding="utf-8") as f:
-        json.dump(search_response, f, ensure_ascii=False, indent=2)
+        # Save raw search
+        try:
+            with open(
+                os.path.join(firm_dir, "raw_search.json"), "w", encoding="utf-8"
+            ) as f:
+                json.dump(search_response, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            error_msg = f"Failed to save raw_search.json for {firm_name}: {e}"
+            print(f"ERROR: {error_msg}")
+            errors_encountered.append(error_msg)
 
-    # Save summary
-    with open(os.path.join(firm_dir, "summary.md"), "w", encoding="utf-8") as f:
-        f.write(f"# {firm_name}\n\n")
-        f.write(f"**Address:** {address}\n")
-        f.write(f"**Category:** {'Finance/Quant' if is_finance else 'General'}\n\n")
-        f.write(summary)
+        # Save summary
+        try:
+            with open(os.path.join(firm_dir, "summary.md"), "w", encoding="utf-8") as f:
+                f.write(f"# {firm_name}\n\n")
+                f.write(f"**Address:** {address}\n")
+                f.write(
+                    f"**Category:** {'Finance/Quant' if is_finance else 'General'}\n\n"
+                )
+                f.write(summary)
+        except Exception as e:
+            error_msg = f"Failed to save summary.md for {firm_name}: {e}"
+            print(f"ERROR: {error_msg}")
+            errors_encountered.append(error_msg)
 
-    if is_finance:
-        finance_firms_list.append(
-            {
-                "firm_name": firm_name,
-                "address": address,
-                "summary_snippet": summary[:100] + "...",
-            }
-        )
-        print(f"  -> Classified as Finance/Quant")
-    else:
-        print(f"  -> Classified as General")
+        if is_finance:
+            finance_firms_list.append(
+                {
+                    "firm_name": firm_name,
+                    "address": address,
+                    "summary_snippet": summary[:100] + "...",
+                }
+            )
+            print(f"  -> Classified as Finance/Quant")
+        else:
+            print(f"  -> Classified as General")
 
-    time.sleep(1)  # Respect rate limits
+        time.sleep(1)  # Respect rate limits
+
+except KeyboardInterrupt:
+    print("\n\nERROR: Script interrupted by user (Ctrl+C)")
+    print(f"Processed {row_number}/{len(df)} firms before interruption")
+    if errors_encountered:
+        print(f"\nEncountered {len(errors_encountered)} error(s) before interruption:")
+        for err in errors_encountered:
+            print(f"  - {err}")
+    raise SystemExit(130)  # Standard exit code for Ctrl+C
+
+except Exception as e:
+    print(f"\n\nCRITICAL ERROR: Unexpected error occurred: {e}")
+    if errors_encountered:
+        print(f"\nPrevious errors encountered:")
+        for err in errors_encountered:
+            print(f"  - {err}")
+    raise SystemExit(1)
 
 # Save finance firms CSV
-if finance_firms_list:
-    finance_df = pd.DataFrame(finance_firms_list)
-    finance_csv_path = os.path.join(OUTPUT_DIR, "finance_firms.csv")
+try:
+    if finance_firms_list:
+        finance_df = pd.DataFrame(finance_firms_list)
+        finance_csv_path = os.path.join(OUTPUT_DIR, "finance_firms.csv")
 
-    if os.path.exists(finance_csv_path):
-        finance_df.to_csv(
-            finance_csv_path, mode="a", header=False, index=False, encoding="utf-8-sig"
-        )
-        print(f"Appended {len(finance_firms_list)} finance firms to {finance_csv_path}")
+        if os.path.exists(finance_csv_path):
+            finance_df.to_csv(
+                finance_csv_path,
+                mode="a",
+                header=False,
+                index=False,
+                encoding="utf-8-sig",
+            )
+            print(
+                f"Appended {len(finance_firms_list)} finance firms to {finance_csv_path}"
+            )
+        else:
+            finance_df.to_csv(finance_csv_path, index=False, encoding="utf-8-sig")
+            print(
+                f"Saved {len(finance_firms_list)} finance firms to {finance_csv_path}"
+            )
     else:
-        finance_df.to_csv(finance_csv_path, index=False, encoding="utf-8-sig")
-        print(f"Saved {len(finance_firms_list)} finance firms to {finance_csv_path}")
-else:
-    print("No finance firms found in this batch.")
+        print("No finance firms found in this batch.")
+except Exception as e:
+    print(f"ERROR: Failed to save finance_firms.csv: {e}")
+    raise SystemExit(1)
 
-print("Done!")
+# Final summary
+print("\n" + "=" * 60)
+if errors_encountered:
+    print(f"COMPLETED WITH {len(errors_encountered)} ERROR(S)")
+    print("=" * 60)
+    print("\nErrors encountered:")
+    for err in errors_encountered:
+        print(f"  - {err}")
+    print("\nNote: Non-critical errors were skipped, processing continued.")
+else:
+    print("COMPLETED SUCCESSFULLY")
+    print("=" * 60)
+print(f"Total firms processed: {len(df)}")
+print(f"Finance/Quant firms found: {len(finance_firms_list)}")
