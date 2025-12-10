@@ -67,15 +67,15 @@ def parse_pdf_to_csv(pdf_path, output_csv_path):
                         if cell is None:
                             cleaned_row.append('')
                         else:
-                            # Clean up the cell text - remove newlines and extra spaces
-                            cell_text = str(cell).strip().replace('\n', ' ')
+                            # Clean up the cell text - normalize all whitespace to single spaces
+                            cell_text = ' '.join(str(cell).split())
                             cleaned_row.append(cell_text)
                     
                     # Only add rows that have at least 6 columns and start with a number
                     if len(cleaned_row) >= 6 and cleaned_row[0].strip().isdigit():
                         all_rows.append(cleaned_row[:6])  # Take only first 6 columns
             
-            print(f"  Page {page_num}/{len(pdf.pages)}: {len([r for r in all_rows])} total rows so far")
+            print(f"  Page {page_num}/{len(pdf.pages)}: {len(all_rows)} total rows so far")
     
     # Write to CSV
     with open(output_csv_path, 'w', encoding='utf-8', newline='') as f:
@@ -104,8 +104,7 @@ def main():
     
     # Check if PDF exists
     if not os.path.exists(pdf_path):
-        print(f"Error: PDF file not found at {pdf_path}")
-        return
+        raise FileNotFoundError(f"PDF file not found at {pdf_path}")
     
     # Parse PDF and create CSV
     num_rows = parse_pdf_to_csv(pdf_path, output_csv_path)
