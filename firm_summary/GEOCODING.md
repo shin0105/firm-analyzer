@@ -32,9 +32,35 @@ cd firm_summary
 python generate_firms_data.py
 ```
 
+### Interactive Mode (Default)
+
 When prompted, choose:
 - **y** - Use geopy API for accurate geocoding (slow but accurate)
 - **n** - Use fallback coordinates only (fast but less accurate)
+
+### Command-Line Arguments
+
+For automated/batch processing, use command-line arguments:
+
+```bash
+# Use API geocoding
+python generate_firms_data.py --use-api
+
+# Use fallback only
+python generate_firms_data.py --no-api
+```
+
+### Environment Variable
+
+Alternatively, set an environment variable:
+
+```bash
+# Use API geocoding
+USE_GEOCODING_API=1 python generate_firms_data.py
+
+# Use fallback only
+USE_GEOCODING_API=0 python generate_firms_data.py
+```
 
 ## Geocoding Methods
 

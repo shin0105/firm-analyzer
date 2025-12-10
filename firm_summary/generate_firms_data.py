@@ -11,8 +11,8 @@ import csv
 import json
 import os
 import random
+import sys
 import time
-from pathlib import Path
 
 try:
     from geopy.geocoders import Nominatim
@@ -155,6 +155,7 @@ JURISDICTION_COORDS = {
 # Cache for geocoding results
 GEOCODE_CACHE = {}
 GEOCODE_CACHE_FILE = None  # Will be set in main()
+GEOLOCATOR = None  # Reusable geolocator instance
 
 def load_geocode_cache():
     """Load geocoding cache from file."""
@@ -180,23 +181,29 @@ def save_geocode_cache():
         except Exception as e:
             print(f"Warning: Could not save geocode cache: {e}")
 
-def geocode_with_nominatim(address, geolocator, max_retries=3):
+def geocode_with_nominatim(address, max_retries=3):
     """
     Geocode an address using Nominatim with retry logic.
     
+    Uses the global GEOLOCATOR instance which is initialized once in main().
+    
     Args:
         address: Address string to geocode
-        geolocator: Nominatim geolocator instance
         max_retries: Maximum number of retries on timeout
     
     Returns:
         Tuple of (lat, lng) or (None, None) if geocoding fails
     """
+    global GEOLOCATOR
+    
+    if not GEOLOCATOR:
+        return None, None
+    
     for attempt in range(max_retries):
         try:
             # Add small delay to respect Nominatim usage policy
             time.sleep(1.1)
-            location = geolocator.geocode(address, timeout=10)
+            location = GEOLOCATOR.geocode(address, timeout=10)
             if location:
                 return location.latitude, location.longitude
             return None, None
@@ -294,8 +301,7 @@ def get_coordinates(address, jurisdiction=None, use_api=True):
     # Try API geocoding if enabled and available
     if use_api and GEOPY_AVAILABLE and address:
         try:
-            geolocator = Nominatim(user_agent="firm_websearch_geocoder")
-            lat, lng = geocode_with_nominatim(address, geolocator)
+            lat, lng = geocode_with_nominatim(address)
             
             if lat and lng:
                 print(f"  ✓ Geocoded via API: {address[:50]}")
@@ -320,7 +326,7 @@ def get_coordinates(address, jurisdiction=None, use_api=True):
 
 
 def main():
-    global GEOCODE_CACHE_FILE
+    global GEOCODE_CACHE_FILE, GEOLOCATOR
     
     # Set up cache file path
     GEOCODE_CACHE_FILE = os.path.join(DATA_DIR, "geocode_cache.json")
@@ -329,7 +335,24 @@ def main():
     load_geocode_cache()
     
     # Check if user wants to use API geocoding
-    use_api = input("Use geopy API for geocoding? (y/n, default=n): ").strip().lower() == 'y'
+    # Support command-line argument: --use-api or --no-api
+    # Support environment variable: USE_GEOCODING_API=1 or 0
+    use_api = False
+    
+    if len(sys.argv) > 1:
+        if '--use-api' in sys.argv:
+            use_api = True
+        elif '--no-api' in sys.argv:
+            use_api = False
+    elif os.environ.get('USE_GEOCODING_API', '').lower() in ('1', 'true', 'yes'):
+        use_api = True
+    else:
+        # Interactive prompt as fallback
+        try:
+            use_api = input("Use geopy API for geocoding? (y/n, default=n): ").strip().lower() == 'y'
+        except (EOFError, KeyboardInterrupt):
+            print("\nDefaulting to fallback coordinates only.")
+            use_api = False
     
     if use_api and not GEOPY_AVAILABLE:
         print("\nWarning: geopy is not installed. Install with:")
@@ -337,6 +360,8 @@ def main():
         print("\nFalling back to hardcoded coordinates only.\n")
         use_api = False
     elif use_api:
+        # Initialize geolocator once for reuse
+        GEOLOCATOR = Nominatim(user_agent="firm_websearch_geocoder")
         print("\nUsing geopy with Nominatim for geocoding.")
         print("Note: This will be slow due to API rate limits (1 request per second).")
         print("Results will be cached in geocode_cache.json for future runs.\n")
