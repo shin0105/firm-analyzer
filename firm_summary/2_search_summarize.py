@@ -261,13 +261,21 @@ try:
             errors_encountered.append(error_msg)
 
         if is_finance:
-            finance_firms_list.append(
-                {
-                    "firm_name": firm_name,
-                    "address": address,
-                    "summary_snippet": summary[:100] + "...",
-                }
-            )
+            firm_data = {
+                "firm_name": firm_name,
+                "address": address,
+                "summary_snippet": summary[:100] + "...",
+            }
+            
+            # Add webpage URL if found
+            if webpage_result and webpage_result.get("url"):
+                firm_data["webpage"] = webpage_result["url"]
+                firm_data["webpage_confidence"] = webpage_result.get("confidence", "unknown")
+            else:
+                firm_data["webpage"] = ""
+                firm_data["webpage_confidence"] = ""
+            
+            finance_firms_list.append(firm_data)
             print(f"  -> Classified as Finance/Quant")
         else:
             print(f"  -> Classified as General")
