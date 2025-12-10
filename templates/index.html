@@ -808,19 +808,19 @@
         function simpleMarkdownParser(markdown) {
             let html = markdown;
             
-            // Headers
+            // Headers - Process from longest to shortest to avoid conflicts
+            html = html.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
+            html = html.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
+            html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
             html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
             html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
             html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-            html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
-            html = html.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
-            html = html.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
             
-            // Bold
+            // Bold - Process before italic to avoid conflicts
             html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
             
-            // Italic
-            html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
+            // Italic - Use pattern that doesn't match bold markers
+            html = html.replace(/(?<!\*)\*(?!\*)([^*]+)\*(?!\*)/gim, '<em>$1</em>');
             
             // Links
             html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2">$1</a>');
@@ -1183,16 +1183,17 @@
             // Check if marked.js is available
             if (typeof marked !== 'undefined') {
                 try {
-                    // Configure marked options for better security
+                    // Configure marked options for better security and compatibility
                     marked.setOptions({
                         breaks: true,
                         gfm: true,
                         headerIds: false,
-                        mangle: false
+                        mangle: false,
+                        sanitize: false  // We trust the server-generated summaries
                     });
                     
-                    // Render markdown to HTML
-                    htmlContent = marked.parse(summaryContent);
+                    // Render markdown to HTML - use marked() for compatibility
+                    htmlContent = typeof marked.parse === 'function' ? marked.parse(summaryContent) : marked(summaryContent);
                 } catch (e) {
                     console.error('Error with marked.js:', e);
                     // Use fallback parser
