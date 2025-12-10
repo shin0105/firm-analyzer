@@ -101,11 +101,13 @@ def get_default_config():
             "focus_areas": ["business_areas", "research_technologies", "job_openings"],
             "custom_prompt": "",
             "output_format": "markdown",
+            "system_prompt": "You are a helpful assistant that summarizes company information in JSON format.",
         },
         "search": {
             "query_template": "{firm_name} 채용 연구분야 사업내용",
             "search_depth": "advanced",
             "max_results": 5,
+            "context": "",
         },
         "output": {"directory": "firm_results", "create_csv_summary": True},
     }
