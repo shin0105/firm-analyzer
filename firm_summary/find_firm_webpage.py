@@ -23,6 +23,9 @@ def initialize_clients():
     github_token = os.getenv("GITHUB_TOKEN")
     openai_base_url = os.getenv("OPENAI_BASE_URL", "https://models.github.ai/inference")
     
+    # Can also be configured via environment variable
+    # Default model can be overridden when calling find_firm_webpage()
+    
     if not tavily_api_key:
         raise ValueError("TAVILY_API_KEY not found in environment variables.")
     if not github_token:
@@ -42,6 +45,7 @@ def find_firm_webpage(
     tavily_client: TavilyClient,
     openai_client: OpenAI,
     max_candidates: int = 5,
+    model: str = "gpt-4o",
 ) -> Optional[Dict[str, Any]]:
     """
     Find and verify the actual firm webpage.
@@ -51,6 +55,7 @@ def find_firm_webpage(
         tavily_client: Initialized Tavily client
         openai_client: Initialized OpenAI client
         max_candidates: Maximum number of URLs to check (default: 5)
+        model: OpenAI model to use for verification (default: "gpt-4o")
     
     Returns:
         Dictionary containing:
@@ -100,7 +105,8 @@ def find_firm_webpage(
     verification_result = verify_firm_webpage(
         firm_name, 
         candidates, 
-        openai_client
+        openai_client,
+        model
     )
     
     return verification_result
@@ -110,6 +116,7 @@ def verify_firm_webpage(
     firm_name: str,
     candidates: list,
     openai_client: OpenAI,
+    model: str = "gpt-4o",
 ) -> Optional[Dict[str, Any]]:
     """
     Use LLM to verify which candidate URL is the actual firm webpage.
@@ -118,6 +125,7 @@ def verify_firm_webpage(
         firm_name: The name of the firm
         candidates: List of candidate URLs with their titles and content
         openai_client: Initialized OpenAI client
+        model: OpenAI model to use for verification (default: "gpt-4o")
     
     Returns:
         Dictionary with url, confidence, and reasoning, or None if verification fails
@@ -158,7 +166,7 @@ If none of the URLs appear to be a legitimate company webpage, return:
     
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=model,
             messages=[
                 {
                     "role": "system",

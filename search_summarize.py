@@ -20,18 +20,23 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from tavily import TavilyClient
 
-# Import firm webpage finder module
-# Add firm_summary directory to path if needed
-firm_summary_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "firm_summary")
-if os.path.exists(firm_summary_dir) and firm_summary_dir not in sys.path:
-    sys.path.insert(0, firm_summary_dir)
+# Import firm webpage finder module with proper error handling
+WEBPAGE_FINDER_AVAILABLE = False
+find_firm_webpage = None
 
 try:
-    from find_firm_webpage import find_firm_webpage
+    # Try to import from firm_summary package
+    from firm_summary.find_firm_webpage import find_firm_webpage as _find_firm_webpage
+    find_firm_webpage = _find_firm_webpage
     WEBPAGE_FINDER_AVAILABLE = True
 except ImportError:
-    WEBPAGE_FINDER_AVAILABLE = False
-    print("Warning: Firm webpage finder module not available")
+    # Fallback: Try direct import if module is in same directory or PYTHONPATH
+    try:
+        from find_firm_webpage import find_firm_webpage as _find_firm_webpage
+        find_firm_webpage = _find_firm_webpage
+        WEBPAGE_FINDER_AVAILABLE = True
+    except ImportError:
+        print("Warning: Firm webpage finder module not available")
 
 # Load environment variables
 load_dotenv()
