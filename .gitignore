@@ -17,6 +17,9 @@ venv/
 env/
 .env
 
+# UV
+.python-version
+
 # Database
 *.sqlite3
 
