@@ -118,9 +118,43 @@ REGION_COORDS = {
     '제주특별자치도': (33.4890, 126.4983),
 }
 
-def get_coordinates(address):
-    """Get approximate coordinates for an address."""
+# Jurisdiction to region mapping
+JURISDICTION_COORDS = {
+    '서울': (37.5665, 126.9780),
+    '부산.울산': (35.3, 129.1),
+    '대구.경북': (35.87, 128.60),
+    '인천': (37.4563, 126.7052),
+    '광주.전남': (35.16, 126.85),
+    '대전.충남': (36.3504, 127.3845),
+    '경기': (37.4138, 127.5183),
+    '경인': (37.4563, 126.7052),  # Gyeonggi-Incheon area
+    '경기북부': (37.7381, 127.0337),  # Northern Gyeonggi (around Uijeongbu)
+    '강원': (37.8228, 128.1555),
+    '강원.제주': (37.8228, 128.1555),
+    '강원영동': (37.7519, 128.8760),  # Eastern Gangwon (around Gangneung)
+    '충북': (36.6357, 127.4917),
+    '전북': (35.8200, 127.1089),
+    '경남': (35.4606, 128.2132),
+    '제주': (33.4890, 126.4983),
+}
+
+def get_coordinates(address, jurisdiction=None):
+    """Get approximate coordinates for an address.
+    
+    Args:
+        address: The address string to geocode
+        jurisdiction: The jurisdiction/region name as fallback (e.g., "대전.충남")
+    
+    Returns:
+        Tuple of (lat, lng) or (None, None) if no match found
+    """
     if not address:
+        # If address is empty but we have jurisdiction, use that
+        if jurisdiction and jurisdiction in JURISDICTION_COORDS:
+            coords = JURISDICTION_COORDS[jurisdiction]
+            lat_offset = (random.random() - 0.5) * 0.02
+            lng_offset = (random.random() - 0.5) * 0.02
+            return coords[0] + lat_offset, coords[1] + lng_offset
         return None, None
 
     # Try to match specific district first
@@ -147,6 +181,13 @@ def get_coordinates(address):
                 lng_offset = (random.random() - 0.5) * 0.02
                 return coords[0] + lat_offset, coords[1] + lng_offset
 
+    # Final fallback: use jurisdiction if available
+    if jurisdiction and jurisdiction in JURISDICTION_COORDS:
+        coords = JURISDICTION_COORDS[jurisdiction]
+        lat_offset = (random.random() - 0.5) * 0.02
+        lng_offset = (random.random() - 0.5) * 0.02
+        return coords[0] + lat_offset, coords[1] + lng_offset
+
     return None, None
 
 
@@ -170,8 +211,8 @@ def main():
                     "jurisdiction": row[5].strip() if row[5] else "",
                 }
 
-                # Get coordinates
-                lat, lng = get_coordinates(firm["address"])
+                # Get coordinates (pass jurisdiction as fallback)
+                lat, lng = get_coordinates(firm["address"], firm["jurisdiction"])
                 firm["lat"] = lat
                 firm["lng"] = lng
 
