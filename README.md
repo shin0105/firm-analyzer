@@ -68,6 +68,9 @@ python app.py
 
 Open http://localhost:8001 in your browser.
 
+- 🔧 **설정/요약 페이지**: `http://localhost:8001/`
+- 🚇 **지도 기반 업체 보기**: `http://localhost:8001/firms` (지하철 노선이 강조된 지도)
+
 ## Command Line Usage
 
 ### Filter Firms

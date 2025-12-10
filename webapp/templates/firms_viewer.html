@@ -6,7 +6,7 @@
     <title>2025 전문연구요원 인원배정 업체 현황</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
           onerror="console.log('Leaflet CSS failed to load')"/>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/firms_viewer.css') }}">
+    <link rel="stylesheet" href="{{ url_for(static_endpoint|default('static'), filename='css/firms_viewer.css') }}">
     <style>
         /* Fallback Leaflet styles if CDN fails */
         .leaflet-container {
@@ -105,7 +105,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
             onerror="window.leafletFailed = true"></script>
-    <script src="{{ url_for('static', filename='js/firms_data.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/firms_viewer.js') }}"></script>
+    <script src="{{ url_for(static_endpoint|default('static'), filename='js/firms_data.js') }}"></script>
+    <script src="{{ url_for(static_endpoint|default('static'), filename='js/firms_viewer.js') }}"></script>
 </body>
 </html>

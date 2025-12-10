@@ -20,6 +20,13 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 
 CONFIG_PATH = "config.json"
 DEFAULT_INPUT_CSV = "2025_전문연구요원_인원배정.csv"
+BASE_DIR = Path(__file__).parent
+VIEWER_TEMPLATE_DIR = BASE_DIR / "webapp" / "templates"
+VIEWER_STATIC_DIR = BASE_DIR / "webapp" / "static"
+
+# Include the viewer templates so they can be rendered from this app
+if app.jinja_loader and str(VIEWER_TEMPLATE_DIR) not in app.jinja_loader.searchpath:
+    app.jinja_loader.searchpath.append(str(VIEWER_TEMPLATE_DIR))
 
 # Configurable timeout values (in seconds)
 FILTER_SCRIPT_TIMEOUT = int(os.getenv("FILTER_SCRIPT_TIMEOUT", "60"))
@@ -180,6 +187,12 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/firms")
+def firms_viewer():
+    """Render the map-based firm viewer page."""
+    return render_template("firms_viewer.html", static_endpoint="viewer_static")
+
+
 @app.route("/api/config", methods=["GET"])
 def get_config():
     """Get current configuration."""
@@ -284,6 +297,12 @@ def run_summarize():
 def serve_static(filename):
     """Serve static files."""
     return send_from_directory("static", filename)
+
+
+@app.route("/viewer-static/<path:filename>")
+def viewer_static(filename):
+    """Serve assets for the map-based firm viewer."""
+    return send_from_directory(str(VIEWER_STATIC_DIR), filename)
 
 
 def create_templates():
