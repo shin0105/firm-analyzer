@@ -107,8 +107,9 @@ python app.py
 
 Open http://localhost:8001 in your browser.
 
-- 🔧 **설정/요약 페이지**: `http://localhost:8001/`
-- 🚇 **지도 기반 업체 보기**: `http://localhost:8001/firms` (지하철 노선이 강조된 지도)
+Available pages:
+- 🔧 **Configuration/Summary**: `http://localhost:8001/`
+- 🚇 **Map-based Firm Viewer**: `http://localhost:8001/firms` (with subway lines)
 
 #### 4. Run Command Line Scripts
 
@@ -226,7 +227,7 @@ If you previously used conda, here's the mapping:
 | `conda install package` | `uv add package` |
 | `conda remove package` | `uv remove package` |
 | `conda list` | `uv pip list` |
-| `conda env export` | `uv lock` (creates uv.lock) |
+| `conda env export` | `pyproject.toml` + `uv.lock` (together define environment) |
 
 ### Benefits Over Conda
 
