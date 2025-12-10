@@ -20,6 +20,24 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from tavily import TavilyClient
 
+# Import firm webpage finder module with proper error handling
+WEBPAGE_FINDER_AVAILABLE = False
+find_firm_webpage = None
+
+try:
+    # Try to import from firm_summary package
+    from firm_summary.find_firm_webpage import find_firm_webpage as _find_firm_webpage
+    find_firm_webpage = _find_firm_webpage
+    WEBPAGE_FINDER_AVAILABLE = True
+except ImportError:
+    # Fallback: Try direct import if module is in same directory or PYTHONPATH
+    try:
+        from find_firm_webpage import find_firm_webpage as _find_firm_webpage
+        find_firm_webpage = _find_firm_webpage
+        WEBPAGE_FINDER_AVAILABLE = True
+    except ImportError:
+        print("Warning: Firm webpage finder module not available")
+
 # Load environment variables
 load_dotenv()
 
@@ -65,6 +83,7 @@ def get_default_config() -> dict:
             "search_depth": "advanced",
             "max_results": 5,
             "context": "",
+            "find_webpage": True,  # Enable firm webpage finding
         },
         "output": {
             "directory": "firm_results",
@@ -374,6 +393,19 @@ def main():
             print(f"Error searching for {firm_name}: {e}")
             continue
 
+        # Find firm webpage if enabled
+        webpage_result = None
+        if WEBPAGE_FINDER_AVAILABLE and search_config.get("find_webpage", True):
+            try:
+                webpage_result = find_firm_webpage(
+                    firm_name,
+                    tavily_client,
+                    openai_client,
+                    max_candidates=5
+                )
+            except Exception as e:
+                print(f"  -> Warning: Could not find webpage: {e}")
+
         # Summarize and classify
         try:
             result_data = summarize_firm(
@@ -404,20 +436,42 @@ def main():
         with open(os.path.join(firm_dir, "raw_search.json"), "w", encoding="utf-8") as f:
             json.dump(search_response, f, ensure_ascii=False, indent=2)
 
+        # Save webpage information if found
+        if webpage_result and webpage_result.get("url"):
+            with open(os.path.join(firm_dir, "webpage.json"), "w", encoding="utf-8") as f:
+                json.dump(webpage_result, f, ensure_ascii=False, indent=2)
+
         # Save summary
         with open(os.path.join(firm_dir, "summary.md"), "w", encoding="utf-8") as f:
             f.write(f"# {firm_name}\n\n")
             f.write(f"**Address:** {address}\n")
-            f.write(f"**Category:** {category_info['name']}\n\n")
+            f.write(f"**Category:** {category_info['name']}\n")
+            
+            # Add webpage URL if found
+            if webpage_result and webpage_result.get("url"):
+                f.write(f"**Official Webpage:** [{webpage_result['url']}]({webpage_result['url']})\n")
+                f.write(f"**Webpage Confidence:** {webpage_result.get('confidence', 'unknown')}\n")
+            
+            f.write("\n")
             f.write(summary)
 
         # Track for CSV summary
-        category_firms[category_id].append({
+        firm_data = {
             "firm_name": firm_name,
             "address": address,
             "category": category_info["name"],
             "summary_snippet": summary[:100] + "..." if len(summary) > 100 else summary,
-        })
+        }
+        
+        # Add webpage URL if found
+        if webpage_result and webpage_result.get("url"):
+            firm_data["webpage"] = webpage_result["url"]
+            firm_data["webpage_confidence"] = webpage_result.get("confidence", "unknown")
+        else:
+            firm_data["webpage"] = ""
+            firm_data["webpage_confidence"] = ""
+        
+        category_firms[category_id].append(firm_data)
 
         print(f"  -> Classified as {category_info['name']}")
         time.sleep(1)  # Respect rate limits

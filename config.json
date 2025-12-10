@@ -69,7 +69,8 @@
     "query_template": "{firm_name} 채용 연구분야 사업내용",
     "search_depth": "advanced",
     "max_results": 5,
-    "context": ""
+    "context": "",
+    "find_webpage": true
   },
   "summary": {
     "custom_prompt": "",
