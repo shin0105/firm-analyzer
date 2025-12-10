@@ -7,6 +7,14 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import re
 
+# Import firm webpage finder module
+try:
+    from find_firm_webpage import find_firm_webpage
+    WEBPAGE_FINDER_AVAILABLE = True
+except ImportError:
+    WEBPAGE_FINDER_AVAILABLE = False
+    print("Warning: Firm webpage finder module not available")
+
 # Load environment variables
 load_dotenv()
 
@@ -169,6 +177,19 @@ try:
             errors_encountered.append(error_msg)
             continue
 
+        # 1.5. Find firm webpage if available
+        webpage_result = None
+        if WEBPAGE_FINDER_AVAILABLE:
+            try:
+                webpage_result = find_firm_webpage(
+                    firm_name,
+                    tavily_client,
+                    openai_client,
+                    max_candidates=5
+                )
+            except Exception as e:
+                print(f"  -> Warning: Could not find webpage: {e}")
+
         # 2. Summarize and Classify
         try:
             result_data = summarize_firm(firm_name, search_response.get("results", []))
@@ -208,14 +229,31 @@ try:
             print(f"ERROR: {error_msg}")
             errors_encountered.append(error_msg)
 
+        # Save webpage information if found
+        if webpage_result and webpage_result.get("url"):
+            try:
+                with open(os.path.join(firm_dir, "webpage.json"), "w", encoding="utf-8") as f:
+                    json.dump(webpage_result, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                error_msg = f"Failed to save webpage.json for {firm_name}: {e}"
+                print(f"ERROR: {error_msg}")
+                errors_encountered.append(error_msg)
+
         # Save summary
         try:
             with open(os.path.join(firm_dir, "summary.md"), "w", encoding="utf-8") as f:
                 f.write(f"# {firm_name}\n\n")
                 f.write(f"**Address:** {address}\n")
                 f.write(
-                    f"**Category:** {'Finance/Quant' if is_finance else 'General'}\n\n"
+                    f"**Category:** {'Finance/Quant' if is_finance else 'General'}\n"
                 )
+                
+                # Add webpage URL if found
+                if webpage_result and webpage_result.get("url"):
+                    f.write(f"**Official Webpage:** [{webpage_result['url']}]({webpage_result['url']})\n")
+                    f.write(f"**Webpage Confidence:** {webpage_result.get('confidence', 'unknown')}\n")
+                
+                f.write("\n")
                 f.write(summary)
         except Exception as e:
             error_msg = f"Failed to save summary.md for {firm_name}: {e}"
