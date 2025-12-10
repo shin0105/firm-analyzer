@@ -31,7 +31,7 @@ if "소재지" not in df.columns:
 
 seoul_df = df[df["소재지"].str.contains("서울", na=False)]
 
-# Save to new CSV
-seoul_df.to_csv(output_file, index=False, encoding="utf-8-sig")
+# Save to new CSV without BOM to keep column names intact
+seoul_df.to_csv(output_file, index=False, encoding="utf-8")
 print(f"Filtered {len(seoul_df)} firms in Seoul.")
 print(f"Saved to {output_file}")

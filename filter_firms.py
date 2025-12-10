@@ -133,7 +133,7 @@ def main():
         print("No filter applied, using all rows")
 
     # Save result
-    filtered_df.to_csv(output_file, index=False, encoding="utf-8-sig")
+    filtered_df.to_csv(output_file, index=False, encoding="utf-8")
     print(f"Filtered {len(filtered_df)} firms.")
     print(f"Saved to {output_file}")
 
