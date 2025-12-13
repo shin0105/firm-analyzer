@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Convert the CSV data to JavaScript format for the firms viewer webpage.
 This script generates a firms_data.js file with geocoded coordinates.
@@ -21,7 +21,14 @@ import os
 import random
 import sys
 import time
-import requests
+
+try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+    print("Warning: requests not installed. Kakao Maps API will not be available.")
+    print("Install with: pip install requests")
 
 try:
     from geopy.geocoders import Nominatim
@@ -34,6 +41,7 @@ except ImportError:
 
 # Check if Kakao API key is available
 KAKAO_API_KEY = os.environ.get('KAKAO_REST_API_KEY', '')
+KAKAO_API_AVAILABLE = REQUESTS_AVAILABLE and bool(KAKAO_API_KEY)
 
 # Get the parent directory (project root)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -193,7 +201,7 @@ def save_geocode_cache():
         except Exception as e:
             print(f"Warning: Could not save geocode cache: {e}")
 
-def geocode_with_kakao(address, max_retries=3):
+def geocode_with_kakao(address, max_retries=3, base_delay=0.15):
     """
     Geocode an address using Kakao Maps API (best for Korean addresses).
     
@@ -203,11 +211,12 @@ def geocode_with_kakao(address, max_retries=3):
     Args:
         address: Address string to geocode
         max_retries: Maximum number of retries on failure
+        base_delay: Base delay in seconds between requests (default: 0.15)
     
     Returns:
         Tuple of (lat, lng) or (None, None) if geocoding fails
     """
-    if not KAKAO_API_KEY:
+    if not KAKAO_API_AVAILABLE:
         return None, None
     
     url = "https://dapi.kakao.com/v2/local/search/address.json"
@@ -215,8 +224,12 @@ def geocode_with_kakao(address, max_retries=3):
     
     for attempt in range(max_retries):
         try:
-            # Small delay to respect API rate limits
-            time.sleep(0.1)
+            # Add delay to respect API rate limits (exponential backoff on retry)
+            if attempt > 0:
+                delay = base_delay * (2 ** attempt)
+            else:
+                delay = base_delay
+            time.sleep(delay)
             
             response = requests.get(url, headers=headers, params={"query": address}, timeout=10)
             
@@ -443,19 +456,22 @@ def main():
     # Support command-line argument: --use-api or --no-api
     # Support environment variable: USE_GEOCODING_API=1 or 0
     use_api = False
-    use_kakao = bool(KAKAO_API_KEY)
+    use_kakao = KAKAO_API_AVAILABLE
     
     if len(sys.argv) > 1:
         if '--use-api' in sys.argv:
             use_api = True
         elif '--no-api' in sys.argv:
             use_api = False
+            use_kakao = False  # Explicitly disable when user says --no-api
     elif os.environ.get('USE_GEOCODING_API', '').lower() in ('1', 'true', 'yes'):
         use_api = True
-    elif KAKAO_API_KEY:
+    elif KAKAO_API_AVAILABLE:
         # If Kakao API key is available, default to using it
+        # User can override with --no-api flag
         use_api = True
         print("\n✓ Kakao Maps API key detected - will use for accurate Korean geocoding")
+        print("   (Use --no-api flag to disable)")
     else:
         # Interactive prompt as fallback
         try:
