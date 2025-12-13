@@ -29,6 +29,13 @@ A configurable web-based tool for filtering, searching, and summarizing firm/com
 - **Real-time results**: View processed firms by category
 - **Run controls**: Execute filter and summarize scripts from the browser
 
+### 🗺️ Accurate Korean Map Display
+- **Kakao Maps API integration**: Precise geocoding for Korean addresses
+- **Dual address format support**: Works with both 도로명주소 (road name) and 지번주소 (lot number) addresses
+- **Interactive map viewer**: View firms on an accurate map with exact locations
+
+📖 **See [Korean Maps Setup Guide](KOREAN_MAPS_SETUP.md) for detailed instructions on getting accurate map locations.**
+
 ## Quick Start
 
 ### Option A: Using UV (Recommended)
