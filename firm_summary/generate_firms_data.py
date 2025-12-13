@@ -517,8 +517,10 @@ def main():
     with open(output_file, "w", encoding="utf-8") as f:
         f.write("// Auto-generated firms data from CSV\n")
         f.write("// Generated for 2025 전문연구요원 인원배정 업체 현황\n")
-        if use_api:
-            f.write("// Geocoded using geopy with Nominatim API\n")
+        if use_api and use_kakao:
+            f.write("// Geocoded using Kakao Maps API (accurate Korean addresses)\n")
+        elif use_api:
+            f.write("// Geocoded using Nominatim API\n")
         else:
             f.write("// Geocoded using fallback coordinates\n")
         f.write("\n")
@@ -528,9 +530,11 @@ def main():
 
     print(f"\nGenerated {output_file} with {len(firms)} firms")
 
-    # Print statistics
+    # Print statistics by geocoding method
     regions = {}
     geocoded_count = 0
+    methods = {'Kakao': 0, 'Nominatim': 0, 'Fallback': 0, None: 0}
+    
     for firm in firms:
         region = firm["jurisdiction"]
         if region not in regions:
@@ -538,8 +542,26 @@ def main():
         regions[region] += 1
         if firm["lat"] and firm["lng"]:
             geocoded_count += 1
+        
+        # Count geocoding methods used
+        cache_key = f"{firm['address']}|{firm['jurisdiction']}"
+        if cache_key in GEOCODE_CACHE:
+            method = GEOCODE_CACHE[cache_key].get('method')
+            if method in methods:
+                methods[method] += 1
 
     print(f"\nSuccessfully geocoded: {geocoded_count}/{len(firms)} firms")
+    
+    # Print geocoding method breakdown
+    if any(methods.values()):
+        print("\nGeocoding methods used:")
+        if methods['Kakao'] > 0:
+            print(f"  ✓ Kakao Maps API: {methods['Kakao']} (accurate)")
+        if methods['Nominatim'] > 0:
+            print(f"  → Nominatim: {methods['Nominatim']} (approximate)")
+        if methods['Fallback'] > 0:
+            print(f"  → Fallback: {methods['Fallback']} (regional)")
+    
     print("\nFirms by region:")
     for region, count in sorted(regions.items(), key=lambda x: -x[1]):
         print(f"  {region}: {count}")
