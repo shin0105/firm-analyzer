@@ -42,7 +42,7 @@ def extract_city_from_location(location: str) -> str:
         "서울특별시 강남구 테헤란로 123" -> "서울특별시"
         "경기도 수원시 영통구 삼성로 129" -> "수원시"
         "부산광역시 해운대구 센텀중앙로 79" -> "부산광역시"
-        "제주특별자치도 제주시 첨단로 242" -> "제주시"
+        "제주특별자치도 제주시 첨단로 242" -> "제주특별자치도"
     
     Args:
         location: Full address string in Korean
@@ -60,7 +60,7 @@ def extract_city_from_location(location: str) -> str:
         r'^([가-힣]+특별자치도)',        # 제주특별자치도
         r'^([가-힣]+특별시)',            # 서울특별시
         r'^([가-힣]+광역시)',            # 부산광역시, 대구광역시, etc.
-        r'^([가-힣]+도)\s+([가-힣]+시)', # 경기도 수원시 -> 수원시 (allow flexible spacing)
+        r'^([가-힣]+도)\s+([가-힣]+시)', # 경기도 수원시 -> 수원시 (requires spacing)
         r'^([가-힣]+시)',                # 서울시, 수원시 (without 도)
     ]
     
