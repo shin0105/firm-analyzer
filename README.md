@@ -31,26 +31,98 @@ A configurable web-based tool for filtering, searching, and summarizing firm/com
 
 ## Quick Start
 
-### 1. Install Dependencies
+### Option A: Using UV (Recommended)
+
+[UV](https://docs.astral.sh/uv/) is a fast Python package manager that replaces pip, conda, and other tools. It's much faster and provides better dependency resolution.
+
+#### 1. Install UV
 
 ```bash
-pip install -r requirements.txt
+# On macOS and Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Or via pip
+pip install uv
+
+# Or via Homebrew
+brew install uv
 ```
 
-### 2. Set Environment Variables
+#### 2. Install Dependencies
 
 ```bash
-export TAVILY_API_KEY="your_tavily_api_key"
-export GITHUB_TOKEN="your_github_token"  # For OpenAI via GitHub Models
+# This will automatically create a virtual environment and install all dependencies
+uv sync
 ```
 
-Or create a `.env` file:
+#### 3. Set Environment Variables
+
+Create a `.env` file:
 ```
 TAVILY_API_KEY=your_tavily_api_key
 GITHUB_TOKEN=your_github_token
 ```
 
-#### Optional Environment Variables
+#### 4. Run the Web Interface
+
+```bash
+# Run any Python script using uv run
+uv run python app.py
+```
+
+Open http://localhost:8001 in your browser.
+
+#### 5. Run Command Line Scripts
+
+```bash
+# Filter firms
+uv run python filter_firms.py
+
+# Search and summarize with options
+uv run python search_summarize.py --dry-run
+uv run python search_summarize.py --limit 10
+```
+
+### Option B: Using pip (Traditional)
+
+#### 1. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+#### 2. Set Environment Variables
+
+Create a `.env` file (same as UV option above):
+```
+TAVILY_API_KEY=your_tavily_api_key
+GITHUB_TOKEN=your_github_token
+```
+
+#### 3. Run the Web Interface
+
+```bash
+python app.py
+```
+
+Open http://localhost:8001 in your browser.
+
+Available pages:
+- 🔧 **Configuration/Summary**: `http://localhost:8001/`
+- 🚇 **Map-based Firm Viewer**: `http://localhost:8001/firms` (with subway lines)
+
+#### 4. Run Command Line Scripts
+
+```bash
+# Filter firms
+python filter_firms.py
+
+# Search and summarize with options
+python search_summarize.py --dry-run
+python search_summarize.py --limit 10
+```
+
+### Optional Environment Variables
 
 ```bash
 # Custom OpenAI-compatible endpoint (default: GitHub Models)
@@ -65,23 +137,17 @@ export SUMMARIZE_SCRIPT_TIMEOUT="300"
 export DRY_RUN_TIMEOUT="60"
 ```
 
-### 3. Run the Web Interface
-
-```bash
-python app.py
-```
-
-Open http://localhost:8001 in your browser.
-
-- 🔧 **설정/요약 페이지**: `http://localhost:8001/`
-- 🚇 **지도 기반 업체 보기**: `http://localhost:8001/firms` (지하철 노선이 강조된 지도)
-
 ## Command Line Usage
+
+All examples below work with both UV and pip installations. Simply prefix commands with `uv run` when using UV.
 
 ### Filter Firms
 
 ```bash
-# Use config.json settings
+# With UV
+uv run python filter_firms.py
+
+# With pip (traditional)
 python filter_firms.py
 
 # Override with command line
@@ -103,6 +169,73 @@ python search_summarize.py --limit 10
 # Use custom config
 python search_summarize.py --config my_config.json
 ```
+
+## UV Package Management Guide
+
+UV is a modern Python package manager that provides significant advantages over traditional tools like pip and conda.
+
+### Why UV?
+
+- **⚡ Lightning Fast**: 10-100x faster than pip for installing packages
+- **🔒 Reliable**: Consistent dependency resolution with lockfiles
+- **🎯 All-in-One**: Replaces pip, pip-tools, virtualenv, and more
+- **💾 Efficient**: Global caching reduces disk space usage
+- **🐍 Python Version Management**: Can install and manage Python versions
+
+### Common UV Commands
+
+```bash
+# Install dependencies (creates virtual environment automatically)
+uv sync
+
+# Add a new dependency
+uv add flask pandas
+
+# Add a development dependency
+uv add --dev pytest black
+
+# Remove a dependency
+uv remove package-name
+
+# Update dependencies
+uv lock --upgrade
+
+# Run a Python script
+uv run python script.py
+
+# Run a command in the virtual environment
+uv run flask run
+
+# Install a specific Python version (if needed)
+uv python install 3.12
+
+# Create a new project
+uv init
+
+# Show installed packages
+uv pip list
+```
+
+### UV vs Conda
+
+If you previously used conda, here's the mapping:
+
+| Conda Command | UV Equivalent |
+|--------------|---------------|
+| `conda create -n env` | `uv venv` (automatic with `uv sync`) |
+| `conda activate env` | Automatic when using `uv run` |
+| `conda install package` | `uv add package` |
+| `conda remove package` | `uv remove package` |
+| `conda list` | `uv pip list` |
+| `conda env export` | `pyproject.toml` + `uv.lock` (together define environment) |
+
+### Benefits Over Conda
+
+1. **Speed**: UV is significantly faster for package installation
+2. **Standard Python**: Uses PyPI packages directly, no special conda packages needed
+3. **Smaller Footprint**: No need for large conda distribution
+4. **Better for CI/CD**: Faster builds and deploys
+5. **Lockfiles**: `uv.lock` ensures reproducible installations
 
 ## Configuration
 
