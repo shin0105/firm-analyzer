@@ -2,12 +2,26 @@
 """
 Convert the CSV data to JavaScript format for the firms viewer webpage.
 This script generates a firms_data.js file with geocoded coordinates.
+
+Uses geopy with Nominatim for geocoding Korean addresses.
+Results are cached to avoid repeated API calls.
 """
 
 import csv
 import json
 import os
 import random
+import sys
+import time
+
+try:
+    from geopy.geocoders import Nominatim
+    from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+    GEOPY_AVAILABLE = True
+except ImportError:
+    GEOPY_AVAILABLE = False
+    print("Warning: geopy not installed. Using fallback coordinates only.")
+    print("Install with: pip install geopy")
 
 # Get the parent directory (project root)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -118,9 +132,113 @@ REGION_COORDS = {
     '제주특별자치도': (33.4890, 126.4983),
 }
 
-def get_coordinates(address):
-    """Get approximate coordinates for an address."""
+# Jurisdiction to region mapping
+JURISDICTION_COORDS = {
+    '서울': (37.5665, 126.9780),
+    '부산.울산': (35.3, 129.1),
+    '대구.경북': (35.87, 128.60),
+    '인천': (37.4563, 126.7052),
+    '광주.전남': (35.16, 126.85),
+    '대전.충남': (36.3504, 127.3845),
+    '경기': (37.4138, 127.5183),
+    '경인': (37.4563, 126.7052),  # Gyeonggi-Incheon area
+    '경기북부': (37.7381, 127.0337),  # Northern Gyeonggi (around Uijeongbu)
+    '강원': (37.8228, 128.1555),
+    '강원.제주': (37.8228, 128.1555),
+    '강원영동': (37.7519, 128.8760),  # Eastern Gangwon (around Gangneung)
+    '충북': (36.6357, 127.4917),
+    '전북': (35.8200, 127.1089),
+    '경남': (35.4606, 128.2132),
+    '제주': (33.4890, 126.4983),
+}
+
+# Cache for geocoding results
+GEOCODE_CACHE = {}
+GEOCODE_CACHE_FILE = None  # Will be set in main()
+GEOLOCATOR = None  # Reusable geolocator instance
+
+def load_geocode_cache():
+    """Load geocoding cache from file."""
+    global GEOCODE_CACHE
+    if GEOCODE_CACHE_FILE and os.path.exists(GEOCODE_CACHE_FILE):
+        try:
+            with open(GEOCODE_CACHE_FILE, 'r', encoding='utf-8') as f:
+                GEOCODE_CACHE = json.load(f)
+            print(f"Loaded {len(GEOCODE_CACHE)} cached geocoding results")
+        except Exception as e:
+            print(f"Warning: Could not load geocode cache: {e}")
+            GEOCODE_CACHE = {}
+    else:
+        GEOCODE_CACHE = {}
+
+def save_geocode_cache():
+    """Save geocoding cache to file."""
+    if GEOCODE_CACHE_FILE:
+        try:
+            with open(GEOCODE_CACHE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(GEOCODE_CACHE, f, ensure_ascii=False, indent=2)
+            print(f"Saved {len(GEOCODE_CACHE)} geocoding results to cache")
+        except Exception as e:
+            print(f"Warning: Could not save geocode cache: {e}")
+
+def geocode_with_nominatim(address, max_retries=3):
+    """
+    Geocode an address using Nominatim with retry logic.
+    
+    Uses the global GEOLOCATOR instance which is initialized once in main().
+    
+    Args:
+        address: Address string to geocode
+        max_retries: Maximum number of retries on timeout
+    
+    Returns:
+        Tuple of (lat, lng) or (None, None) if geocoding fails
+    """
+    global GEOLOCATOR
+    
+    if not GEOLOCATOR:
+        return None, None
+    
+    for attempt in range(max_retries):
+        try:
+            # Add small delay to respect Nominatim usage policy
+            time.sleep(1.1)
+            location = GEOLOCATOR.geocode(address, timeout=10)
+            if location:
+                return location.latitude, location.longitude
+            return None, None
+        except GeocoderTimedOut:
+            if attempt < max_retries - 1:
+                print(f"  Timeout, retrying ({attempt + 1}/{max_retries})...")
+                time.sleep(2)
+                continue
+            print(f"  Failed after {max_retries} retries")
+            return None, None
+        except GeocoderServiceError as e:
+            print(f"  Geocoder service error: {e}")
+            return None, None
+        except Exception as e:
+            print(f"  Unexpected error: {e}")
+            return None, None
+    return None, None
+
+def get_coordinates_from_fallback(address, jurisdiction=None):
+    """Get approximate coordinates using hardcoded fallback data.
+    
+    Args:
+        address: The address string to geocode
+        jurisdiction: The jurisdiction/region name as fallback (e.g., "대전.충남")
+    
+    Returns:
+        Tuple of (lat, lng) or (None, None) if no match found
+    """
     if not address:
+        # If address is empty but we have jurisdiction, use that
+        if jurisdiction and jurisdiction in JURISDICTION_COORDS:
+            coords = JURISDICTION_COORDS[jurisdiction]
+            lat_offset = (random.random() - 0.5) * 0.02
+            lng_offset = (random.random() - 0.5) * 0.02
+            return coords[0] + lat_offset, coords[1] + lng_offset
         return None, None
 
     # Try to match specific district first
@@ -147,10 +265,109 @@ def get_coordinates(address):
                 lng_offset = (random.random() - 0.5) * 0.02
                 return coords[0] + lat_offset, coords[1] + lng_offset
 
+    # Final fallback: use jurisdiction if available
+    if jurisdiction and jurisdiction in JURISDICTION_COORDS:
+        coords = JURISDICTION_COORDS[jurisdiction]
+        lat_offset = (random.random() - 0.5) * 0.02
+        lng_offset = (random.random() - 0.5) * 0.02
+        return coords[0] + lat_offset, coords[1] + lng_offset
+
     return None, None
+
+def get_coordinates(address, jurisdiction=None, use_api=True):
+    """Get coordinates for an address using geopy with fallback.
+    
+    This function tries multiple strategies to geocode an address:
+    1. Check cache for previously geocoded addresses
+    2. Try geocoding with Nominatim API (if use_api=True and geopy is available)
+    3. Fall back to hardcoded regional coordinates
+    
+    Args:
+        address: The address string to geocode
+        jurisdiction: The jurisdiction/region name as fallback (e.g., "대전.충남")
+        use_api: Whether to use external geocoding API (default: True)
+    
+    Returns:
+        Tuple of (lat, lng) or (None, None) if no match found
+    """
+    # Check cache first
+    cache_key = f"{address}|{jurisdiction}"
+    if cache_key in GEOCODE_CACHE:
+        cached = GEOCODE_CACHE[cache_key]
+        return cached.get('lat'), cached.get('lng')
+    
+    lat, lng = None, None
+    
+    # Try API geocoding if enabled and available
+    if use_api and GEOPY_AVAILABLE and address:
+        try:
+            lat, lng = geocode_with_nominatim(address)
+            
+            if lat and lng:
+                print(f"  ✓ Geocoded via API: {address[:50]}")
+                # Add small random offset to prevent overlapping markers
+                lat_offset = (random.random() - 0.5) * 0.001
+                lng_offset = (random.random() - 0.5) * 0.001
+                lat += lat_offset
+                lng += lng_offset
+        except Exception as e:
+            print(f"  Error during API geocoding: {e}")
+    
+    # Fall back to hardcoded coordinates if API didn't work
+    if lat is None or lng is None:
+        lat, lng = get_coordinates_from_fallback(address, jurisdiction)
+        if lat and lng:
+            print(f"  → Using fallback: {address[:50]}")
+    
+    # Cache the result
+    GEOCODE_CACHE[cache_key] = {'lat': lat, 'lng': lng}
+    
+    return lat, lng
 
 
 def main():
+    global GEOCODE_CACHE_FILE, GEOLOCATOR
+    
+    # Set up cache file path
+    GEOCODE_CACHE_FILE = os.path.join(DATA_DIR, "geocode_cache.json")
+    
+    # Load existing cache
+    load_geocode_cache()
+    
+    # Check if user wants to use API geocoding
+    # Support command-line argument: --use-api or --no-api
+    # Support environment variable: USE_GEOCODING_API=1 or 0
+    use_api = False
+    
+    if len(sys.argv) > 1:
+        if '--use-api' in sys.argv:
+            use_api = True
+        elif '--no-api' in sys.argv:
+            use_api = False
+    elif os.environ.get('USE_GEOCODING_API', '').lower() in ('1', 'true', 'yes'):
+        use_api = True
+    else:
+        # Interactive prompt as fallback
+        try:
+            use_api = input("Use geopy API for geocoding? (y/n, default=n): ").strip().lower() == 'y'
+        except (EOFError, KeyboardInterrupt):
+            print("\nDefaulting to fallback coordinates only.")
+            use_api = False
+    
+    if use_api and not GEOPY_AVAILABLE:
+        print("\nWarning: geopy is not installed. Install with:")
+        print("  pip install geopy")
+        print("\nFalling back to hardcoded coordinates only.\n")
+        use_api = False
+    elif use_api:
+        # Initialize geolocator once for reuse
+        GEOLOCATOR = Nominatim(user_agent="firm_websearch_geocoder")
+        print("\nUsing geopy with Nominatim for geocoding.")
+        print("Note: This will be slow due to API rate limits (1 request per second).")
+        print("Results will be cached in geocode_cache.json for future runs.\n")
+    else:
+        print("\nUsing hardcoded fallback coordinates only.\n")
+    
     firms = []
 
     # Read CSV file
@@ -159,7 +376,7 @@ def main():
         reader = csv.reader(f)
         header = next(reader)  # Skip header
 
-        for row in reader:
+        for i, row in enumerate(reader, 1):
             if len(row) >= 6:
                 firm = {
                     "id": row[0].strip() if row[0] else "",
@@ -170,32 +387,47 @@ def main():
                     "jurisdiction": row[5].strip() if row[5] else "",
                 }
 
-                # Get coordinates
-                lat, lng = get_coordinates(firm["address"])
+                # Get coordinates (pass jurisdiction as fallback)
+                if i % 100 == 0:
+                    print(f"Processing firm {i}...")
+                lat, lng = get_coordinates(firm["address"], firm["jurisdiction"], use_api=use_api)
                 firm["lat"] = lat
                 firm["lng"] = lng
 
                 firms.append(firm)
 
+    # Save updated cache
+    if use_api:
+        save_geocode_cache()
+
     # Write JavaScript file
     output_file = os.path.join(WEBAPP_DIR, "static", "js", "firms_data.js")
     with open(output_file, "w", encoding="utf-8") as f:
         f.write("// Auto-generated firms data from CSV\n")
-        f.write("// Generated for 2025 전문연구요원 인원배정 업체 현황\n\n")
+        f.write("// Generated for 2025 전문연구요원 인원배정 업체 현황\n")
+        if use_api:
+            f.write("// Geocoded using geopy with Nominatim API\n")
+        else:
+            f.write("// Geocoded using fallback coordinates\n")
+        f.write("\n")
         f.write("const firmsData = ")
         f.write(json.dumps(firms, ensure_ascii=False, indent=2))
         f.write(";\n")
 
-    print(f"Generated {output_file} with {len(firms)} firms")
+    print(f"\nGenerated {output_file} with {len(firms)} firms")
 
     # Print statistics
     regions = {}
+    geocoded_count = 0
     for firm in firms:
         region = firm["jurisdiction"]
         if region not in regions:
             regions[region] = 0
         regions[region] += 1
+        if firm["lat"] and firm["lng"]:
+            geocoded_count += 1
 
+    print(f"\nSuccessfully geocoded: {geocoded_count}/{len(firms)} firms")
     print("\nFirms by region:")
     for region, count in sorted(regions.items(), key=lambda x: -x[1]):
         print(f"  {region}: {count}")
