@@ -54,13 +54,14 @@ def extract_city_from_location(location: str) -> str:
         return ""
     
     # Pattern for Korean administrative divisions
-    # 특별시, 광역시, 도, 시, 군, 구
+    # Order matters: match more specific patterns first
     patterns = [
-        r'^([가-힣]+특별시)',           # 서울특별시, 세종특별자치시
-        r'^([가-힣]+광역시)',           # 부산광역시, 대구광역시, etc.
-        r'^([가-힣]+특별자치도)',       # 제주특별자치도
-        r'^([가-힣]+도)\s+([가-힣]+시)', # 경기도 수원시 -> 수원시
-        r'^([가-힣]+시)',               # 서울시, 수원시 (without 도)
+        r'^([가-힣]+특별자치시)',        # 세종특별자치시 (must come before 특별시)
+        r'^([가-힣]+특별자치도)',        # 제주특별자치도
+        r'^([가-힣]+특별시)',            # 서울특별시
+        r'^([가-힣]+광역시)',            # 부산광역시, 대구광역시, etc.
+        r'^([가-힣]+도)\s+([가-힣]+시)', # 경기도 수원시 -> 수원시 (allow flexible spacing)
+        r'^([가-힣]+시)',                # 서울시, 수원시 (without 도)
     ]
     
     for pattern in patterns:
@@ -229,9 +230,8 @@ def parse_pdf_to_csv_extended(
                 else:
                     # If no header found, assume columns are in order
                     start_idx = 0
-                    for idx in range(min(len(expected_columns), 10)):  # Assume max 10 columns
-                        if idx < len(expected_columns):
-                            column_mapping[idx] = expected_columns[idx]
+                    for idx in range(len(expected_columns)):
+                        column_mapping[idx] = expected_columns[idx]
                 
                 # Process each data row in the table
                 for row_idx in range(start_idx, len(table)):
@@ -286,13 +286,12 @@ def parse_pdf_to_csv_extended(
                                 output_row.append('')
                         
                         # Only add rows that have enough valid data
-                        non_empty = sum(1 for cell in output_row if cell.strip())
+                        non_empty = sum(1 for cell in output_row if str(cell).strip())
                         if non_empty >= min_columns:
                             all_rows.append(output_row)
-                    else:
+                    elif len(cleaned_row) >= min_columns:
                         # Use row as-is if no mapping
-                        if len(cleaned_row) >= min_columns:
-                            all_rows.append(cleaned_row[:len(output_columns)])
+                        all_rows.append(cleaned_row[:len(output_columns)])
             
             print(f"  Page {page_num}/{len(pdf.pages)}: {len(all_rows)} total rows so far")
     
