@@ -1,9 +1,17 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Convert the CSV data to JavaScript format for the firms viewer webpage.
 This script generates a firms_data.js file with geocoded coordinates.
 
-Uses geopy with Nominatim for geocoding Korean addresses.
+Supports multiple geocoding methods:
+1. Kakao Maps API (recommended for Korean addresses) - most accurate for both
+   도로명주소 (road name address) and 지번주소 (lot number address)
+2. Nominatim (OpenStreetMap) - fallback geocoder
+3. Hardcoded regional coordinates - final fallback
+
+Set KAKAO_REST_API_KEY environment variable for best results.
+Get a free API key at: https://developers.kakao.com/
+
 Results are cached to avoid repeated API calls.
 """
 
@@ -15,6 +23,14 @@ import sys
 import time
 
 try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+    print("Warning: requests not installed. Kakao Maps API will not be available.")
+    print("Install with: pip install requests")
+
+try:
     from geopy.geocoders import Nominatim
     from geopy.exc import GeocoderTimedOut, GeocoderServiceError
     GEOPY_AVAILABLE = True
@@ -22,6 +38,10 @@ except ImportError:
     GEOPY_AVAILABLE = False
     print("Warning: geopy not installed. Using fallback coordinates only.")
     print("Install with: pip install geopy")
+
+# Check if Kakao API key is available
+KAKAO_API_KEY = os.environ.get('KAKAO_REST_API_KEY', '')
+KAKAO_API_AVAILABLE = REQUESTS_AVAILABLE and bool(KAKAO_API_KEY)
 
 # Get the parent directory (project root)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -181,6 +201,84 @@ def save_geocode_cache():
         except Exception as e:
             print(f"Warning: Could not save geocode cache: {e}")
 
+def geocode_with_kakao(address, max_retries=3, base_delay=0.15):
+    """
+    Geocode an address using Kakao Maps API (best for Korean addresses).
+    
+    Kakao Maps API provides accurate geocoding for Korean addresses including
+    both 도로명주소 (road name address) and 지번주소 (lot number address).
+    
+    Args:
+        address: Address string to geocode
+        max_retries: Maximum number of retries on failure
+        base_delay: Base delay in seconds between requests (default: 0.15)
+    
+    Returns:
+        Tuple of (lat, lng) or (None, None) if geocoding fails
+    """
+    if not KAKAO_API_AVAILABLE:
+        return None, None
+    
+    url = "https://dapi.kakao.com/v2/local/search/address.json"
+    headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
+    
+    for attempt in range(max_retries):
+        try:
+            # Add delay to respect API rate limits (exponential backoff on retry)
+            if attempt > 0:
+                delay = base_delay * (2 ** attempt)
+            else:
+                delay = base_delay
+            time.sleep(delay)
+            
+            response = requests.get(url, headers=headers, params={"query": address}, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check if we got results
+                if data.get('documents'):
+                    # Use the first result
+                    result = data['documents'][0]
+                    
+                    # Try road address first, then jibun address
+                    if result.get('road_address'):
+                        lat = float(result['road_address']['y'])
+                        lng = float(result['road_address']['x'])
+                        return lat, lng
+                    elif result.get('address'):
+                        lat = float(result['address']['y'])
+                        lng = float(result['address']['x'])
+                        return lat, lng
+                
+                # If no results, return None
+                return None, None
+            
+            elif response.status_code == 429:  # Rate limit
+                if attempt < max_retries - 1:
+                    print(f"  Rate limit hit, retrying ({attempt + 1}/{max_retries})...")
+                    time.sleep(1)
+                    continue
+                return None, None
+            
+            else:
+                print(f"  Kakao API error: {response.status_code}")
+                return None, None
+                
+        except requests.RequestException as e:
+            if attempt < max_retries - 1:
+                print(f"  Request error, retrying ({attempt + 1}/{max_retries})...")
+                time.sleep(1)
+                continue
+            print(f"  Failed after {max_retries} retries: {e}")
+            return None, None
+        except Exception as e:
+            print(f"  Unexpected error: {e}")
+            return None, None
+    
+    return None, None
+
+
 def geocode_with_nominatim(address, max_retries=3):
     """
     Geocode an address using Nominatim with retry logic.
@@ -274,18 +372,20 @@ def get_coordinates_from_fallback(address, jurisdiction=None):
 
     return None, None
 
-def get_coordinates(address, jurisdiction=None, use_api=True):
-    """Get coordinates for an address using geopy with fallback.
+def get_coordinates(address, jurisdiction=None, use_api=True, use_kakao=True):
+    """Get coordinates for an address using multiple geocoding strategies.
     
     This function tries multiple strategies to geocode an address:
     1. Check cache for previously geocoded addresses
-    2. Try geocoding with Nominatim API (if use_api=True and geopy is available)
-    3. Fall back to hardcoded regional coordinates
+    2. Try Kakao Maps API (best for Korean addresses) if available
+    3. Try Nominatim API as fallback (if use_api=True and geopy is available)
+    4. Fall back to hardcoded regional coordinates
     
     Args:
         address: The address string to geocode
         jurisdiction: The jurisdiction/region name as fallback (e.g., "대전.충남")
         use_api: Whether to use external geocoding API (default: True)
+        use_kakao: Whether to prefer Kakao Maps API for Korean addresses (default: True)
     
     Returns:
         Tuple of (lat, lng) or (None, None) if no match found
@@ -297,30 +397,48 @@ def get_coordinates(address, jurisdiction=None, use_api=True):
         return cached.get('lat'), cached.get('lng')
     
     lat, lng = None, None
+    geocode_method = None
     
-    # Try API geocoding if enabled and available
-    if use_api and GEOPY_AVAILABLE and address:
+    # Try Kakao Maps API first (best for Korean addresses)
+    if use_api and use_kakao and KAKAO_API_KEY and address:
+        try:
+            lat, lng = geocode_with_kakao(address)
+            
+            if lat and lng:
+                geocode_method = "Kakao"
+                print(f"  ✓ Geocoded via Kakao: {address[:50]}")
+        except Exception as e:
+            print(f"  Error during Kakao geocoding: {e}")
+    
+    # Try Nominatim API as fallback if Kakao didn't work
+    if (lat is None or lng is None) and use_api and GEOPY_AVAILABLE and address:
         try:
             lat, lng = geocode_with_nominatim(address)
             
             if lat and lng:
-                print(f"  ✓ Geocoded via API: {address[:50]}")
+                geocode_method = "Nominatim"
+                print(f"  ✓ Geocoded via Nominatim: {address[:50]}")
                 # Add small random offset to prevent overlapping markers
                 lat_offset = (random.random() - 0.5) * 0.001
                 lng_offset = (random.random() - 0.5) * 0.001
                 lat += lat_offset
                 lng += lng_offset
         except Exception as e:
-            print(f"  Error during API geocoding: {e}")
+            print(f"  Error during Nominatim geocoding: {e}")
     
     # Fall back to hardcoded coordinates if API didn't work
     if lat is None or lng is None:
         lat, lng = get_coordinates_from_fallback(address, jurisdiction)
         if lat and lng:
+            geocode_method = "Fallback"
             print(f"  → Using fallback: {address[:50]}")
     
-    # Cache the result
-    GEOCODE_CACHE[cache_key] = {'lat': lat, 'lng': lng}
+    # Cache the result with method info
+    GEOCODE_CACHE[cache_key] = {
+        'lat': lat, 
+        'lng': lng,
+        'method': geocode_method
+    }
     
     return lat, lng
 
@@ -338,34 +456,44 @@ def main():
     # Support command-line argument: --use-api or --no-api
     # Support environment variable: USE_GEOCODING_API=1 or 0
     use_api = False
+    use_kakao = KAKAO_API_AVAILABLE
     
     if len(sys.argv) > 1:
         if '--use-api' in sys.argv:
             use_api = True
         elif '--no-api' in sys.argv:
             use_api = False
+            use_kakao = False  # Explicitly disable when user says --no-api
     elif os.environ.get('USE_GEOCODING_API', '').lower() in ('1', 'true', 'yes'):
         use_api = True
+    elif KAKAO_API_AVAILABLE:
+        # If Kakao API key is available, default to using it
+        # User can override with --no-api flag
+        use_api = True
+        print("\n✓ Kakao Maps API key detected - will use for accurate Korean geocoding")
+        print("   (Use --no-api flag to disable)")
     else:
         # Interactive prompt as fallback
         try:
-            use_api = input("Use geopy API for geocoding? (y/n, default=n): ").strip().lower() == 'y'
+            use_api = input("Use geocoding API? (y/n, default=n): ").strip().lower() == 'y'
         except (EOFError, KeyboardInterrupt):
             print("\nDefaulting to fallback coordinates only.")
             use_api = False
     
-    if use_api and not GEOPY_AVAILABLE:
-        print("\nWarning: geopy is not installed. Install with:")
-        print("  pip install geopy")
-        print("\nFalling back to hardcoded coordinates only.\n")
-        use_api = False
-    elif use_api:
-        # Initialize geolocator once for reuse
-        GEOLOCATOR = Nominatim(user_agent="firm_websearch_geocoder")
-        print("\nUsing geopy with Nominatim for geocoding.")
-        print("Note: This will be slow due to API rate limits (1 request per second).")
-        print("Results will be cached in geocode_cache.json for future runs.\n")
+    # Print geocoding method info
+    if use_api:
+        if use_kakao:
+            print("\n🗺️  Using Kakao Maps API for accurate Korean address geocoding")
+            print("   This provides exact locations for both 도로명주소 and 지번주소")
+        if GEOPY_AVAILABLE:
+            # Initialize geolocator once for reuse (as fallback)
+            GEOLOCATOR = Nominatim(user_agent="firm_websearch_geocoder")
+            print("   Nominatim (OSM) available as fallback")
+        print("   Results will be cached in geocode_cache.json for future runs.\n")
     else:
+        if not GEOPY_AVAILABLE and not use_kakao:
+            print("\nNote: For accurate Korean geocoding, set KAKAO_REST_API_KEY environment variable")
+            print("      Get a free API key at: https://developers.kakao.com/")
         print("\nUsing hardcoded fallback coordinates only.\n")
     
     firms = []
@@ -390,7 +518,7 @@ def main():
                 # Get coordinates (pass jurisdiction as fallback)
                 if i % 100 == 0:
                     print(f"Processing firm {i}...")
-                lat, lng = get_coordinates(firm["address"], firm["jurisdiction"], use_api=use_api)
+                lat, lng = get_coordinates(firm["address"], firm["jurisdiction"], use_api=use_api, use_kakao=use_kakao)
                 firm["lat"] = lat
                 firm["lng"] = lng
 
@@ -405,8 +533,10 @@ def main():
     with open(output_file, "w", encoding="utf-8") as f:
         f.write("// Auto-generated firms data from CSV\n")
         f.write("// Generated for 2025 전문연구요원 인원배정 업체 현황\n")
-        if use_api:
-            f.write("// Geocoded using geopy with Nominatim API\n")
+        if use_api and use_kakao:
+            f.write("// Geocoded using Kakao Maps API (accurate Korean addresses)\n")
+        elif use_api:
+            f.write("// Geocoded using Nominatim API\n")
         else:
             f.write("// Geocoded using fallback coordinates\n")
         f.write("\n")
@@ -416,9 +546,11 @@ def main():
 
     print(f"\nGenerated {output_file} with {len(firms)} firms")
 
-    # Print statistics
+    # Print statistics by geocoding method
     regions = {}
     geocoded_count = 0
+    methods = {'Kakao': 0, 'Nominatim': 0, 'Fallback': 0, None: 0}
+    
     for firm in firms:
         region = firm["jurisdiction"]
         if region not in regions:
@@ -426,8 +558,26 @@ def main():
         regions[region] += 1
         if firm["lat"] and firm["lng"]:
             geocoded_count += 1
+        
+        # Count geocoding methods used
+        cache_key = f"{firm['address']}|{firm['jurisdiction']}"
+        if cache_key in GEOCODE_CACHE:
+            method = GEOCODE_CACHE[cache_key].get('method')
+            if method in methods:
+                methods[method] += 1
 
     print(f"\nSuccessfully geocoded: {geocoded_count}/{len(firms)} firms")
+    
+    # Print geocoding method breakdown
+    if any(methods.values()):
+        print("\nGeocoding methods used:")
+        if methods['Kakao'] > 0:
+            print(f"  ✓ Kakao Maps API: {methods['Kakao']} (accurate)")
+        if methods['Nominatim'] > 0:
+            print(f"  → Nominatim: {methods['Nominatim']} (approximate)")
+        if methods['Fallback'] > 0:
+            print(f"  → Fallback: {methods['Fallback']} (regional)")
+    
     print("\nFirms by region:")
     for region, count in sorted(regions.items(), key=lambda x: -x[1]):
         print(f"  {region}: {count}")
