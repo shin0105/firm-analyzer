@@ -35,5 +35,9 @@ env/
 # *_firms.csv
 # !seoul_firms.csv
 
+# Test files
+data/test_*.csv
+data/*_parsed_extended.csv
+
 # Flask
 instance/
