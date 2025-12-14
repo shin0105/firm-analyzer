@@ -29,6 +29,13 @@ A configurable web-based tool for filtering, searching, and summarizing firm/com
 - **Real-time results**: View processed firms by category
 - **Run controls**: Execute filter and summarize scripts from the browser
 
+### 🗺️ Accurate Korean Map Display
+- **Kakao Maps API integration**: Precise geocoding for Korean addresses
+- **Dual address format support**: Works with both 도로명주소 (road name) and 지번주소 (lot number) addresses
+- **Interactive map viewer**: View firms on an accurate map with exact locations
+
+📖 **See [Korean Maps Setup Guide](KOREAN_MAPS_SETUP.md) for detailed instructions on getting accurate map locations.**
+
 ## Quick Start
 
 ### Option A: Using UV (Recommended)
@@ -61,7 +68,12 @@ Create a `.env` file:
 ```
 TAVILY_API_KEY=your_tavily_api_key
 GITHUB_TOKEN=your_github_token
+
+# Optional: For accurate Korean address geocoding (recommended)
+KAKAO_REST_API_KEY=your_kakao_rest_api_key
 ```
+
+**Note**: To get accurate map locations for Korean addresses, obtain a free Kakao REST API key at [https://developers.kakao.com/](https://developers.kakao.com/). Without this key, the system will use approximate regional coordinates.
 
 #### 4. Run the Web Interface
 
@@ -97,7 +109,12 @@ Create a `.env` file (same as UV option above):
 ```
 TAVILY_API_KEY=your_tavily_api_key
 GITHUB_TOKEN=your_github_token
+
+# Optional: For accurate Korean address geocoding (recommended)
+KAKAO_REST_API_KEY=your_kakao_rest_api_key
 ```
+
+**Note**: To get accurate map locations for Korean addresses, obtain a free Kakao REST API key at [https://developers.kakao.com/](https://developers.kakao.com/). Without this key, the system will use approximate regional coordinates.
 
 #### 3. Run the Web Interface
 
@@ -288,6 +305,65 @@ All settings are stored in `config.json`. You can edit this file directly or use
 }
 ```
 
+## Korean Address Geocoding
+
+### Overview
+
+The map viewer supports accurate geocoding of Korean addresses, including both address formats used in South Korea:
+
+- **도로명주소 (Road Name Address)**: Modern address system based on road names (e.g., "서울특별시 강남구 테헤란로 123")
+- **지번주소 (Lot Number Address)**: Traditional address system based on land parcel numbers (e.g., "서울특별시 강남구 역삼동 123-45")
+
+### Accurate Location Display
+
+To display exact locations on the map instead of approximate regional coordinates:
+
+1. **Get a Kakao REST API Key** (Free):
+   - Visit [https://developers.kakao.com/](https://developers.kakao.com/)
+   - Create an account and register an application
+   - Get your REST API key from the application dashboard
+
+2. **Set the Environment Variable**:
+   ```bash
+   export KAKAO_REST_API_KEY=your_api_key_here
+   ```
+   Or add it to your `.env` file:
+   ```
+   KAKAO_REST_API_KEY=your_api_key_here
+   ```
+
+3. **Regenerate Geocoded Data**:
+   ```bash
+   cd firm_summary
+   uv run python generate_firms_data.py
+   ```
+   The script will automatically use Kakao Maps API for accurate geocoding.
+
+### Geocoding Methods (in order of preference)
+
+1. **Kakao Maps API** (Most Accurate):
+   - Best for Korean addresses
+   - Handles both 도로명주소 and 지번주소
+   - Provides exact coordinates
+
+2. **Nominatim (OpenStreetMap)** (Fallback):
+   - Works for some Korean addresses
+   - Less accurate than Kakao for incomplete addresses
+
+3. **Regional Coordinates** (Final Fallback):
+   - Uses hardcoded coordinates for major cities and districts
+   - Adds random offset to prevent marker overlap
+   - Only shows approximate location
+
+### Caching
+
+Geocoding results are cached in `data/geocode_cache.json` to:
+- Avoid repeated API calls
+- Speed up subsequent runs
+- Preserve geocoding results
+
+To force re-geocoding, delete the cache file before running the script.
+
 ## File Structure
 
 ```
@@ -302,6 +378,10 @@ firm_websearch/
 │   ├── finance/            # Firms classified as finance
 │   ├── ai_ml/              # Firms classified as AI/ML
 │   └── general/            # General category firms
+├── firm_summary/
+│   └── generate_firms_data.py  # Geocode addresses and generate map data
+├── data/
+│   └── geocode_cache.json  # Cached geocoding results
 ├── 1_filter_seoul.py       # Legacy: Seoul-only filter
 ├── 2_search_summarize.py   # Legacy: Fixed categories
 └── README.md
