@@ -29,6 +29,12 @@ A configurable web-based tool for filtering, searching, and summarizing firm/com
 - **Real-time results**: View processed firms by category
 - **Run controls**: Execute filter and summarize scripts from the browser
 
+### 📄 PDF to CSV Parser (New!)
+- **Flexible column mapping**: Parse any PDF table format with custom column names
+- **Automatic city extraction**: Extract city names from Korean addresses
+- **Smart header detection**: Automatically identifies table headers in PDFs
+- **Column renaming**: Map source columns to target column names
+- **Multiple format support**: Works with various Korean company list PDFs
 ### 🗺️ Accurate Korean Map Display
 - **Kakao Maps API integration**: Precise geocoding for Korean addresses
 - **Dual address format support**: Works with both 도로명주소 (road name) and 지번주소 (lot number) addresses
@@ -185,6 +191,30 @@ python search_summarize.py --limit 10
 
 # Use custom config
 python search_summarize.py --config my_config.json
+```
+
+### Parse PDF to CSV (New!)
+
+```bash
+# Parse PDF with default settings
+python firm_summary/parse_pdf_to_csv_extended.py
+
+# Extract city from location and add as a column
+python firm_summary/parse_pdf_to_csv_extended.py --extract-city-from-location
+
+# Parse custom PDF with column mapping
+python firm_summary/parse_pdf_to_csv_extended.py \
+  --pdf data/korean_companies.pdf \
+  --output data/korean_companies.csv \
+  --columns "번호" "회사명" "상세주소" "도시"
+
+# Rename columns while parsing
+python firm_summary/parse_pdf_to_csv_extended.py \
+  --columns "번호:Number" "회사명:Company Name" "소재지:Location" \
+  --extract-city-from-location
+
+# For detailed documentation
+See firm_summary/README_PDF_PARSER.md
 ```
 
 ## UV Package Management Guide
