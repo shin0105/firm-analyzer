@@ -1,0 +1,45 @@
+{
+  "query": "기업부설연구소 R&D Center Bazbiomedic 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "title": "Replicate Netflix login and generate cookie - Stack Overflow",
+      "url": "https://stackoverflow.com/questions/32337821/replicate-netflix-login-and-generate-cookie",
+      "content": "I am not a lawyer, but what you intend to do here may very well be explained as a violation of the DMCA's anti-circumvention provisions, which might explain a) the downvotes and b) the lack of answers.\n\n  fvu\n\n  –  fvu\n\n  2015-09-10 15:59:18 +00:00\n\n   Commented Sep 10, 2015 at 15:59\n\n|   Show 11 more comments\n\n## 4 Answers 4\n\nReset to default\n\n3\n\nWhat you're looking for is called Web Scraping / Web Crawling. [...] –  Forivin\n\n  2015-09-07 11:50:23 +00:00\n\n   Commented Sep 7, 2015 at 11:50\n 2\n\n  Also, the downvote button is not to be used, just because you think the question asker is up to no good. The download button is to be used when the question is bad formatted or doesn't show any research effort etc. And I spent probably more than 4 hours on doing research, debugging and reverse engineering on this.\n\n  Forivin\n\n  –  Forivin\n\n  2015-09-07 11:52:52 +00:00\n\n   Commented Sep 7, 2015 at 11:52\n 1 [...] I'm trying to understand what you're trying to achieve so that I can try and assist you. If you still need help?\n\n  Ajaypayne\n\n  –  Ajaypayne\n\n  2015-09-02 18:45:23 +00:00\n\n   Commented Sep 2, 2015 at 18:45\n 2",
+      "score": 0.0130707845,
+      "raw_content": null
+    },
+    {
+      "title": "Movie Deeplink for Netflix Android TV app (com.netflix.ninja)",
+      "url": "https://stackoverflow.com/questions/35556634/movie-deeplink-for-netflix-android-tv-app-com-netflix-ninja",
+      "content": "Add a comment   |\n\n## 2 Answers 2\n\nReset to default\n\n10 [...] Stack Overflow \n\n1. About\n3. For Teams\n\n1. Stack Internal Implement a knowledge platform layer to power your enterprise and AI tools.\n2. Stack Data Licensing Get access to top-class technical expertise with trusted & attributed content.\n3. Stack Ads Connect your brand to the world’s most trusted technologist communities.\n4. Releases Keep up-to-date on features we add to Stack Overflow and Stack Internal.\n5. About the company Visit the blog\n\n##### Collectives™ on Stack Overflow",
+      "score": 0.011869121,
+      "raw_content": null
+    },
+    {
+      "title": "Zuul Proxy not able to route, resulting in …",
+      "url": "https://stackoverflow.com/questions/35376860/zuul-proxy-not-able-to-route-resulting-in-com-netflix-zuul-exception-zuulexcept",
+      "content": "Improve this answer\n\nanswered Sep 29, 2017 at 10:15\n\njuanlumn\n\n7,30322 gold badges3434 silver badges4242 bronze badges\n\n## Comments\n\n2\n\nyou can use this to avoid 500 error\n\nhystrix.command.default.execution.isolation.thread.timeoutInMilliseconds=1000000\n\nzuul.host.connect-timeout-millis=10000\n\nzuul.host.socket-timeout-millis=1000000\n\nShare\n\nImprove this answer\n\nanswered Sep 23, 2020 at 13:27\n\nlotus\n\n4566 bronze badges\n\n## 1 Comment\n\nHenrique Schmitt\n\nHenrique Schmitt [...] Stack Overflow \n\n1. About\n3. For Teams\n\n1. Stack Internal Implement a knowledge platform layer to power your enterprise and AI tools.\n2. Stack Data Licensing Get access to top-class technical expertise with trusted & attributed content.\n3. Stack Ads Connect your brand to the world’s most trusted technologist communities.\n4. Releases Keep up-to-date on features we add to Stack Overflow and Stack Internal.\n5. About the company Visit the blog\n\n##### Collectives™ on Stack Overflow",
+      "score": 0.009936418,
+      "raw_content": null
+    },
+    {
+      "title": "Create an automated script that login in into netflix",
+      "url": "https://stackoverflow.com/questions/39536901/create-an-automated-script-that-login-in-into-netflix",
+      "content": "Skip to main content\n\nStack Overflow\n\n1. About\n3. For Teams\n\n1. Stack Internal\n   Implement a knowledge platform layer to power your enterprise and AI tools.\n2. Stack Data Licensing\n   Get access to top-class technical expertise with trusted & attributed content.\n3. Stack Ads\n   Connect your brand to the world’s most trusted technologist communities.\n4. Releases\n   Keep up-to-date on features we add to Stack Overflow and Stack Internal.\n5. About the company\n   Visit the blog [...] ```\n\n python\n python-3.x\n selenium\n\nShare\n\nCC BY-SA 3.0\n\nImprove this question\n\nFollow this question to receive notifications\n\nedited Sep 16, 2016 at 20:09\n\nasked Sep 16, 2016 at 17:14\n\nCatchJoul\n\n9722 silver badges88 bronze badges\n\nAdd a comment\n |\n\n## 3 Answers 3\n\nReset to default\n\nThis answer is useful\n\n0\n\nSave this answer.\n\nShow activity on this post. [...] ```\n\nShare\n\nCC BY-SA 3.0\n\nImprove this answer\n\nFollow this answer to receive notifications\n\nanswered Sep 16, 2016 at 20:10\n\nCatchJoul\n\n9722 silver badges88 bronze badges\n\n## Comments\n\nStart asking to get answers\n\nFind the answer to your question by asking.\n\nAsk question\n\nExplore related questions\n\n python\n python-3.x\n selenium\n\nSee similar questions with these tags.",
+      "score": 0.009746104,
+      "raw_content": null
+    },
+    {
+      "title": "Cannot resolve org.springframework.cloud:spring-cloud-starter …",
+      "url": "https://stackoverflow.com/questions/63693570/cannot-resolve-org-springframework-cloudspring-cloud-starter-netflix-eureka-cli",
+      "content": "Find centralized, trusted content and collaborate around the technologies you use most.\n\n Learn more about Collectives\n\nStack Internal\n\nKnowledge at work\n\nBring the best of human thought and AI automation together at your work.\n\n Explore Stack Internal\n\n# Cannot resolve org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:unknown\n\nAsk Question\n\nAsked\n\nModified 1 year, 7 months ago\n\nViewed 95k times [...] Improve this answer\n\nedited May 9, 2024 at 20:33\n\nwafL\n\n65366 silver badges1717 bronze badges\n\nanswered May 6, 2024 at 10:25\n\nKenshika Venistran\n\n1\n\n## Comments\n\n-1\n\nAt Spring Start, when creating the project, also take the repositories, these guys are fundamental.\n\n```\n // DATA    // DATA   // DATA   \n```\n\nShare\n\nImprove this answer\n\nedited Jan 15, 2021 at 17:25\n\nanswered Jan 15, 2021 at 13:47\n\nMarlon Souza\n\n1322 bronze badges\n\n## Comments [...] Stack Overflow \n\n1. About\n3. For Teams\n\n1. Stack Internal Implement a knowledge platform layer to power your enterprise and AI tools.\n2. Stack Data Licensing Get access to top-class technical expertise with trusted & attributed content.\n3. Stack Ads Connect your brand to the world’s most trusted technologist communities.\n4. Releases Keep up-to-date on features we add to Stack Overflow and Stack Internal.\n5. About the company Visit the blog\n\n##### Collectives™ on Stack Overflow",
+      "score": 0.009090384,
+      "raw_content": null
+    }
+  ],
+  "response_time": 5.69,
+  "request_id": "2c707571-0911-4c17-b721-d81ea2580f86"
+}
