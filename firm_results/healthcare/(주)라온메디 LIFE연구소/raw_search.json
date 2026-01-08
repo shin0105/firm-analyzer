@@ -1,0 +1,45 @@
+{
+  "query": "(주)라온메디 LIFE연구소 채용 연구분야 사업내용",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://www.jobkorea.co.kr/recruit/co_read/c/laonmedi2021",
+      "title": "라온메디 2025년 기업정보 - 직원수, 근무환경, 복리후생 등 - 잡코리아",
+      "content": "| 산업 | 시스템 소프트웨어 개발 및 공급업 | 사원수 | 11명  (2022.11.28) |\n| 기업구분 | 중소기업 | 설립일 | 2021.11.01  (6년차) |\n| 자본금 | 5억 54만원  (2024.12.31) | 매출액 | 1억 5,600만원  (2024.12.31) |\n| 대표자 | 이석중 | 주요사업 | 소프트웨어 개발 및 공급업,그 외 기타 의료용 기기 제조업,치과용 기기 제조업,전자상거래 소매업 |\n| 4대보험 | 국민연금, 건강보험, 고용보험, 산재보험 | 홈페이지 |  |\n| 주소 | 경기 과천시 과천대로7나길 60 (갈현동, 과천어반허브) C동 504호 |\n| 계열사 | 라온피플그룹    라온피플(주)  (주)티디지  (주)라온로드 |\n\n## 재무분석\n\n재무현황 전체보기;)\n\n### 매출액\n\n툴팁\n\n기업의 주요 영업활동 등을 통해 얻는 수익을 말합니다.  \n상품 등의 판매나 용역의 제공으로 얻어진 수익입니다. [...] 저희 회사는 라온피플이라는 회사로부터 물적 분할을 한 회사 입니다.   \n모회사인 라온피플은 2010년에 설립된 13년차 회사로 3년전에 코스닥에 등록되었으며, 인공지능 머신비전 전문 솔루션 기업으로,   \n축적된 산업현장에서의 인공지능 기술을 바탕으로 교통 및 의료 부문으로 사업영역을 확장하였습니다.   \n2018년에 메디칼 비전팀을 창설하였고, 의료산업계에서 필요한 “인공지능 기반의 솔루션”을 연구개발, 판매해 왔습니다.   \n이미 덴탈관련 분야에서는 식약처 승인된 의료기기 솔루션을 보유하고 있으며 일본 등 해외 수출실적을 내고 있습니다.   \n2021년 자회사로 분리된 후 라온메디라는 이름으로 스타트업의 분위기로 젊고 패기 넘치는 연구원들을 중심으로   \n현직 대학병원 의료진으로 구성된 자문단을 보유한 활기 넘치는 회사입니다.  \n  \n기술로 행복한 사람을 만들고, 선진화된 의료기술로 인류의 행복한 삶을 만들고자 합니다.\n\n더보기;)\n\n### 복리후생\n\n연금·보험\n\n국민연금 [...] | 계정명 | 2024.12.31 | 2023.12.31 | 2022.12.31 |\n| 유동자산 | 3,981,185 | 790,642 | 1,358,766 |\n| 비 유동자산 | 287,880 | 192,592 | 265,079 |\n| 자산 합계 | 4,269,065 | 983,234 | 1,623,845 |\n| 유동부채 | 1,295,329 | 1,007,339 | 34,097 |\n| 비 유동부채 | 182,693 | 79,235 | 80,044 |\n| 채무 합계 | 1,478,023 | 1,086,573 | 114,141 |\n| 자본금 | 500,542 | 419,213 | 398,100 |\n| 자본금 합계 | 2,791,043 | -103,339 | 1,509,704 |\n| 매출 액 | 156,000 | 20,278 | 112,807 |\n| 매출 전체 이익 | 155,849 | 15,784 | 109,021 |",
+      "score": 0.9235924,
+      "raw_content": null
+    },
+    {
+      "url": "https://huggingface.co/datasets/upstage/CReSt",
+      "title": "upstage/CReSt · Datasets at Hugging Face",
+      "content": "style='font-size:16px'>\\ud53c\\ub4dc\\ubc31 \\uc81c\\uacf5 \\uacbd\\ud5d8\\uc5d0 \\ucd08\\uc810\\uc744 \\ub454 \\uc5f0\\uad6c\\uc5d0 \\ub530\\ub974\\uba74, \\uad50\\uc0ac\\uac00 \\uc801\\uc808\\ud55c \\uc9c0\\uc2dd\\uacfc \\uae30\\uc220\\uc744 \\uac16\\ucd94\\uace0 \\ud53c\\ub4dc\\ubc31\\uc744<br>\\uc218\\ud589\\ud558\\ub294 \\uac83\\uc774 \\uad50\\uc721\\uc801 \\ud6a8\\uacfc\\uc640 \\uc9c1\\uc811\\uc801\\uc778 \\uad00\\ub828\\uc131\\uc744 \\uac16\\ub294\\ub2e4\\uace0 \\ubcf4\\uc558\\ub2e4(Heritage, 2007). \\ub530\\ub77c\\uc11c<br>\\ub2e4\\uc218\\uc758 [...] \\uace01<br>\\ud328\\ub110\\uc758 3\\ucc28\\ub144\\ub3c4 \\uc790\\ub8cc\\ub85c\\uc11c 2019\\ub144\\uc5d0 \\uace03\\uc774 \\ub41c \\ud559\\uc0dd\\ub4e4\\uc758 \\uc790\\ub8cc\\ub97c \\ud65c\\uc6a9\\ud558\\uc600\\ub2e4. \\uad50\\uc0ac\\uc758 \\uacbd\\uc6b0 \\ud45c\\uc9d1<br>\\ud559\\uc0dd\\uc758 \\ub2f4\\uc784\\uad50\\uc0ac\\uc640 \\uad50\\uacfc \\ub2f4\\ub2f9\\uad50\\uc0ac\\ub97c \\ud45c\\uc9d1 \\ub300\\uc0c1\\uc73c\\ub85c \\ud558\\uace0 \\uc788\\ub2e4. \\uc774 \\uc5f0\\uad6c\\uc5d0\\uc11c\\ub294 \\ud53c\\ub4dc\\ubc31 \\uacbd\\ud5d8\\uacfc [...] style='font-size:16px'>\\ud559\\uc0dd\\uc758 \\ud53c\\ub4dc\\ubc31 \\uacbd\\ud5d8\\uc5d0 \\uc601\\ud5a5\\uc744 \\ubbf8\\uce58\\ub294 \\uc694\\uc778\\uc740 \\ub9e4\\uc6b0 \\ub2e4\\uc591\\ud558\\uba70, \\uc77c\\ubc18\\uc801\\uc73c\\ub85c \\ud559\\uc0dd \\ud2b9\\uc131, \\uac00\\uc815 \\ud2b9\\uc131,<br>\\uad50\\uc0ac \\ubc0f \\ud559\\uad50 \\ud2b9\\uc131\\uc758 \\ub9e5\\ub77d\\uc5d0\\uc11c \\uace0\\ub824\\ud574\\ubcfc \\uc218 \\uc788\\ub2e4. \\uba3c\\uc800, \\ud559\\uc0dd \\ud2b9\\uc131 \\uc694\\uc778\\uc73c\\ub85c\\ub294 \\uc778\\uc9c0\\uc801,",
+      "score": 0.027795622,
+      "raw_content": null
+    },
+    {
+      "url": "https://github.com/Erudika/scoold/blob/master/src/main/resources/lang_ko.properties",
+      "title": "scoold/src/main/resources/lang_ko.properties at master - GitHub",
+      "content": "feed.title = {0} - \\ucd5c\\uadfc \\uc9c8\\ubb38\n\nfeed.description = {0}\\uc5d0\\uc11c \\ucd5c\\uadfc \\uc9c8\\ubb38\\uc758 \\uc694\\uc57d\\uc785\\ub2c8\\ub2e4\n\nFooter\n\n[]( © 2026 GitHub,Inc. \n\n### Footer navigation\n\n   Terms\n   Privacy\n   Security\n   Status\n   Community\n   Docs\n   Contact\n    Manage cookies \n    Do not share my personal information \n\n You can’t perform that action at this time. [...] editor = \\ud3b8\\uc9d1\\uc790\n\nbackintime = \\uc61b\\ub0a0\\ub85c\n\nveteran = \\ubca0\\ud14c\\ub791\n\nenthusiast = \\uc560\\ud638\\uac00\n\nfreshman = \\uc2e0\\uc785\\uc0dd\n\nscholar = \\ud559\\uc790\n\nteacher = \\uc120\\uc0dd\\ub2d8\n\nprofessor = \\uad50\\uc218\\ub2d8\n\ngeek = \\uae31\n\ngoodquestion = \\uc88b\\uc740 \\uc9c8\\ubb38\n\ngoodanswer = \\uc88b\\uc740 \\ub2f5\\ubcc0\n\neureka = \\uc720\\ub808\\uce74!\n\nsenior = \\uc0c1\\uae09\\uc0dd\n\nnoob = \\ucd08\\ubcf4\n\ndisciplined = \\ud6c8\\ub828\\ub41c\n\npolyglot = \\ub2e4\\uc5b8\\uc5b4\\uc790 [...] notification.summary.heading = {0}\\uc5d0 \\ub300\\ud55c \\uc0c8\\ub85c\\uc6b4 \\uc778\\uae30 \\uc9c8\\ubb38 \\uc694\\uc57d\n\nnotification.mention.subject1 = {0}\\uc758 \\ub313\\uae00\\uc5d0\\uc11c \\uba58\\uc158\\ub418\\uc5c8\\uc2b5\\ub2c8\\ub2e4.\n\nnotification.mention.subject2 = {0}\\uc758 \\uac8c\\uc2dc\\ubb3c\\uc5d0\\uc11c \\uba58\\uc158\\ub418\\uc5c8\\uc2b5\\ub2c8\\ub2e4.\n\nnotification.mention.heading1 = {0} {1}\\uc774(\\uac00) \\ub313\\uae00\\uc5d0\\uc11c \\ub098\\ub97c \\uba58\\uc158\\ud588\\uc2b5\\ub2c8\\ub2e4.",
+      "score": 0.027066175,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.solitykorea.com/en/media/select_news_list_ajax",
+      "title": "Untitled",
+      "content": "## \\ud0c1\\uc6d4\\ud55c \\ubcf4\\uc548·\\ud3b8\\uc758\\uc131\\uc5d0 \\uc2a4\\ub9c8\\ud2b8\\ud648 \\uc5f0\\ub3d9\\uae4c\\uc9c0, \\ud504\\ub9ac\\ubbf8\\uc5c4 \\ub3c4\\uc5b4\\ub77d \\uc2e0\\uae30\\uc900 \\uc81c\\uc2dc<\\/h2>\\r\\n\\r\\n\n\n              <\\/p>\\r\\n\\r\\n [...] {\"result\":{\"page\":1,\"pagination\":\"\n\n ‹ First<\\/a><\\/li> 1(current)<\\/span><\\/li> [2<\\/a><\\/li> [3<\\/a><\\/li> [4<\\/a><\\/li> [><\\/a><\\/li> [Last ›<\\/a><\\/li><\\/ul>\",\"total\\_rows\":\"39\",\"total\\_page\":4,\"cur\\_page\":1,\"data\\_list\":[{\"no\":\"39\",\"SITE\\_DATA\\_MNG\\_SEQ\":\"974\",\"DOMAIN\\_TYPE\":\"MEDIA\",\"TITLE\":\"\\uc194\\ub9ac\\ud2f0, \\uc815\\ub9e5\\uc778\\uc2dd \\ub3c4\\uc5b4\\ub77d \\ucd9c\\uc2dc 6\\uac1c\\uc6d4 \\ub9cc\\uc5d0 5000\\ub300 \\ud310\\ub9e4 \\ub3cc\\ud30c\",\"CONTENT\":\"\n              \\r\\n",
+      "score": 0.026455775,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.ibookee.kr/home_api/v1/media/6",
+      "title": "Untitled",
+      "content": "\\ud611\\uc5c5\\uc0ac\\ub840\",\"news\\_source\":\"\\uc624\\ub9c8\\uc774\\ub274\\uc2a4\"},{\"document\\_srl\":\"32479\",\"module\\_srl\":\"13950\",\"category\\_srl\":\"0\",\"title\":\"(\\uc0ac)\\ud55c\\uad6d\\uc5ec\\uc131\\uac74\\ucd95\\uac00\\ud611\\ud68c \\uc8fc\\ud0dd\\uc5f0\\uad6c\\uc704\\uc6d0\\ud68c\\uc8fc\\uad00 \\uc2ec\\ud3ec\\uc9c0\\uc5c4 1\\ucc28 \\u201c\\uc548\\uc554\\uc0dd\\ud65c \\ub2f5\\uc0ac \\ubc0f \\uac04\\ub2f4\\ud68c\\u201d\",\"content\":\" [...] \\uc544\\uc774\\ubd80\\ud0a4 \\uc784\\uc9c1\\uc6d0\\ub4e4\\uc740 \\ub298 \\uacf5\\uac04\\uc774 \\uc8fc\\ub294 \\ubb34\\uac8c\\uc640 \\uac00\\uce58\\ub97c \\uace0\\ubbfc\\ud55c\\ub2e4. \\ubb3c\\ub9ac\\uc801 \\uacf5\\uac04\\uc744 \\ucc44\\uc6b0\\ub294 \\uac83\\uc740 \\uace7 \\uc0ac\\ub78c\\uc758 \\uc778\\uc2dd\\uc774\\uae30 \\ub54c\\ubb38\\uc774\\ub2e4. <\\/p>\\n\\n [...] \\ub354 \\ud070 \\ubb38\\uc81c\\ub294 \\uc774\\ub7ec\\ud55c \\uc8fc\\ud0dd\\uc5d0 \\uac70\\uc8fc\\ud558\\ub294 \\uc774\\ub4e4\\uc758 \\uc0c1\\ub2f9\\uc218\\uac00 \\uacbd\\uc81c\\uc801 \\uc5ec\\uac74\\uc774 \\ucde8\\uc57d\\ud55c \\uacc4\\uce35\\uc774\\ub77c\\ub294 \\uc810\\uc774\\ub2e4. \\ud53c\\ud574\\ub97c \\uc785\\uc5c8\\uc744 \\ub54c \\ub300\\uccb4 \\uac70\\ucc98\\ub97c \\ub9c8\\ub828\\ud558\\uae30\\uc870\\ucc28 \\uc27d\\uc9c0 \\uc54a\\uc544, \\uc218\\ud574\\uac00 \\uace7 \\uc0dd\\uc874\\uacfc \\uc9c1\\uacb0\\ub418\\ub294 \\uc704\\ud611\\uc73c\\ub85c",
+      "score": 0.023330769,
+      "raw_content": null
+    }
+  ],
+  "response_time": 1.31,
+  "request_id": "3ad331bb-bfc3-45af-a801-10c04e23a5f3"
+}
