@@ -1,56 +1,116 @@
 # Firm Summary Tools
 
-This directory contains tools for processing and analyzing research personnel allocation data.
+This directory contains utility scripts for processing and analyzing research personnel allocation data.
 
-## PDF to CSV Parser
+## Core Utilities
 
-### parse_pdf_to_csv.py
+### 1. PDF to CSV Parser (`parse_pdf_to_csv_extended.py`)
 
-A utility to parse the `2025_전문연구요원_인원배정.pdf` file and convert it to CSV format.
+Flexible PDF table parser with column mapping, city extraction, and multi-format support.
 
-#### Features
+**Features:**
+- Flexible column mapping and renaming
+- Automatic city extraction from Korean addresses
+- Smart header detection and fuzzy column matching
+- Supports various PDF table layouts
 
-- Extracts table data from all 53 pages of the PDF
-- Outputs CSV with the same structure as the original data file
-- Normalizes whitespace and handles embedded newlines
-- Validates data integrity during extraction
-
-#### Usage
-
+**Basic Usage:**
 ```bash
-python3 firm_summary/parse_pdf_to_csv.py
+# Parse with default settings
+python parse_pdf_to_csv_extended.py
+
+# Extract city from location field
+python parse_pdf_to_csv_extended.py --extract-city-from-location
+
+# Custom PDF with column mapping
+python parse_pdf_to_csv_extended.py \
+  --pdf data/custom.pdf \
+  --output data/output.csv \
+  --columns "번호" "회사명" "소재지" "도시"
 ```
 
-#### Output
+**See [README_PDF_PARSER.md](README_PDF_PARSER.md) for detailed documentation.**
 
-Creates: `data/2025_전문연구요원_인원배정_parsed.csv`
+### 2. Map Data Generator (`generate_firms_data.py`)
 
-The CSV contains the following columns:
-- **연번** (Number): Sequential ID number
-- **업종구분** (Industry Type): Type of research institution
-- **업체명** (Company Name): Name of the institution
-- **소재지** (Location): Address
-- **25년 배정인원** (2025 Allocation): Number of personnel allocated for 2025
-- **관할청** (Jurisdiction): Supervising authority
+Converts CSV firm data to JavaScript format with geocoded coordinates for map display.
 
-#### Dependencies
+**Features:**
+- Multi-tier geocoding (Kakao API, Nominatim, fallback)
+- Geocoding cache to avoid repeated API calls
+- Supports both 도로명주소 and 지번주소
+- Handles incomplete Korean addresses intelligently
 
-Requires `pdfplumber` library (included in requirements.txt):
-
+**Usage:**
 ```bash
-pip install pdfplumber
+# Interactive mode
+cd firm_summary
+python generate_firms_data.py
+
+# Use API geocoding (requires KAKAO_REST_API_KEY)
+python generate_firms_data.py --use-api
+
+# Use fallback coordinates only
+python generate_firms_data.py --no-api
 ```
 
-#### Validation
+**See [GEOCODING.md](GEOCODING.md) and [../KOREAN_MAPS_SETUP.md](../KOREAN_MAPS_SETUP.md) for detailed setup.**
 
-The parser has been validated to extract all 1895 data rows correctly from the PDF, matching the structure of the existing CSV file.
+### 3. Firm Webpage Finder (`find_firm_webpage.py`)
 
-## Other Tools
+Automatically finds and verifies firm official webpages using Tavily search and LLM verification.
 
-### generate_firms_data.py
+**Features:**
+- Tavily search integration
+- GPT-4 based verification with confidence scoring
+- Returns reasoning for webpage selection
+- Integrated into main search/summarize workflow
 
-Converts CSV data to JavaScript format for the web viewer with geocoded coordinates.
+**Standalone Usage:**
+```bash
+python find_firm_webpage.py "카카오"
+```
 
-### filter_seoul_firms.py
+**Integration:**
+```python
+from find_firm_webpage import find_firm_webpage, initialize_clients
 
-Filters firms located in Seoul from the dataset.
+tavily_client, openai_client = initialize_clients()
+result = find_firm_webpage("카카오", tavily_client, openai_client)
+```
+
+**See [README_WEBPAGE_FINDER.md](README_WEBPAGE_FINDER.md) for detailed documentation.**
+
+## Shell Scripts
+
+### example_pdf_parsing.sh
+
+Example commands demonstrating various PDF parsing scenarios.
+
+## Dependencies
+
+All dependencies are in the main `requirements.txt`:
+```bash
+pip install -r ../requirements.txt
+```
+
+Key packages:
+- `pdfplumber` - PDF table extraction
+- `geopy` - Address geocoding
+- `requests` - HTTP requests for Kakao API
+- `tavily` - Web search API
+- `openai` - LLM integration
+
+## Output Files
+
+Scripts generate various output files:
+
+- **CSV files**: `data/*.csv` - Parsed and filtered firm data
+- **Map data**: `../webapp/static/js/firms_data.js` - Geocoded JavaScript data
+- **Geocode cache**: `../data/geocode_cache.json` - Cached geocoding results
+
+## Related Documentation
+
+- [Main README](../README.md) - Project overview and setup
+- [KOREAN_MAPS_SETUP.md](../KOREAN_MAPS_SETUP.md) - Kakao Maps API setup guide
+- [IMPLEMENTATION_SUMMARY.md](../IMPLEMENTATION_SUMMARY.md) - Technical implementation details
