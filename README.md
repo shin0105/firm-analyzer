@@ -4,6 +4,11 @@ A configurable web-based tool for filtering, searching, and summarizing firm/com
 
 ## Features
 
+### 🎯 Dual-Page Workflow Interface
+- **Configuration Editor**: Dedicated page for editing all settings (filters, search, summaries, categories)
+- **Results Viewer**: Separate page for browsing and searching processed firm summaries
+- **Clean Navigation**: Easy switching between config, results, and map views
+
 ### 🔧 Configurable Filters
 - **Location-based filtering**: Filter firms by any location/region, not just Seoul
 - **Multiple filter types**: Contains, exact match, or starts-with patterns
@@ -131,8 +136,9 @@ python app.py
 Open http://localhost:8001 in your browser.
 
 Available pages:
-- 🔧 **Configuration/Summary**: `http://localhost:8001/`
-- 🚇 **Map-based Firm Viewer**: `http://localhost:8001/firms` (with subway lines)
+- 🔧 **Configuration Editor**: `http://localhost:8001/` or `http://localhost:8001/config/firm-summary` - Configure filters, search parameters, summary settings, and categories
+- 📊 **Results Viewer**: `http://localhost:8001/view/firm-summary` - View and browse processed firm summaries by category
+- 🗺️ **Map Viewer**: `http://localhost:8001/firms` - Interactive map showing firms with subway lines
 
 #### 4. Run Command Line Scripts
 
@@ -287,6 +293,27 @@ If you previously used conda, here's the mapping:
 ## Configuration
 
 All settings are stored in `config.json`. You can edit this file directly or use the web interface.
+
+### Using the Dual-Page Interface
+
+The application provides two dedicated pages for managing firm summaries:
+
+#### 1. Configuration Editor (`/` or `/config/firm-summary`)
+- **Summary Settings**: Configure output language, format, focus areas, and custom prompts
+- **Search Settings**: Set query templates, search depth, and max results
+- **Categories**: Define and manage categories with keywords for automatic classification
+- **Actions**: Save, reload, or reset configuration to defaults
+
+#### 2. Results Viewer (`/view/firm-summary`)
+- **Statistics Dashboard**: View total firms processed and counts per category
+- **Category Selection**: Browse firms by category with color-coded cards
+- **Search & Filter**: Search firms by name within selected category
+- **Summary Display**: View full markdown-rendered summaries with proper formatting
+
+**Navigation**: Both pages include a navigation bar for easy switching between:
+- ⚙️ Config Editor
+- 📊 View Results
+- 🗺️ Map Viewer
 
 ### Example Configuration
 
