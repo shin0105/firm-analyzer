@@ -185,7 +185,7 @@ def get_available_columns():
 
 @app.route("/")
 def index():
-    """Render main page - now redirects to config editor."""
+    """Render the firm summary configuration editor page."""
     return render_template("config_firm_summary.html")
 
 
