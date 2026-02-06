@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firm Summary Config - 기업 요약 설정</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        header .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        nav {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 20px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        nav a:hover {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        nav a.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #1e3c72;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .categories-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .category-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid var(--category-color, #607D8B);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .category-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: normal;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 Firm Summary Configuration</h1>
+            <p class="subtitle">기업 요약 설정 - 필터, 검색, 요약 옵션 구성</p>
+        </header>
+
+        <nav>
+            <a href="/" class="active">⚙️ Config Editor</a>
+            <a href="/view/firm-summary">📊 View Results</a>
+            <a href="/firms">🗺️ Map Viewer</a>
+        </nav>
+
+        <div class="content">
+            <div id="alert-container"></div>
+
+            <!-- Summary Configuration -->
+            <div class="section">
+                <h2 class="section-title">📝 Summary Settings</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="summary-language">Output Language</label>
+                        <select id="summary-language">
+                            <option value="Korean">한국어 (Korean)</option>
+                            <option value="English">English</option>
+                            <option value="Japanese">日本語 (Japanese)</option>
+                            <option value="Chinese">中文 (Chinese)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="output-format">Output Format</label>
+                        <select id="output-format">
+                            <option value="markdown">Markdown</option>
+                            <option value="json">JSON</option>
+                            <option value="text">Plain Text</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Focus Areas (요약에 포함할 내용)</label>
+                    <div class="checkbox-group" id="focus-areas">
+                        <label><input type="checkbox" value="business_areas"> 사업 분야</label>
+                        <label><input type="checkbox" value="research_technologies"> 연구 기술</label>
+                        <label><input type="checkbox" value="job_openings"> 채용 정보</label>
+                        <label><input type="checkbox" value="company_culture"> 회사 문화</label>
+                        <label><input type="checkbox" value="financials"> 재무 정보</label>
+                        <label><input type="checkbox" value="team_info"> 팀 구성</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="custom-prompt">Custom Prompt (선택사항)</label>
+                    <textarea id="custom-prompt" placeholder="예: '회사의 기술 스택과 연구 분야에 중점을 두어 요약해주세요.'"></textarea>
+                    <div class="help-text">비워두면 기본 프롬프트를 사용합니다.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="system-prompt">System Prompt (고급)</label>
+                    <textarea id="system-prompt" placeholder="You are a helpful assistant that summarizes company information in JSON format."></textarea>
+                    <div class="help-text">LLM의 역할과 동작을 정의합니다.</div>
+                </div>
+            </div>
+
+            <!-- Search Configuration -->
+            <div class="section">
+                <h2 class="section-title">🔎 Search Settings</h2>
+                
+                <div class="form-group">
+                    <label for="query-template">Search Query Template</label>
+                    <input type="text" id="query-template" placeholder="{firm_name} 채용 연구분야 사업내용">
+                    <div class="help-text">{firm_name}은 회사명으로 자동 치환됩니다.</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="search-depth">Search Depth</label>
+                        <select id="search-depth">
+                            <option value="basic">Basic (빠름)</option>
+                            <option value="advanced">Advanced (정확함)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="max-results">Max Results per Search</label>
+                        <input type="number" id="max-results" min="1" max="20" value="5">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="search-context">Persistent Search Context (선택사항)</label>
+                    <textarea id="search-context" placeholder="예: '채용, 연구 분야, 주요 기술 스택을 중심으로 검색'"></textarea>
+                    <div class="help-text">모든 검색 쿼리에 추가되는 컨텍스트입니다.</div>
+                </div>
+            </div>
+
+            <!-- Categories Configuration -->
+            <div class="section">
+                <h2 class="section-title">🏷️ Categories</h2>
+                <p style="color: #666; margin-bottom: 15px;">키워드를 기반으로 기업을 자동 분류합니다.</p>
+                
+                <div id="categories-list" class="categories-list"></div>
+
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="addCategory()">➕ Add Category</button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="section">
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="saveConfig()">💾 Save Configuration</button>
+                    <button class="btn btn-secondary" onclick="loadConfig()">🔄 Reload</button>
+                    <button class="btn btn-secondary" onclick="resetConfig()">⚠️ Reset to Default</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentConfig = {};
+
+        // Load configuration on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+        });
+
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                currentConfig = await response.json();
+                populateConfigUI(currentConfig);
+                showAlert('Configuration loaded successfully', 'success');
+            } catch (error) {
+                console.error('Error loading config:', error);
+                showAlert('Error loading configuration: ' + error.message, 'error');
+            }
+        }
+
+        function populateConfigUI(config) {
+            // Summary
+            const summary = config.summary || {};
+            document.getElementById('summary-language').value = summary.language || 'Korean';
+            document.getElementById('output-format').value = summary.output_format || 'markdown';
+            document.getElementById('custom-prompt').value = summary.custom_prompt || '';
+            document.getElementById('system-prompt').value = summary.system_prompt || '';
+
+            // Focus areas
+            const focusAreas = summary.focus_areas || [];
+            document.querySelectorAll('#focus-areas input[type="checkbox"]').forEach(cb => {
+                cb.checked = focusAreas.includes(cb.value);
+            });
+
+            // Search
+            const search = config.search || {};
+            document.getElementById('query-template').value = search.query_template || '{firm_name} 채용 연구분야 사업내용';
+            document.getElementById('search-depth').value = search.search_depth || 'advanced';
+            document.getElementById('max-results').value = search.max_results || 5;
+            document.getElementById('search-context').value = search.context || '';
+
+            // Categories
+            renderCategories(config.categories || []);
+        }
+
+        function renderCategories(categories) {
+            const container = document.getElementById('categories-list');
+            container.innerHTML = '';
+
+            categories.forEach((cat, index) => {
+                const div = document.createElement('div');
+                div.className = 'category-item';
+                div.style.setProperty('--category-color', cat.color || '#607D8B');
+                div.innerHTML = `
+                    <div class="category-header">
+                        <div style="flex: 1;">
+                            <input type="text" value="${cat.name}" class="category-name-input" 
+                                   style="font-weight: 600; border: 1px solid #ddd; border-radius: 4px; padding: 8px; font-size: 1.1rem; width: 100%;"
+                                   data-index="${index}" data-field="name">
+                            <input type="text" value="${cat.id}" class="category-id-input" 
+                                   style="font-size: 0.85rem; color: #666; border: 1px solid #ddd; border-radius: 4px; padding: 6px; margin-top: 5px; width: 100%;"
+                                   data-index="${index}" data-field="id" placeholder="Category ID">
+                        </div>
+                        <div class="category-actions">
+                            <input type="color" value="${cat.color || '#607D8B'}" 
+                                   data-index="${index}" data-field="color" title="카테고리 색상"
+                                   style="width: 50px; height: 40px; border: none; cursor: pointer;">
+                            <button class="btn btn-secondary" onclick="removeCategory(${index})" 
+                                    style="padding: 8px 16px; background: #f44336; color: white;">🗑️ Delete</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 10px; margin-top: 10px;">
+                        <label style="font-size: 0.9rem; margin-bottom: 5px;">Description</label>
+                        <input type="text" value="${cat.description || ''}" placeholder="카테고리 설명"
+                               data-index="${index}" data-field="description"
+                               style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100%;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-size: 0.9rem; margin-bottom: 5px;">Keywords (쉼표로 구분)</label>
+                        <input type="text" value="${(cat.keywords || []).join(', ')}" placeholder="금융, 투자, 핀테크"
+                               data-index="${index}" data-field="keywords"
+                               style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100%;">
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addCategory() {
+            const categories = currentConfig.categories || [];
+            categories.push({
+                id: 'new_category_' + Date.now(),
+                name: 'New Category',
+                description: '',
+                keywords: [],
+                color: '#607D8B'
+            });
+            currentConfig.categories = categories;
+            renderCategories(categories);
+        }
+
+        function removeCategory(index) {
+            if (confirm('이 카테고리를 삭제하시겠습니까?')) {
+                currentConfig.categories.splice(index, 1);
+                renderCategories(currentConfig.categories);
+            }
+        }
+
+        async function saveConfig() {
+            try {
+                // Collect summary settings
+                const focusAreas = Array.from(
+                    document.querySelectorAll('#focus-areas input[type="checkbox"]:checked')
+                ).map(cb => cb.value);
+
+                currentConfig.summary = {
+                    language: document.getElementById('summary-language').value,
+                    output_format: document.getElementById('output-format').value,
+                    custom_prompt: document.getElementById('custom-prompt').value,
+                    system_prompt: document.getElementById('system-prompt').value,
+                    focus_areas: focusAreas
+                };
+
+                // Collect search settings
+                currentConfig.search = {
+                    query_template: document.getElementById('query-template').value,
+                    search_depth: document.getElementById('search-depth').value,
+                    max_results: parseInt(document.getElementById('max-results').value),
+                    context: document.getElementById('search-context').value
+                };
+
+                // Collect category updates from inputs
+                document.querySelectorAll('.category-item input').forEach(input => {
+                    const index = parseInt(input.dataset.index);
+                    const field = input.dataset.field;
+                    if (!isNaN(index) && currentConfig.categories[index]) {
+                        if (field === 'keywords') {
+                            currentConfig.categories[index][field] = input.value
+                                .split(',')
+                                .map(k => k.trim())
+                                .filter(k => k);
+                        } else {
+                            currentConfig.categories[index][field] = input.value;
+                        }
+                    }
+                });
+
+                // Save to server
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentConfig)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('Configuration saved successfully!', 'success');
+                } else {
+                    showAlert('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error saving config:', error);
+                showAlert('Error saving configuration: ' + error.message, 'error');
+            }
+        }
+
+        async function resetConfig() {
+            if (!confirm('모든 설정을 기본값으로 초기화하시겠습니까?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/config/reset', { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    currentConfig = result.config;
+                    populateConfigUI(currentConfig);
+                    showAlert('Configuration reset to defaults', 'success');
+                } else {
+                    showAlert('Error resetting configuration', 'error');
+                }
+            } catch (error) {
+                console.error('Error resetting config:', error);
+                showAlert('Error resetting configuration: ' + error.message, 'error');
+            }
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.innerHTML = '';
+            container.appendChild(alert);
+
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
