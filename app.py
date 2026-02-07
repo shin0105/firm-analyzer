@@ -185,8 +185,20 @@ def get_available_columns():
 
 @app.route("/")
 def index():
-    """Render main page."""
-    return render_template("index.html")
+    """Render the firm summary configuration editor page."""
+    return render_template("config_firm_summary.html")
+
+
+@app.route("/config/firm-summary")
+def config_firm_summary():
+    """Render the firm summary configuration editor page."""
+    return render_template("config_firm_summary.html")
+
+
+@app.route("/view/firm-summary")
+def view_firm_summary():
+    """Render the firm summary results viewing page."""
+    return render_template("view_firm_summary.html")
 
 
 @app.route("/firms")
