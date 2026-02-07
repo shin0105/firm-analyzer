@@ -2,8 +2,8 @@
 """
 Unit tests for the extended PDF parser.
 
-Run with:
-    python3 firm_summary/test_pdf_parser.py
+Run from project root:
+    python3 tests/test_pdf_parser.py
 """
 
 import unittest
