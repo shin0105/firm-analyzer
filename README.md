@@ -2,6 +2,8 @@
 
 A configurable web-based tool for filtering, searching, and summarizing firm/company information. Originally designed for Korean professional researcher personnel allocation (전문연구요원 인원배정) data, now extended to be flexible for any user-defined use case.
 
+📖 **New!** See [FIRM_DATA_FORMAT.md](FIRM_DATA_FORMAT.md) for a comprehensive guide on CSV data format requirements and sample files in `data/samples/` directory.
+
 ## Features
 
 ### 🎯 Dual-Page Workflow Interface
@@ -289,6 +291,36 @@ If you previously used conda, here's the mapping:
 3. **Smaller Footprint**: No need for large conda distribution
 4. **Better for CI/CD**: Faster builds and deploys
 5. **Lockfiles**: `uv.lock` ensures reproducible installations
+
+## Firm List Data Format
+
+The application works with CSV files containing firm information. **Only 2 columns are required**:
+
+- `업체명` (Company Name) - Required for identification and search
+- `소재지` (Location) - Required for filtering and geocoding
+
+All other columns are optional and can be customized for your use case.
+
+### Sample CSV Files
+
+Example CSV files for different scenarios are provided in `data/samples/`:
+
+- `minimal_example.csv` - Just the 2 required columns
+- `standard_example.csv` - Common business fields
+- `research_institutions.csv` - Universities and labs
+- `startups.csv` - Startup companies
+- `international.csv` - Global companies
+- `manufacturing.csv` - Manufacturing firms
+- `healthcare.csv` - Healthcare institutions
+
+### Creating Your Own Firm List
+
+1. Create a CSV file with at least `업체명` and `소재지` columns
+2. Add any additional columns relevant to your use case
+3. Save with UTF-8 encoding to support Korean characters
+4. Use with the filter and search scripts
+
+**See [FIRM_DATA_FORMAT.md](FIRM_DATA_FORMAT.md) for detailed specifications and examples.**
 
 ## Configuration
 
