@@ -41,3 +41,5 @@ data/*_parsed_extended.csv
 
 # Flask
 instance/
+
+.env
