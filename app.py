@@ -14,7 +14,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, send_from_directory
+
+load_dotenv()
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
@@ -204,7 +207,8 @@ def view_firm_summary():
 @app.route("/firms")
 def firms_viewer():
     """Render the map-based firm viewer page."""
-    return render_template("firms_viewer.html", static_endpoint="viewer_static")
+    kakao_api_key = os.getenv("KAKAO_JS_API_KEY", "")
+    return render_template("firms_viewer.html", static_endpoint="viewer_static", kakao_api_key=kakao_api_key)
 
 
 @app.route("/api/config", methods=["GET"])
@@ -317,6 +321,18 @@ def serve_static(filename):
 def viewer_static(filename):
     """Serve assets for the map-based firm viewer."""
     return send_from_directory(str(VIEWER_STATIC_DIR), filename)
+
+
+@app.route("/favicon.ico")
+def favicon():
+    """Serve favicon."""
+    return send_from_directory("static", "favicon.png", mimetype="image/png")
+
+
+@app.route("/.well-known/appspecific/com.chrome.devtools.json")
+def chrome_devtools():
+    """Suppress Chrome devtools 404 error in logs."""
+    return jsonify({})
 
 
 def create_templates():
