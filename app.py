@@ -16,10 +16,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask_cors import CORS
 
 load_dotenv()
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
+CORS(app)
 
 CONFIG_PATH = "config.json"
 DEFAULT_INPUT_CSV = "2025_전문연구요원_인원배정.csv"
@@ -308,6 +310,48 @@ def run_summarize():
         return jsonify({"success": False, "error": "Script timed out"}), 408
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/upload-pdf", methods=["POST"])
+def upload_pdf():
+    """Upload a PDF file and parse it to CSV using LLM."""
+    if 'file' not in request.files:
+        return jsonify({"success": False, "error": "No file part"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"success": False, "error": "No selected file"}), 400
+        
+    if file and file.filename.endswith('.pdf'):
+        provider = request.form.get('provider', 'gemini')
+        # Save temporarily
+        temp_path = os.path.join(BASE_DIR, "data", file.filename)
+        os.makedirs(os.path.join(BASE_DIR, "data"), exist_ok=True)
+        file.save(temp_path)
+        
+        try:
+            # Import here to avoid circular imports or missing modules during init
+            import pdf_parser
+            
+            output_csv = pdf_parser.parse_pdf_to_csv(temp_path, provider=provider)
+            return jsonify({
+                "success": True, 
+                "message": f"Successfully parsed PDF to CSV.",
+                "output_file": output_csv
+            })
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+    
+    return jsonify({"success": False, "error": "Invalid file type, must be PDF"}), 400
+
+
+@app.route("/api/download/<filename>", methods=["GET"])
+def download_file(filename):
+    """Download a parsed CSV file."""
+    try:
+        return send_from_directory(os.path.join(BASE_DIR, "data"), filename, as_attachment=True)
+    except Exception as e:
+        return jsonify({"success": False, "error": "File not found"}), 404
 
 
 # Serve static files for the web app

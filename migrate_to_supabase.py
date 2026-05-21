@@ -1,0 +1,154 @@
+import os
+import json
+import pandas as pd
+import requests
+
+SUPABASE_URL = "***REMOVED***"
+SUPABASE_KEY = "***REMOVED***"
+
+def clean_str(val):
+    if val is None:
+        return None
+    return str(val).replace('\x00', '')
+
+def read_summaries():
+    summaries = {}
+    results_dir = 'firm_results'
+    if not os.path.exists(results_dir):
+        return summaries
+        
+    for category in os.listdir(results_dir):
+        cat_path = os.path.join(results_dir, category)
+        if not os.path.isdir(cat_path):
+            continue
+            
+        for firm_name in os.listdir(cat_path):
+            firm_path = os.path.join(cat_path, firm_name)
+            if not os.path.isdir(firm_path):
+                continue
+                
+            firm_data = {
+                'category': category,
+                'summary_md': None,
+                'raw_search': None,
+                'webpage': None
+            }
+            
+            # Read summary.md
+            summary_path = os.path.join(firm_path, 'summary.md')
+            if os.path.exists(summary_path):
+                with open(summary_path, 'r', encoding='utf-8') as f:
+                    firm_data['summary_md'] = clean_str(f.read())
+                    
+            # Read raw_search.json
+            raw_search_path = os.path.join(firm_path, 'raw_search.json')
+            if os.path.exists(raw_search_path):
+                with open(raw_search_path, 'r', encoding='utf-8') as f:
+                    try:
+                        content = f.read().replace('\x00', '')
+                        firm_data['raw_search'] = json.loads(content)
+                    except json.JSONDecodeError:
+                        pass
+                        
+            # Read webpage.json
+            webpage_path = os.path.join(firm_path, 'webpage.json')
+            if os.path.exists(webpage_path):
+                with open(webpage_path, 'r', encoding='utf-8') as f:
+                    try:
+                        content = f.read().replace('\x00', '')
+                        firm_data['webpage'] = json.loads(content)
+                    except json.JSONDecodeError:
+                        pass
+                        
+            summaries[firm_name] = firm_data
+            
+    return summaries
+
+def main():
+    print("Reading summaries...")
+    summaries = read_summaries()
+    
+    print("Reading CSV...")
+    df = pd.read_csv('data/2025_전문연구요원_인원배정_parsed.csv')
+    
+    # Map CSV columns to DB columns
+    records = []
+    
+    for idx, row in df.iterrows():
+        name = str(row.get('업체명', '')).strip()
+        if not name or name == 'nan':
+            continue
+            
+        record = {
+            'name': clean_str(name),
+            'industry': clean_str(row.get('업종구분', '')),
+            'location': clean_str(row.get('소재지', '')),
+            'allocation_2025': clean_str(row.get('25년 배정인원', '')),
+            'jurisdiction': clean_str(row.get('관할청', '')),
+            'category': None,
+            'summary_md': None,
+            'raw_search': None,
+            'webpage': None
+        }
+        
+        # Merge with summary if exists
+        if name in summaries:
+            record.update(summaries[name])
+            del summaries[name]
+            
+        records.append(record)
+        
+    # Add any remaining summaries that weren't in CSV
+    for name, sum_data in summaries.items():
+        record = {
+            'name': clean_str(name),
+            'industry': None,
+            'location': None,
+            'allocation_2025': None,
+            'jurisdiction': None,
+            'category': None,
+            'summary_md': None,
+            'raw_search': None,
+            'webpage': None
+        }
+        record.update(sum_data)
+        records.append(record)
+        
+    print(f"Total records parsed: {len(records)}")
+    
+    # Deduplicate by name
+    unique_records = {}
+    for r in records:
+        unique_records[r['name']] = r
+    records = list(unique_records.values())
+    
+    print(f"Total unique records to insert: {len(records)}")
+    
+    # Insert via Supabase REST API
+    headers = {
+        'apikey': SUPABASE_KEY,
+        'Authorization': f'Bearer {SUPABASE_KEY}',
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal, resolution=merge-duplicates'
+    }
+    
+    chunk_size = 100
+    for i in range(0, len(records), chunk_size):
+        chunk = records[i:i+chunk_size]
+        print(f"Inserting {i} to {i+len(chunk)}...")
+        
+        url = f"{SUPABASE_URL}/rest/v1/firms?on_conflict=name"
+        
+        # Remove \u0000 from the JSON string before sending
+        chunk_str = json.dumps(chunk).replace('\\u0000', '')
+        
+        response = requests.post(url, headers=headers, data=chunk_str)
+        
+        if response.status_code not in (200, 201, 204):
+            print(f"Failed to insert chunk: {response.status_code}")
+            print(response.text)
+            
+    print("Migration completed successfully!")
+
+if __name__ == "__main__":
+    main()

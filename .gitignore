@@ -43,3 +43,4 @@ data/*_parsed_extended.csv
 instance/
 
 .env
+/.agents
