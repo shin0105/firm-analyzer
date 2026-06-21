@@ -214,19 +214,17 @@ Use any tool (Excel, Google Sheets, Python, etc.) to create a CSV file:
 
 ### Step 3: Configure Filters
 
-Edit `config.json` to specify which column to filter on:
+Edit `config.yml` to specify which column to filter on:
 
-```json
-{
-  "filters": {
-    "location": {
-      "enabled": true,
-      "column": "소재지",
-      "type": "contains",
-      "values": ["서울", "경기"]
-    }
-  }
-}
+```yaml
+filters:
+  location:
+    enabled: true
+    column: 소재지
+    type: contains
+    values:
+    - 서울
+    - 경기
 ```
 
 **Filter Column Options**:
@@ -378,15 +376,15 @@ Sample CSV files are provided in the `data/samples/` directory:
 
 ## Additional Resources
 
-- [Main README](README.md) - General application usage
-- [config.json](config.json) - Configuration examples
-- [filter_firms.py](filter_firms.py) - Filtering script
-- [search_summarize.py](search_summarize.py) - Search and summarize script
-- [PDF Parser Guide](firm_summary/README_PDF_PARSER.md) - Converting PDF to CSV
+- [Main README](../README.md) - General application usage
+- [config.yml](../config.yml) - Configuration examples
+- [filter_firms.py](../filter_firms.py) - Filtering script
+- [search_summarize.py](../search_summarize.py) - Search and summarize script
+- [PDF Parser Guide](README_PDF_PARSER.md) - Converting PDF to CSV
 
 ## Support
 
 For questions or issues:
 - Check existing sample CSV files in `data/samples/`
-- Review the main README.md
+- Review the main [README.md](../README.md)
 - Open a GitHub issue

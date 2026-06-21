@@ -13,6 +13,10 @@ Usage:
 import os
 import sys
 import requests
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
 
 # Get API key from environment
 KAKAO_API_KEY = os.environ.get('KAKAO_REST_API_KEY', '')

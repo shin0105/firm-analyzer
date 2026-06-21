@@ -251,6 +251,46 @@
         <div class="content">
             <div id="alert-container"></div>
 
+            <!-- General Configuration -->
+            <div class="section">
+                <h2 class="section-title">⚙️ General Settings</h2>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="app-data-source">Data Source</label>
+                        <select id="app-data-source">
+                            <option value="csv">Local CSV/Markdown</option>
+                            <option value="supabase">Supabase</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="app-model-selection">Model Selection</label>
+                        <select id="app-model-selection">
+                            <option value="gpt-4o">gpt-4o</option>
+                            <option value="gpt-4o-mini">gpt-4o-mini</option>
+                            <option value="gemini-3.1-flash">gemini-3.1-flash</option>
+                            <option value="gemini-3.1-pro">gemini-3.1-pro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Kakao Map UI</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="app-enable-kakao-map"> Enable Kakao Map in Viewer</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="app-summary-config-path">Summary Config File (Optional)</label>
+                        <input type="text" id="app-summary-config-path" placeholder="e.g., summary_config.yml">
+                        <div class="help-text">Point to an external YAML file for summary & categories</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Summary Configuration -->
             <div class="section">
                 <h2 class="section-title">📝 Summary Settings</h2>
@@ -377,6 +417,13 @@
         }
 
         function populateConfigUI(config) {
+            // App settings
+            const appSettings = config.app || {};
+            document.getElementById('app-data-source').value = appSettings.data_source || 'csv';
+            document.getElementById('app-model-selection').value = appSettings.model_selection || 'gpt-4o';
+            document.getElementById('app-enable-kakao-map').checked = appSettings.enable_kakao_map !== false; // default true
+            document.getElementById('app-summary-config-path').value = appSettings.summary_config_path || '';
+
             // Summary
             const summary = config.summary || {};
             document.getElementById('summary-language').value = summary.language || 'Korean';
@@ -466,6 +513,14 @@
 
         async function saveConfig() {
             try {
+                // Collect app settings
+                currentConfig.app = {
+                    data_source: document.getElementById('app-data-source').value,
+                    model_selection: document.getElementById('app-model-selection').value,
+                    enable_kakao_map: document.getElementById('app-enable-kakao-map').checked,
+                    summary_config_path: document.getElementById('app-summary-config-path').value
+                };
+
                 // Collect summary settings
                 const focusAreas = Array.from(
                     document.querySelectorAll('#focus-areas input[type="checkbox"]:checked')

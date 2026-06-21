@@ -299,6 +299,12 @@
 
             <!-- Category Selector -->
             <div class="category-selector">
+                <label for="source-select">Data Source:</label>
+                <select id="source-select" onchange="loadResultsSummary(); loadCategoryFirms();" style="margin-bottom: 15px;">
+                    <option value="supabase" selected>Supabase Database</option>
+                    <option value="local">Local Files</option>
+                </select>
+                
                 <label for="category-select">Select Category to View:</label>
                 <select id="category-select" onchange="loadCategoryFirms()">
                     <option value="">-- Select a Category --</option>
@@ -356,8 +362,9 @@
         }
 
         async function loadResultsSummary() {
+            const source = document.getElementById('source-select') ? document.getElementById('source-select').value : 'supabase';
             try {
-                const response = await fetch('/api/results/summary');
+                const response = await fetch(`/api/results/summary?source=${source}`);
                 const summary = await response.json();
                 
                 // Update total firms
@@ -421,8 +428,10 @@
             document.getElementById('results-container').innerHTML = '<div class="loading">Loading firms</div>';
             document.getElementById('search-box').style.display = 'block';
 
+            const source = document.getElementById('source-select') ? document.getElementById('source-select').value : 'supabase';
+
             try {
-                const response = await fetch(`/api/results/${categoryId}`);
+                const response = await fetch(`/api/results/${categoryId}?source=${source}`);
                 const data = await response.json();
                 allFirms = data.firms || [];
                 filteredFirms = allFirms;

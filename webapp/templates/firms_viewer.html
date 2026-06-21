@@ -82,8 +82,12 @@
         </div>
 
         <div class="content-wrapper">
+            {% if enable_kakao_map %}
             <div id="map"></div>
-            <div class="info-panel">
+            {% else %}
+            <div id="map" style="display: none;"></div>
+            {% endif %}
+            <div class="info-panel" {% if not enable_kakao_map %}style="width: 100%; max-width: none;"{% endif %}>
                 <div class="stats">
                     <div class="stat-item">
                         <span class="stat-label">총 업체 수</span>
@@ -102,7 +106,12 @@
         </div>
     </div>
 
+    {% if enable_kakao_map %}
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_api_key }}&libraries=services,clusterer&autoload=false"></script>
+    {% endif %}
+    <script>
+        window.ENABLE_KAKAO_MAP = {{ 'true' if enable_kakao_map else 'false' }};
+    </script>
     <script src="{{ url_for(static_endpoint|default('static'), filename='js/firms_data.js') }}"></script>
     <script src="{{ url_for(static_endpoint|default('static'), filename='js/firms_viewer.js') }}"></script>
 </body>

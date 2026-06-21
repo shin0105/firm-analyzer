@@ -2,7 +2,7 @@
 
 A configurable web-based tool for filtering, searching, and summarizing firm/company information. Originally designed for Korean professional researcher personnel allocation (전문연구요원 인원배정) data, now extended to be flexible for any user-defined use case.
 
-📖 **New!** See [FIRM_DATA_FORMAT.md](FIRM_DATA_FORMAT.md) for a comprehensive guide on CSV data format requirements and sample files in `data/samples/` directory.
+📖 **New!** See [FIRM_DATA_FORMAT.md](docs/FIRM_DATA_FORMAT.md) for a comprehensive guide on CSV data format requirements and sample files in `data/samples/` directory.
 
 ## Features
 
@@ -47,7 +47,7 @@ A configurable web-based tool for filtering, searching, and summarizing firm/com
 - **Dual address format support**: Works with both 도로명주소 (road name) and 지번주소 (lot number) addresses
 - **Interactive map viewer**: View firms on an accurate map with exact locations
 
-📖 **See [Korean Maps Setup Guide](KOREAN_MAPS_SETUP.md) for detailed instructions on getting accurate map locations.**
+📖 **See [Korean Maps Setup Guide](docs/KOREAN_MAPS_SETUP.md) for detailed instructions on getting accurate map locations.**
 
 ## Quick Start
 
@@ -198,7 +198,7 @@ python search_summarize.py --dry-run
 python search_summarize.py --limit 10
 
 # Use custom config
-python search_summarize.py --config my_config.json
+python search_summarize.py --config my_config.yml
 ```
 
 ### Parse PDF to CSV (New!)
@@ -222,7 +222,7 @@ python firm_summary/parse_pdf_to_csv_extended.py \
   --extract-city-from-location
 
 # For detailed documentation
-See firm_summary/README_PDF_PARSER.md
+See [docs/README_PDF_PARSER.md](docs/README_PDF_PARSER.md)
 ```
 
 ## UV Package Management Guide
@@ -320,11 +320,11 @@ Example CSV files for different scenarios are provided in `data/samples/`:
 3. Save with UTF-8 encoding to support Korean characters
 4. Use with the filter and search scripts
 
-**See [FIRM_DATA_FORMAT.md](FIRM_DATA_FORMAT.md) for detailed specifications and examples.**
+**See [FIRM_DATA_FORMAT.md](docs/FIRM_DATA_FORMAT.md) for detailed specifications and examples.**
 
 ## Configuration
 
-All settings are stored in `config.json`. You can edit this file directly or use the web interface.
+All settings are stored in `config.yml`. You can edit this file directly or use the web interface.
 
 ### Using the Dual-Page Interface
 
@@ -457,28 +457,37 @@ To force re-geocoding, delete the cache file before running the script.
 
 ```
 firm_websearch/
-├── app.py                  # Flask web application
+├── app.py                  # Flask web application entry point
 ├── filter_firms.py         # Configurable filter script
 ├── search_summarize.py     # Configurable search & summarize script
-├── config.json             # Configuration file
-├── templates/
-│   └── index.html          # Web interface template
-├── firm_results/           # Output directory
-│   ├── finance/            # Firms classified as finance
-│   ├── ai_ml/              # Firms classified as AI/ML
+├── pdf_parser.py           # LLM-based PDF table parser
+├── migrate_to_supabase.py  # Supabase database synchronization script
+├── config.yml              # Primary configuration file (YAML)
+├── docs/                   # Documentation and guides
+│   ├── ENGINES_GUIDE.md    # Multi-language guide for all 7 engines
+│   ├── FIRM_DATA_FORMAT.md # Guide on CSV data format specifications
+│   ├── KOREAN_MAPS_SETUP.md # Detailed Kakao Maps geocoding setup guide
+│   ├── SUPABASE_SETUP.md   # Supabase backend deployment guide
+│   ├── GEOCODING.md        # Technical explanation of geocoding strategies
+│   ├── README_PDF_PARSER.md # Extended PDF parser usage documentation
+│   └── README_WEBPAGE_FINDER.md # Webpage finder module documentation
+├── templates/              # Flask Jinja2 templates (legacy backend-served)
+├── static/                 # Flask static files
+├── webapp/                 # Flask webapp server directory (static & templates)
+├── frontend/               # Modern Vite + React frontend codebase
+├── firm_results/           # Output directory for local JSON/MD summaries
+│   ├── finance/            # Classified firms (Finance/Quant)
+│   ├── ai_ml/              # Classified firms (AI/ML)
 │   └── general/            # General category firms
-├── firm_summary/
-│   └── generate_firms_data.py  # Geocode addresses and generate map data
-├── data/
-│   └── geocode_cache.json  # Cached geocoding results
-├── 1_filter_seoul.py       # Legacy: Seoul-only filter
-├── 2_search_summarize.py   # Legacy: Fixed categories
-└── README.md
+├── firm_summary/           # Firm data helper modules
+│   ├── find_firm_webpage.py # Independent webpage finder script
+│   ├── generate_firms_data.py # Geocoding script producing map markers JS
+│   └── parse_pdf_to_csv_extended.py # Rule-based PDF table parser
+├── data/                   # Data directory (CSV resources and caches)
+│   ├── samples/            # Pre-validated sample CSV files
+│   └── geocode_cache.json  # Cached address geocoding results
+└── README.md               # Main readme documentation
 ```
-
-## Legacy Scripts
-
-The original scripts (`1_filter_seoul.py` and `2_search_summarize.py`) are preserved for backwards compatibility. The new scripts (`filter_firms.py`, `search_summarize.py`, `app.py`) provide enhanced configurability.
 
 ## API Endpoints (Web Interface)
 
@@ -506,121 +515,11 @@ Create categories for different investment sectors and analyze company financial
 
 ### 4. Regional Business Analysis
 Filter by multiple regions and compare distributions.
-# Firm WebSearch
 
-A web application for viewing and searching 2025 전문연구요원 인원배정 업체 현황 (Research Personnel Assignment Companies).
+---
 
-## Project Structure
+## Engines Guide / 엔진 사용 가이드
 
-```
-firm_websearch/
-├── data/                          # Data files (CSV)
-│   ├── 2025_전문연구요원_인원배정.csv
-│   └── seoul_firms.csv
-├── firm_summary/                  # Firm data processing scripts
-│   ├── 1_filter_seoul.py          # Filter Seoul-based firms
-│   ├── 2_search_summarize.py      # Search and summarize firm info
-│   ├── filter_seoul_firms.py      # Alternative filtering script
-│   ├── generate_firms_data.py     # Generate JS data for webapp
-│   └── test_url.py                # URL testing utility
-├── firm_results/                  # Results from firm summarization
-│   ├── finance/                   # Finance/Quant related firms
-│   └── general/                   # General firms
-├── webapp/                        # Flask web application
-│   ├── app.py                     # Flask application entry point
-│   ├── static/
-│   │   ├── css/                   # Stylesheets
-│   │   │   ├── firm_viewer.css
-│   │   │   └── firms_viewer.css
-│   │   └── js/                    # JavaScript files
-│   │       ├── firm_viewer.js
-│   │       ├── firms_viewer.js
-│   │       └── firms_data.js
-│   └── templates/                 # Jinja2 templates
-│       ├── firm_viewer.html
-│       └── firms_viewer.html
-├── requirements.txt               # Python dependencies
-└── README.md                      # This file
-```
+For a detailed guide on how each processing and execution engine works, their parameters, and commands to run them via CLI, see **[Engines Guide (docs/ENGINES_GUIDE.md)](docs/ENGINES_GUIDE.md)**.
 
-## Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/shin0105/firm_websearch.git
-   cd firm_websearch
-   ```
-
-2. Create a virtual environment (recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   # or
-   venv\Scripts\activate     # Windows
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## Usage
-
-### Running the Web Application
-
-Start the Flask development server:
-
-```bash
-cd webapp
-python app.py
-```
-
-For development with debug mode enabled:
-
-```bash
-cd webapp
-FLASK_DEBUG=1 python app.py
-```
-
-Then open your browser to:
-- `http://localhost:5000/` - Main firms viewer
-- `http://localhost:5000/firm-viewer` - Alternative firm viewer
-
-### Running Firm Summary Scripts
-
-1. **Filter Seoul firms:**
-   ```bash
-   cd firm_summary
-   python 1_filter_seoul.py
-   ```
-
-2. **Search and summarize firms:**
-   ```bash
-   python 2_search_summarize.py
-   ```
-
-3. **Generate JS data for webapp:**
-   ```bash
-   python generate_firms_data.py
-   ```
-
-## Environment Variables
-
-Create a `.env` file with the following variables for the summary scripts:
-
-```
-TAVILY_API_KEY=your_tavily_api_key
-GITHUB_TOKEN=your_github_token
-```
-
-## Features
-
-- Interactive map showing firm locations across Korea
-- Region-based filtering (Seoul, Busan, etc.)
-- Seoul district (구) filtering
-- Search functionality
-- Responsive design for mobile and desktop
-
-## License
-
-MIT License
+각 처리 및 실행 엔진의 상세 작동 원리, 파라미터, 명령행 실행 방법 등은 **[엔진 사용 가이드 (docs/ENGINES_GUIDE.md)](docs/ENGINES_GUIDE.md)**를 참고하세요.

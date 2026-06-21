@@ -1,0 +1,66 @@
+categories:
+- color: '#4CAF50'
+  description: Finance, Financial Services, Quant Trading
+  id: finance
+  keywords:
+  - 금융
+  - 투자
+  - 자산운용
+  - 핀테크
+  - fintech
+  - quant
+  - trading
+  name: Finance/Quant
+- color: '#2196F3'
+  description: Healthcare, Biotechnology, Medical
+  id: healthcare
+  keywords:
+  - 의료
+  - 바이오
+  - 헬스케어
+  - 제약
+  - 병원
+  - 의학
+  name: Healthcare/Bio
+- color: '#9C27B0'
+  description: Artificial Intelligence, Machine Learning, Deep Learning
+  id: ai_ml
+  keywords:
+  - 인공지능
+  - AI
+  - 머신러닝
+  - 딥러닝
+  - 자연어처리
+  - NLP
+  name: AI/Machine Learning
+- color: '#607D8B'
+  description: Other industries
+  id: general
+  keywords: []
+  name: General
+filters:
+  location:
+    enabled: true
+    type: contains
+    column: 소재지
+    values:
+    - 서울
+output:
+  create_csv_summary: true
+  directory: firm_results
+search:
+  query_template: '{firm_name} 채용 연구분야 사업내용'
+  search_depth: advanced
+  max_results: 5
+  context: ''
+  find_webpage: true
+summary:
+  custom_prompt: ''
+  focus_areas:
+  - business_areas
+  - research_technologies
+  - job_openings
+  language: Korean
+  output_format: markdown
+  system_prompt: You are a helpful assistant that summarizes company information in
+    JSON format.

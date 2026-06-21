@@ -12,18 +12,26 @@ import json
 import os
 import subprocess
 import sys
+import yaml
 from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, send_from_directory
 from flask_cors import CORS
+from supabase import create_client, Client
 
 load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase_client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 CORS(app)
 
-CONFIG_PATH = "config.json"
+CONFIG_PATH = "config.yml"
 DEFAULT_INPUT_CSV = "2025_전문연구요원_인원배정.csv"
 BASE_DIR = Path(__file__).parent
 VIEWER_TEMPLATE_DIR = BASE_DIR / "webapp" / "templates"
@@ -40,22 +48,34 @@ DRY_RUN_TIMEOUT = int(os.getenv("DRY_RUN_TIMEOUT", "60"))
 
 
 def load_config():
-    """Load configuration from JSON file."""
+    """Load configuration from YAML file, with fallback to JSON."""
     if os.path.exists(CONFIG_PATH):
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+            return yaml.safe_load(f) or get_default_config()
+    elif os.path.exists("config.json"):
+        with open("config.json", "r", encoding="utf-8") as f:
+            config = json.load(f)
+        # Migrate to YAML
+        save_config(config)
+        return config
     return get_default_config()
 
 
 def save_config(config):
-    """Save configuration to JSON file."""
+    """Save configuration to YAML file."""
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump(config, f, ensure_ascii=False, indent=2)
+        yaml.dump(config, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
 
 def get_default_config():
     """Return default configuration."""
     return {
+        "app": {
+            "data_source": "csv",
+            "enable_kakao_map": True,
+            "model_selection": "gpt-4o",
+            "summary_config_path": ""
+        },
         "filters": {
             "location": {
                 "enabled": True,
@@ -210,7 +230,9 @@ def view_firm_summary():
 def firms_viewer():
     """Render the map-based firm viewer page."""
     kakao_api_key = os.getenv("KAKAO_JS_API_KEY", "")
-    return render_template("firms_viewer.html", static_endpoint="viewer_static", kakao_api_key=kakao_api_key)
+    config = load_config()
+    enable_kakao_map = config.get("app", {}).get("enable_kakao_map", True)
+    return render_template("firms_viewer.html", static_endpoint="viewer_static", kakao_api_key=kakao_api_key, enable_kakao_map=enable_kakao_map)
 
 
 @app.route("/api/config", methods=["GET"])
@@ -242,6 +264,35 @@ def reset_config():
 @app.route("/api/results/summary", methods=["GET"])
 def results_summary():
     """Get summary of processed results."""
+    config = load_config()
+    source = config.get("app", {}).get("data_source", "csv")
+    if source == "supabase" and supabase_client:
+        try:
+            response = supabase_client.table("firms").select("category").execute()
+            data = response.data
+            
+            config = load_config()
+            categories = config.get("categories", [])
+            summary = {}
+            total = len(data)
+            
+            for cat in categories:
+                summary[cat["id"]] = {
+                    "name": cat["name"],
+                    "count": 0,
+                    "color": cat.get("color", "#607D8B"),
+                }
+                
+            for row in data:
+                cat_id = row.get("category")
+                if cat_id and cat_id in summary:
+                    summary[cat_id]["count"] += 1
+                    
+            summary["total"] = total
+            return jsonify(summary)
+        except Exception as e:
+            print(f"Error fetching from supabase: {e}")
+            
     summary = get_results_summary()
     return jsonify(summary)
 
@@ -249,6 +300,22 @@ def results_summary():
 @app.route("/api/results/<category_id>", methods=["GET"])
 def results_by_category(category_id):
     """Get firms in a category."""
+    config = load_config()
+    source = config.get("app", {}).get("data_source", "csv")
+    if source == "supabase" and supabase_client:
+        try:
+            response = supabase_client.table("firms").select("name, summary_md, webpage").eq("category", category_id).execute()
+            firms = []
+            for row in response.data:
+                firms.append({
+                    "name": row.get("name"),
+                    "summary": row.get("summary_md") or "No summary available"
+                })
+            firms = sorted(firms, key=lambda x: x["name"])
+            return jsonify({"firms": firms, "count": len(firms)})
+        except Exception as e:
+            print(f"Error fetching from supabase: {e}")
+            
     firms = get_firms_by_category(category_id)
     return jsonify({"firms": firms, "count": len(firms)})
 

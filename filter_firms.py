@@ -11,14 +11,21 @@ import json
 import os
 import re
 import sys
+import yaml
 
 import pandas as pd
 
 
-def load_config(config_path: str = "config.json") -> dict:
-    """Load configuration from JSON file."""
-    if os.path.exists(config_path):
+def load_config(config_path: str = "config.yml") -> dict:
+    """Load configuration from YAML or JSON file."""
+    if os.path.exists(config_path) and config_path.endswith(('.yml', '.yaml')):
         with open(config_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    elif os.path.exists(config_path) and config_path.endswith('.json'):
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    elif os.path.exists("config.json"):
+        with open("config.json", "r", encoding="utf-8") as f:
             return json.load(f)
     return {}
 
@@ -65,7 +72,7 @@ def main():
     )
     parser.add_argument(
         "-c", "--config",
-        default="config.json",
+        default="config.yml",
         help="Configuration file path"
     )
     parser.add_argument(

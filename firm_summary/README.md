@@ -29,7 +29,7 @@ python parse_pdf_to_csv_extended.py \
   --columns "번호" "회사명" "소재지" "도시"
 ```
 
-**See [README_PDF_PARSER.md](README_PDF_PARSER.md) for detailed documentation.**
+**See [README_PDF_PARSER.md](../docs/README_PDF_PARSER.md) for detailed documentation.**
 
 ### 2. Map Data Generator (`generate_firms_data.py`)
 
@@ -54,7 +54,7 @@ python generate_firms_data.py --use-api
 python generate_firms_data.py --no-api
 ```
 
-**See [GEOCODING.md](GEOCODING.md) and [../KOREAN_MAPS_SETUP.md](../KOREAN_MAPS_SETUP.md) for detailed setup.**
+**See [GEOCODING.md](../docs/GEOCODING.md) and [KOREAN_MAPS_SETUP.md](../docs/KOREAN_MAPS_SETUP.md) for detailed setup.**
 
 ### 3. Firm Webpage Finder (`find_firm_webpage.py`)
 
@@ -79,7 +79,7 @@ tavily_client, openai_client = initialize_clients()
 result = find_firm_webpage("카카오", tavily_client, openai_client)
 ```
 
-**See [README_WEBPAGE_FINDER.md](README_WEBPAGE_FINDER.md) for detailed documentation.**
+**See [README_WEBPAGE_FINDER.md](../docs/README_WEBPAGE_FINDER.md) for detailed documentation.**
 
 ## Shell Scripts
 
@@ -112,5 +112,5 @@ Scripts generate various output files:
 ## Related Documentation
 
 - [Main README](../README.md) - Project overview and setup
-- [KOREAN_MAPS_SETUP.md](../KOREAN_MAPS_SETUP.md) - Kakao Maps API setup guide
-- [IMPLEMENTATION_SUMMARY.md](../IMPLEMENTATION_SUMMARY.md) - Technical implementation details
+- [KOREAN_MAPS_SETUP.md](../docs/KOREAN_MAPS_SETUP.md) - Kakao Maps API setup guide
+- [ENGINES_GUIDE.md](../docs/ENGINES_GUIDE.md) - Multi-engine CLI runner guide

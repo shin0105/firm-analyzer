@@ -1,10 +1,13 @@
 import os
 import json
 import pandas as pd
-import requests
+from dotenv import load_dotenv
+from supabase import create_client, Client
 
-SUPABASE_URL = "***REMOVED***"
-SUPABASE_KEY = "***REMOVED***"
+load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL", "***REMOVED***")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "***REMOVED***")
 
 def clean_str(val):
     if val is None:
@@ -124,29 +127,26 @@ def main():
     
     print(f"Total unique records to insert: {len(records)}")
     
-    # Insert via Supabase REST API
-    headers = {
-        'apikey': SUPABASE_KEY,
-        'Authorization': f'Bearer {SUPABASE_KEY}',
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal, resolution=merge-duplicates'
-    }
+    # Initialize Supabase Client
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print("Error: SUPABASE_URL and SUPABASE_KEY must be set in environment.")
+        return
+        
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     
     chunk_size = 100
     for i in range(0, len(records), chunk_size):
         chunk = records[i:i+chunk_size]
         print(f"Inserting {i} to {i+len(chunk)}...")
         
-        url = f"{SUPABASE_URL}/rest/v1/firms?on_conflict=name"
-        
         # Remove \u0000 from the JSON string before sending
-        chunk_str = json.dumps(chunk).replace('\\u0000', '')
+        chunk_cleaned = json.loads(json.dumps(chunk).replace('\\u0000', ''))
         
-        response = requests.post(url, headers=headers, data=chunk_str)
-        
-        if response.status_code not in (200, 201, 204):
-            print(f"Failed to insert chunk: {response.status_code}")
-            print(response.text)
+        try:
+            # Use upsert to handle conflicts on 'name'
+            response = supabase.table("firms").upsert(chunk_cleaned, on_conflict="name").execute()
+        except Exception as e:
+            print(f"Failed to insert chunk: {e}")
             
     print("Migration completed successfully!")
 

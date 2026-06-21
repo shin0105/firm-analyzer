@@ -11,7 +11,7 @@ let searchTimeout = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    kakaoMapAvailable = typeof kakao !== 'undefined';
+    kakaoMapAvailable = window.ENABLE_KAKAO_MAP && typeof kakao !== 'undefined';
     
     // Always load the firm list and setup events immediately, independent of the map
     loadFirmsData();

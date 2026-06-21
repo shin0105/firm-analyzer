@@ -274,14 +274,14 @@ Before using your CSV file, check:
 
 ## Additional Resources
 
-- [FIRM_DATA_FORMAT.md](../../FIRM_DATA_FORMAT.md) - Complete data format guide
+- [FIRM_DATA_FORMAT.md](../../docs/FIRM_DATA_FORMAT.md) - Complete data format guide
 - [README.md](../../README.md) - Main application documentation
-- [config.json](../../config.json) - Configuration examples
+- [config.yml](../../config.yml) - Configuration examples
 
 ## Questions?
 
 If you need help:
-1. Check the main [FIRM_DATA_FORMAT.md](../../FIRM_DATA_FORMAT.md) guide
+1. Check the main [FIRM_DATA_FORMAT.md](../../docs/FIRM_DATA_FORMAT.md) guide
 2. Look at the sample files in this directory
 3. Review the main [README.md](../../README.md)
 4. Open a GitHub issue with your question

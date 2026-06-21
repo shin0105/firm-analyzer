@@ -13,6 +13,7 @@ import os
 import re
 import sys
 import time
+import yaml
 from typing import Optional
 
 import pandas as pd
@@ -46,10 +47,27 @@ DEFAULT_SYSTEM_PROMPT = (
 )
 
 
-def load_config(config_path: str = "config.json") -> dict:
-    """Load configuration from JSON file."""
-    if os.path.exists(config_path):
+def load_config(config_path: str = "config.yml") -> dict:
+    """Load configuration from YAML or JSON file."""
+    if os.path.exists(config_path) and config_path.endswith(('.yml', '.yaml')):
         with open(config_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+            
+            # Load external summary config if specified
+            summary_path = config.get("app", {}).get("summary_config_path")
+            if summary_path and os.path.exists(summary_path):
+                with open(summary_path, "r", encoding="utf-8") as sf:
+                    summary_config = yaml.safe_load(sf) or {}
+                    if "summary" in summary_config:
+                        config["summary"] = summary_config["summary"]
+                    if "categories" in summary_config:
+                        config["categories"] = summary_config["categories"]
+            return config
+    elif os.path.exists(config_path) and config_path.endswith('.json'):
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    elif os.path.exists("config.json"):
+        with open("config.json", "r", encoding="utf-8") as f:
             return json.load(f)
     return get_default_config()
 
@@ -212,8 +230,9 @@ def summarize_firm(
     prompt = build_summary_prompt(firm_name, search_results, config)
 
     try:
+        model_name = config.get("app", {}).get("model_selection", "gpt-4o")
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=model_name,
             messages=[
                 {
                     "role": "system",
@@ -269,7 +288,7 @@ def main():
     )
     parser.add_argument(
         "-c", "--config",
-        default="config.json",
+        default="config.yml",
         help="Configuration file path"
     )
     parser.add_argument(
