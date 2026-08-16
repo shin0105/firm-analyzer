@@ -7,28 +7,13 @@ Filters can be customized via config.json or command-line arguments.
 """
 
 import argparse
-import json
 import os
 import re
 import sys
-import yaml
 
 import pandas as pd
 
-
-def load_config(config_path: str = "config.yml") -> dict:
-    """Load configuration from YAML or JSON file."""
-    if os.path.exists(config_path) and config_path.endswith(('.yml', '.yaml')):
-        with open(config_path, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f) or {}
-    elif os.path.exists(config_path) and config_path.endswith('.json'):
-        with open(config_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    elif os.path.exists("config.json"):
-        with open("config.json", "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
-
+from src.firm_analyzer.config import load_config, DEFAULT_INPUT_CSV, BASE_DIR
 
 def filter_by_location(
     df: pd.DataFrame,
@@ -62,18 +47,13 @@ def main():
     )
     parser.add_argument(
         "-i", "--input",
-        default="2025_전문연구요원_인원배정.csv",
+        default=str(DEFAULT_INPUT_CSV),
         help="Input CSV file path"
     )
     parser.add_argument(
         "-o", "--output",
         default=None,
-        help="Output CSV file path (default: filtered_firms.csv)"
-    )
-    parser.add_argument(
-        "-c", "--config",
-        default="config.yml",
-        help="Configuration file path"
+        help="Output CSV file path (default: filtered_firms.csv in data/)"
     )
     parser.add_argument(
         "-l", "--locations",
@@ -96,7 +76,7 @@ def main():
     args = parser.parse_args()
 
     # Load configuration
-    config = load_config(args.config)
+    config = load_config()
     filter_config = config.get("filters", {}).get("location", {})
 
     # Command-line args override config
@@ -106,21 +86,25 @@ def main():
 
     # Default output filename based on filter
     if args.output:
-        output_file = args.output
+        output_file = Path(args.output) if os.path.isabs(args.output) else BASE_DIR / "data" / args.output
     elif locations:
-        output_file = f"{'_'.join(locations)}_firms.csv"
+        output_file = BASE_DIR / "data" / f"{'_'.join(locations)}_firms.csv"
     else:
-        output_file = "filtered_firms.csv"
+        output_file = BASE_DIR / "data" / "filtered_firms.csv"
 
     # Check input file
-    if not os.path.exists(args.input):
-        print(f"Error: {args.input} not found.")
-        sys.exit(1)
+    input_path = os.path.abspath(args.input) if os.path.isabs(args.input) else str(BASE_DIR / args.input)
+    # fall back to check if it's already a full path or in root/data
+    if not os.path.exists(input_path):
+        input_path = args.input
+        if not os.path.exists(input_path):
+            print(f"Error: {input_path} not found.")
+            sys.exit(1)
 
     # Read CSV
     try:
-        df = pd.read_csv(args.input)
-        print(f"Loaded {len(df)} rows from {args.input}")
+        df = pd.read_csv(input_path)
+        print(f"Loaded {len(df)} rows from {input_path}")
     except Exception as e:
         print(f"Error reading CSV: {e}")
         sys.exit(1)
@@ -140,7 +124,9 @@ def main():
         print("No filter applied, using all rows")
 
     # Save result
-    filtered_df.to_csv(output_file, index=False, encoding="utf-8")
+    from pathlib import Path
+    os.makedirs(Path(output_file).parent, exist_ok=True)
+    filtered_df.to_csv(str(output_file), index=False, encoding="utf-8")
     print(f"Filtered {len(filtered_df)} firms.")
     print(f"Saved to {output_file}")
 

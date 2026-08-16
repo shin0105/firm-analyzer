@@ -92,7 +92,7 @@ KAKAO_REST_API_KEY=your_kakao_rest_api_key
 
 ```bash
 # Run any Python script using uv run
-uv run python app.py
+uv run python scripts/run_app.py
 ```
 
 Open http://localhost:8001 in your browser.
@@ -101,11 +101,11 @@ Open http://localhost:8001 in your browser.
 
 ```bash
 # Filter firms
-uv run python filter_firms.py
+uv run python scripts/run_filter.py
 
 # Search and summarize with options
-uv run python search_summarize.py --dry-run
-uv run python search_summarize.py --limit 10
+uv run python scripts/run_summarize.py --dry-run
+uv run python scripts/run_summarize.py --limit 10
 ```
 
 ### Option B: Using pip (Traditional)
@@ -132,7 +132,7 @@ KAKAO_REST_API_KEY=your_kakao_rest_api_key
 #### 3. Run the Web Interface
 
 ```bash
-python app.py
+python scripts/run_app.py
 ```
 
 Open http://localhost:8001 in your browser.
@@ -146,11 +146,11 @@ Available pages:
 
 ```bash
 # Filter firms
-python filter_firms.py
+python scripts/run_filter.py
 
 # Search and summarize with options
-python search_summarize.py --dry-run
-python search_summarize.py --limit 10
+python scripts/run_summarize.py --dry-run
+python scripts/run_summarize.py --limit 10
 ```
 
 ### Optional Environment Variables
@@ -176,48 +176,48 @@ All examples below work with both UV and pip installations. Simply prefix comman
 
 ```bash
 # With UV
-uv run python filter_firms.py
+uv run python scripts/run_filter.py
 
 # With pip (traditional)
-python filter_firms.py
+python scripts/run_filter.py
 
 # Override with command line
-python filter_firms.py --locations 서울 경기 --filter-type contains
+python scripts/run_filter.py --locations 서울 경기 --filter-type contains
 
 # Different input file
-python filter_firms.py -i my_firms.csv -o filtered.csv
+python scripts/run_filter.py -i my_firms.csv -o filtered.csv
 ```
 
 ### Search and Summarize
 
 ```bash
 # Dry run (no API calls)
-python search_summarize.py --dry-run
+python scripts/run_summarize.py --dry-run
 
 # Process limited number of firms
-python search_summarize.py --limit 10
+python scripts/run_summarize.py --limit 10
 
 # Use custom config
-python search_summarize.py --config my_config.yml
+python scripts/run_summarize.py --config my_config.yml
 ```
 
 ### Parse PDF to CSV (New!)
 
 ```bash
 # Parse PDF with default settings
-python firm_summary/parse_pdf_to_csv_extended.py
+python scripts/run_pdf_parser_rule.py
 
 # Extract city from location and add as a column
-python firm_summary/parse_pdf_to_csv_extended.py --extract-city-from-location
+python scripts/run_pdf_parser_rule.py --extract-city-from-location
 
 # Parse custom PDF with column mapping
-python firm_summary/parse_pdf_to_csv_extended.py \
+python scripts/run_pdf_parser_rule.py \
   --pdf data/korean_companies.pdf \
   --output data/korean_companies.csv \
   --columns "번호" "회사명" "상세주소" "도시"
 
 # Rename columns while parsing
-python firm_summary/parse_pdf_to_csv_extended.py \
+python scripts/run_pdf_parser_rule.py \
   --columns "번호:Number" "회사명:Company Name" "소재지:Location" \
   --extract-city-from-location
 
@@ -423,8 +423,7 @@ To display exact locations on the map instead of approximate regional coordinate
 
 3. **Regenerate Geocoded Data**:
    ```bash
-   cd firm_summary
-   uv run python generate_firms_data.py
+   uv run python scripts/run_geocoding.py
    ```
    The script will automatically use Kakao Maps API for accurate geocoding.
 
@@ -457,11 +456,13 @@ To force re-geocoding, delete the cache file before running the script.
 
 ```
 firm_websearch/
-├── app.py                  # Flask web application entry point
-├── filter_firms.py         # Configurable filter script
-├── search_summarize.py     # Configurable search & summarize script
-├── pdf_parser.py           # LLM-based PDF table parser
-├── migrate_to_supabase.py  # Supabase database synchronization script
+├── src/
+│   └── firm_analyzer/
+│       ├── core/           # Core engine scripts (filter, summarize, geocoding, etc.)
+│       ├── web/            # Flask webapp server (app.py, templates, static)
+│       ├── utils/          # Helper modules (webpage finder, etc.)
+│       └── config.py       # Primary configuration module
+├── scripts/                # CLI wrapper scripts (run_app.py, run_filter.py, etc.)
 ├── config.yml              # Primary configuration file (YAML)
 ├── docs/                   # Documentation and guides
 │   ├── ENGINES_GUIDE.md    # Multi-language guide for all 7 engines
@@ -471,21 +472,12 @@ firm_websearch/
 │   ├── GEOCODING.md        # Technical explanation of geocoding strategies
 │   ├── README_PDF_PARSER.md # Extended PDF parser usage documentation
 │   └── README_WEBPAGE_FINDER.md # Webpage finder module documentation
-├── templates/              # Flask Jinja2 templates (legacy backend-served)
-├── static/                 # Flask static files
-├── webapp/                 # Flask webapp server directory (static & templates)
 ├── frontend/               # Modern Vite + React frontend codebase
 ├── firm_results/           # Output directory for local JSON/MD summaries
-│   ├── finance/            # Classified firms (Finance/Quant)
-│   ├── ai_ml/              # Classified firms (AI/ML)
-│   └── general/            # General category firms
-├── firm_summary/           # Firm data helper modules
-│   ├── find_firm_webpage.py # Independent webpage finder script
-│   ├── generate_firms_data.py # Geocoding script producing map markers JS
-│   └── parse_pdf_to_csv_extended.py # Rule-based PDF table parser
 ├── data/                   # Data directory (CSV resources and caches)
 │   ├── samples/            # Pre-validated sample CSV files
 │   └── geocode_cache.json  # Cached address geocoding results
+├── pyproject.toml          # Python package definitions
 └── README.md               # Main readme documentation
 ```
 

@@ -6,8 +6,8 @@ from supabase import create_client, Client
 
 load_dotenv()
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "***REMOVED***")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "***REMOVED***")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 def clean_str(val):
     if val is None:
@@ -15,9 +15,13 @@ def clean_str(val):
     return str(val).replace('\x00', '')
 
 def read_summaries():
+    from src.firm_analyzer.config import load_config, BASE_DIR
+    config = load_config()
+    out_dir_conf = config.get("output", {}).get("directory", "firm_results")
+    results_dir = BASE_DIR / out_dir_conf
     summaries = {}
-    results_dir = 'firm_results'
-    if not os.path.exists(results_dir):
+    
+    if not results_dir.exists():
         return summaries
         
     for category in os.listdir(results_dir):
@@ -68,11 +72,21 @@ def read_summaries():
     return summaries
 
 def main():
+    from src.firm_analyzer.config import BASE_DIR
+
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print("Error: SUPABASE_URL and SUPABASE_KEY must be set in environment.")
+        return
+
     print("Reading summaries...")
     summaries = read_summaries()
     
     print("Reading CSV...")
-    df = pd.read_csv('data/2025_전문연구요원_인원배정_parsed.csv')
+    csv_path = BASE_DIR / 'data/2025_전문연구요원_인원배정_parsed.csv'
+    if not csv_path.exists():
+        print(f"File not found: {csv_path}")
+        return
+    df = pd.read_csv(str(csv_path))
     
     # Map CSV columns to DB columns
     records = []
@@ -128,10 +142,6 @@ def main():
     print(f"Total unique records to insert: {len(records)}")
     
     # Initialize Supabase Client
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        print("Error: SUPABASE_URL and SUPABASE_KEY must be set in environment.")
-        return
-        
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     
     chunk_size = 100

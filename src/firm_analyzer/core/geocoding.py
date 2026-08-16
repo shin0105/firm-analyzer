@@ -44,9 +44,9 @@ KAKAO_API_KEY = os.environ.get('KAKAO_REST_API_KEY', '')
 KAKAO_API_AVAILABLE = REQUESTS_AVAILABLE and bool(KAKAO_API_KEY)
 
 # Get the parent directory (project root)
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(PROJECT_ROOT, "data")
-WEBAPP_DIR = os.path.join(PROJECT_ROOT, "webapp")
+from src.firm_analyzer.config import BASE_DIR
+DATA_DIR = os.path.join(BASE_DIR, "data")
+WEB_DIR = os.path.join(BASE_DIR, "src", "firm_analyzer", "web")
 
 # Approximate coordinates for major cities/regions in Korea
 # These are representative coordinates for each area
@@ -529,7 +529,7 @@ def main():
         save_geocode_cache()
 
     # Write JavaScript file
-    output_file = os.path.join(WEBAPP_DIR, "static", "js", "firms_data.js")
+    output_file = os.path.join(WEB_DIR, "static", "js", "firms_data.js")
     with open(output_file, "w", encoding="utf-8") as f:
         f.write("// Auto-generated firms data from CSV\n")
         f.write("// Generated for 2025 전문연구요원 인원배정 업체 현황\n")

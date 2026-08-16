@@ -13,31 +13,26 @@ import os
 import re
 import sys
 import time
-import yaml
 from typing import Optional
+from pathlib import Path
 
 import pandas as pd
 from dotenv import load_dotenv
 from openai import OpenAI
 from tavily import TavilyClient
 
+from src.firm_analyzer.config import load_config, BASE_DIR
+
 # Import firm webpage finder module with proper error handling
 WEBPAGE_FINDER_AVAILABLE = False
 find_firm_webpage = None
 
 try:
-    # Try to import from firm_summary package
-    from firm_summary.find_firm_webpage import find_firm_webpage as _find_firm_webpage
+    from src.firm_analyzer.utils.webpage_finder import find_firm_webpage as _find_firm_webpage
     find_firm_webpage = _find_firm_webpage
     WEBPAGE_FINDER_AVAILABLE = True
 except ImportError:
-    # Fallback: Try direct import if module is in same directory or PYTHONPATH
-    try:
-        from find_firm_webpage import find_firm_webpage as _find_firm_webpage
-        find_firm_webpage = _find_firm_webpage
-        WEBPAGE_FINDER_AVAILABLE = True
-    except ImportError:
-        print("Warning: Firm webpage finder module not available")
+    print("Warning: Firm webpage finder module not available")
 
 # Load environment variables
 load_dotenv()
@@ -45,69 +40,6 @@ load_dotenv()
 DEFAULT_SYSTEM_PROMPT = (
     "You are a helpful assistant that summarizes company information in JSON format."
 )
-
-
-def load_config(config_path: str = "config.yml") -> dict:
-    """Load configuration from YAML or JSON file."""
-    if os.path.exists(config_path) and config_path.endswith(('.yml', '.yaml')):
-        with open(config_path, "r", encoding="utf-8") as f:
-            config = yaml.safe_load(f) or {}
-            
-            # Load external summary config if specified
-            summary_path = config.get("app", {}).get("summary_config_path")
-            if summary_path and os.path.exists(summary_path):
-                with open(summary_path, "r", encoding="utf-8") as sf:
-                    summary_config = yaml.safe_load(sf) or {}
-                    if "summary" in summary_config:
-                        config["summary"] = summary_config["summary"]
-                    if "categories" in summary_config:
-                        config["categories"] = summary_config["categories"]
-            return config
-    elif os.path.exists(config_path) and config_path.endswith('.json'):
-        with open(config_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    elif os.path.exists("config.json"):
-        with open("config.json", "r", encoding="utf-8") as f:
-            return json.load(f)
-    return get_default_config()
-
-
-def get_default_config() -> dict:
-    """Return default configuration."""
-    return {
-        "categories": [
-            {
-                "id": "finance",
-                "name": "Finance/Quant",
-                "description": "Finance, Financial Services, Quant Trading",
-                "keywords": ["금융", "투자", "자산운용", "핀테크", "fintech", "quant"],
-            },
-            {
-                "id": "general",
-                "name": "General",
-                "description": "Other industries",
-                "keywords": [],
-            },
-        ],
-        "summary": {
-            "language": "Korean",
-            "focus_areas": ["business_areas", "research_technologies", "job_openings"],
-            "custom_prompt": "",
-            "output_format": "markdown",
-            "system_prompt": DEFAULT_SYSTEM_PROMPT,
-        },
-        "search": {
-            "query_template": "{firm_name} 채용 연구분야 사업내용",
-            "search_depth": "advanced",
-            "max_results": 5,
-            "context": "",
-            "find_webpage": True,  # Enable firm webpage finding
-        },
-        "output": {
-            "directory": "firm_results",
-            "create_csv_summary": True,
-        },
-    }
 
 
 def sanitize_filename(name: str) -> str:
@@ -283,13 +215,8 @@ def main():
     )
     parser.add_argument(
         "-i", "--input",
-        default="seoul_firms.csv",
+        default="filtered_firms.csv",
         help="Input CSV file with firms to process"
-    )
-    parser.add_argument(
-        "-c", "--config",
-        default="config.yml",
-        help="Configuration file path"
     )
     parser.add_argument(
         "-o", "--output-dir",
@@ -311,7 +238,7 @@ def main():
     args = parser.parse_args()
 
     # Load configuration
-    config = load_config(args.config)
+    config = load_config()
 
     # Get API keys
     tavily_api_key = os.getenv("TAVILY_API_KEY")
@@ -338,18 +265,22 @@ def main():
         openai_client = None
 
     # Get output directory
-    output_dir = args.output_dir or config.get("output", {}).get("directory", "firm_results")
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    out_dir_conf = config.get("output", {}).get("directory", "firm_results")
+    output_dir = Path(args.output_dir) if args.output_dir and os.path.isabs(args.output_dir) else (BASE_DIR / args.output_dir if args.output_dir else BASE_DIR / out_dir_conf)
+    if not output_dir.exists():
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     # Check input file
-    if not os.path.exists(args.input):
-        print(f"Error: {args.input} not found.")
-        print("Run filter_firms.py first to create the filtered CSV.")
-        sys.exit(1)
+    input_path = Path(args.input) if os.path.isabs(args.input) else BASE_DIR / "data" / args.input
+    if not input_path.exists():
+        input_path = Path(args.input)
+        if not input_path.exists():
+            print(f"Error: {input_path} not found.")
+            print("Run scripts/run_filter.py first to create the filtered CSV.")
+            sys.exit(1)
 
     # Read CSV
-    df = pd.read_csv(args.input)
+    df = pd.read_csv(str(input_path))
     print(f"Loaded {len(df)} firms to process.")
 
     # Get search config
@@ -363,10 +294,10 @@ def main():
     processed_folders = set()
     categories = config.get("categories", [])
     for cat in categories:
-        category_path = os.path.join(output_dir, cat["id"])
-        if os.path.isdir(category_path):
-            for entry in os.listdir(category_path):
-                processed_folders.add(entry)
+        category_path = output_dir / cat["id"]
+        if category_path.is_dir():
+            for entry in category_path.iterdir():
+                processed_folders.add(entry.name)
 
     # Process firms
     firms_to_process = df
@@ -383,8 +314,8 @@ def main():
         safe_name = sanitize_filename(firm_name)
         already_processed = False
         for cat in categories:
-            cat_path = os.path.join(output_dir, cat["id"], safe_name)
-            if safe_name in processed_folders or os.path.exists(cat_path):
+            cat_path = output_dir / cat["id"] / safe_name
+            if safe_name in processed_folders or cat_path.exists():
                 already_processed = True
                 break
 
@@ -445,23 +376,23 @@ def main():
         category_info = get_category_info(category_id, config)
 
         # Create output directory for this firm
-        firm_dir = os.path.join(output_dir, category_id, safe_name)
-        if not os.path.exists(firm_dir):
-            os.makedirs(firm_dir)
+        firm_dir = output_dir / category_id / safe_name
+        if not firm_dir.exists():
+            firm_dir.mkdir(parents=True, exist_ok=True)
 
         processed_folders.add(safe_name)
 
         # Save raw search results
-        with open(os.path.join(firm_dir, "raw_search.json"), "w", encoding="utf-8") as f:
+        with open(firm_dir / "raw_search.json", "w", encoding="utf-8") as f:
             json.dump(search_response, f, ensure_ascii=False, indent=2)
 
         # Save webpage information if found
         if webpage_result and webpage_result.get("url"):
-            with open(os.path.join(firm_dir, "webpage.json"), "w", encoding="utf-8") as f:
+            with open(firm_dir / "webpage.json", "w", encoding="utf-8") as f:
                 json.dump(webpage_result, f, ensure_ascii=False, indent=2)
 
         # Save summary
-        with open(os.path.join(firm_dir, "summary.md"), "w", encoding="utf-8") as f:
+        with open(firm_dir / "summary.md", "w", encoding="utf-8") as f:
             f.write(f"# {firm_name}\n\n")
             f.write(f"**Address:** {address}\n")
             f.write(f"**Category:** {category_info['name']}\n")
@@ -500,15 +431,15 @@ def main():
         for category_id, firms_list in category_firms.items():
             if firms_list:
                 firms_df = pd.DataFrame(firms_list)
-                csv_path = os.path.join(output_dir, f"{category_id}_firms.csv")
+                csv_path = output_dir / f"{category_id}_firms.csv"
 
-                if os.path.exists(csv_path):
+                if csv_path.exists():
                     firms_df.to_csv(
-                        csv_path, mode="a", header=False, index=False, encoding="utf-8-sig"
+                        str(csv_path), mode="a", header=False, index=False, encoding="utf-8-sig"
                     )
                     print(f"Appended {len(firms_list)} firms to {csv_path}")
                 else:
-                    firms_df.to_csv(csv_path, index=False, encoding="utf-8-sig")
+                    firms_df.to_csv(str(csv_path), index=False, encoding="utf-8-sig")
                     print(f"Saved {len(firms_list)} firms to {csv_path}")
 
     print("Done!")

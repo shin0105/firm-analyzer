@@ -35,28 +35,28 @@ This script parses tables using programmatic layout rules and supports Korean ci
 
 ```bash
 # Using UV (Recommended / UV 사용 권장)
-uv run python firm_summary/parse_pdf_to_csv_extended.py [options]
+uv run python scripts/run_pdf_parser_rule.py [options]
 
 # Using standard Python (일반 파이썬 사용)
-python firm_summary/parse_pdf_to_csv_extended.py [options]
+python scripts/run_pdf_parser_rule.py [options]
 ```
 
 **Common Examples / 자주 쓰는 예시:**
 ```bash
 # 1. Parse with default settings (기본 설정으로 파싱)
-uv run python firm_summary/parse_pdf_to_csv_extended.py
+uv run python scripts/run_pdf_parser_rule.py
 
 # 2. Extract city name from address column (주소 열에서 도시명 자동 추출 추가)
-uv run python firm_summary/parse_pdf_to_csv_extended.py --extract-city-from-location
+uv run python scripts/run_pdf_parser_rule.py --extract-city-from-location
 
 # 3. Parse custom PDF with custom columns (사용자 정의 PDF 및 열 지정)
-uv run python firm_summary/parse_pdf_to_csv_extended.py \
+uv run python scripts/run_pdf_parser_rule.py \
   --pdf data/my_firms.pdf \
   --output data/my_firms.csv \
   --columns "번호" "회사명" "소재지" "관할청"
 
 # 4. Map and rename columns during parsing (파싱 중 열 이름 변경 매핑)
-uv run python firm_summary/parse_pdf_to_csv_extended.py \
+uv run python scripts/run_pdf_parser_rule.py \
   --columns "번호:Number" "회사명:Company Name" "소재지:Location"
 ```
 
@@ -98,22 +98,22 @@ Filters raw company CSV datasets using configured location parameters or custom 
 
 ```bash
 # Using UV (Recommended / UV 사용 권장)
-uv run python filter_firms.py [options]
+uv run python scripts/run_filter.py [options]
 
 # Using standard Python (일반 파이썬 사용)
-python filter_firms.py [options]
+python scripts/run_filter.py [options]
 ```
 
 **Common Examples / 자주 쓰는 예시:**
 ```bash
 # 1. Filter using settings from config.yml (config.yml 설정대로 필터링)
-uv run python filter_firms.py
+uv run python scripts/run_filter.py
 
 # 2. Override location filter via command line (명령행으로 특정 지역 지정 필터링)
-uv run python filter_firms.py --locations 서울 경기 --filter-type contains
+uv run python scripts/run_filter.py --locations 서울 경기 --filter-type contains
 
 # 3. Specify custom input and output files (입출력 파일명 직접 지정)
-uv run python filter_firms.py -i data/custom_companies.csv -o data/filtered.csv
+uv run python scripts/run_filter.py -i data/custom_companies.csv -o data/filtered.csv
 ```
 
 **Arguments / 옵션:**
@@ -144,22 +144,22 @@ GITHUB_TOKEN=your_github_token
 
 ```bash
 # Using UV (Recommended / UV 사용 권장)
-uv run python search_summarize.py [options]
+uv run python scripts/run_summarize.py [options]
 
 # Using standard Python (일반 파이썬 사용)
-python search_summarize.py [options]
+python scripts/run_summarize.py [options]
 ```
 
 **Common Examples / 자주 쓰는 예시:**
 ```bash
 # 1. Test search query structure without making API calls (API 호출 없이 쿼리 구조 확인 - 드라이런)
-uv run python search_summarize.py --dry-run
+uv run python scripts/run_summarize.py --dry-run
 
 # 2. Run summarization for only the first 5 firms (처음 5개 기업만 요약 생성 진행)
-uv run python search_summarize.py --limit 5
+uv run python scripts/run_summarize.py --limit 5
 
 # 3. Process with custom configuration (사용자 정의 구성 파일 적용하여 실행)
-uv run python search_summarize.py --config my_custom_config.yml --input filtered_firms.csv
+uv run python scripts/run_summarize.py --config my_custom_config.yml --input filtered_firms.csv
 ```
 
 **Arguments / 옵션:**
@@ -183,15 +183,15 @@ Tavily 검색을 활용해 기업의 공식 웹사이트 URL을 찾고, 웹페�
 
 ```bash
 # Using UV (Recommended / UV 사용 권장)
-uv run python firm_summary/find_firm_webpage.py "<firm_name>"
+uv run python scripts/run_webpage_finder.py "<firm_name>"
 
 # Using standard Python (일반 파이썬 사용)
-python firm_summary/find_firm_webpage.py "<firm_name>"
+python scripts/run_webpage_finder.py "<firm_name>"
 ```
 
 **Example / 예시:**
 ```bash
-uv run python firm_summary/find_firm_webpage.py "네이버"
+uv run python scripts/run_webpage_finder.py "네이버"
 ```
 
 **Output format / 출력 형식:**
@@ -221,23 +221,23 @@ CSV 목록에 포함된 한글 주소 문자열을 위경도 좌표로 변환합
 
 ```bash
 # Using UV (Recommended / UV 사용 권장)
-uv run python firm_summary/generate_firms_data.py [options]
+uv run python scripts/run_geocoding.py [options]
 
 # Using standard Python (일반 파이썬 사용)
-python firm_summary/generate_firms_data.py [options]
+python scripts/run_geocoding.py [options]
 ```
 
 **Common Examples / 자주 쓰는 예시:**
 ```bash
 # 1. Run with auto-detection (Kakao key set in .env will be auto-used)
 # (자동 감지 모드로 실행: .env에 Kakao 키가 있으면 자동으로 사용됨)
-uv run python firm_summary/generate_firms_data.py
+uv run python scripts/run_geocoding.py
 
 # 2. Force API usage (API 사용 강제)
-uv run python firm_summary/generate_firms_data.py --use-api
+uv run python scripts/run_geocoding.py --use-api
 
 # 3. Disable API calls and use fallback coordinates only (인터넷 API 비활성화 및 기본 지역 좌표만 사용)
-uv run python firm_summary/generate_firms_data.py --no-api
+uv run python scripts/run_geocoding.py --no-api
 ```
 
 **Arguments / 옵션:**
@@ -263,10 +263,10 @@ SUPABASE_KEY=your_supabase_anon_or_service_key
 
 ```bash
 # Using UV (Recommended / UV 사용 권장)
-uv run python migrate_to_supabase.py
+uv run python scripts/run_supabase_sync.py
 
 # Using standard Python (일반 파이썬 사용)
-python migrate_to_supabase.py
+python scripts/run_supabase_sync.py
 ```
 
 ---
@@ -281,10 +281,10 @@ Runs the local Flask web server. The web UI provides an editor for `config.yml`,
 
 ```bash
 # Using UV (Recommended / UV 사용 권장)
-uv run python app.py
+uv run python scripts/run_app.py
 
 # Using standard Python (일반 파이썬 사용)
-python app.py
+python scripts/run_app.py
 ```
 
 - **Default URL**: http://localhost:8001

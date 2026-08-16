@@ -1,0 +1,101 @@
+import os
+import json
+import yaml
+from pathlib import Path
+
+# Find the project root (where config.yml resides)
+# This assumes src/firm_analyzer/config.py -> parent is firm_analyzer -> parent is src -> parent is project root
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+CONFIG_PATH = BASE_DIR / "config.yml"
+DEFAULT_INPUT_CSV = BASE_DIR / "data" / "2025_전문연구요원_인원배정.csv"
+
+def get_default_config():
+    """Return default configuration."""
+    return {
+        "app": {
+            "data_source": "csv",
+            "enable_kakao_map": True,
+            "model_selection": "gpt-4o",
+            "summary_config_path": ""
+        },
+        "filters": {
+            "location": {
+                "enabled": True,
+                "type": "contains",
+                "values": ["서울"],
+                "column": "소재지",
+            }
+        },
+        "categories": [
+            {
+                "id": "finance",
+                "name": "Finance/Quant",
+                "description": "Finance, Financial Services, Quant Trading",
+                "keywords": ["금융", "투자", "자산운용", "핀테크", "fintech", "quant"],
+                "color": "#4CAF50",
+            },
+            {
+                "id": "healthcare",
+                "name": "Healthcare/Bio",
+                "description": "Healthcare, Biotechnology, Medical",
+                "keywords": ["의료", "바이오", "헬스케어", "제약", "병원", "의학"],
+                "color": "#2196F3",
+            },
+            {
+                "id": "ai_ml",
+                "name": "AI/Machine Learning",
+                "description": "Artificial Intelligence, Machine Learning, Deep Learning",
+                "keywords": [
+                    "인공지능",
+                    "AI",
+                    "머신러닝",
+                    "딥러닝",
+                    "자연어처리",
+                    "NLP",
+                ],
+                "color": "#9C27B0",
+            },
+            {
+                "id": "general",
+                "name": "General",
+                "description": "Other industries",
+                "keywords": [],
+                "color": "#607D8B",
+            },
+        ],
+        "summary": {
+            "language": "Korean",
+            "focus_areas": ["business_areas", "research_technologies", "job_openings"],
+            "custom_prompt": "",
+            "output_format": "markdown",
+            "system_prompt": "You are a helpful assistant that summarizes company information in JSON format.",
+        },
+        "search": {
+            "query_template": "{firm_name} 채용 연구분야 사업내용",
+            "search_depth": "advanced",
+            "max_results": 5,
+            "context": "",
+        },
+        "output": {"directory": "firm_results", "create_csv_summary": True},
+    }
+
+def load_config():
+    """Load configuration from YAML file, with fallback to JSON."""
+    if CONFIG_PATH.exists():
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or get_default_config()
+    
+    # Fallback to config.json for legacy migration
+    json_path = BASE_DIR / "config.json"
+    if json_path.exists():
+        with open(json_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+        save_config(config)
+        return config
+        
+    return get_default_config()
+
+def save_config(config):
+    """Save configuration to YAML file."""
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        yaml.dump(config, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
