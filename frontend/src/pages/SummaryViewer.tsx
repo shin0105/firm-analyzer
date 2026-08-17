@@ -1,14 +1,15 @@
+import { apiUrl, type Category, type Firm } from '../api';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 export default function SummaryViewer() {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [firms, setFirms] = useState<any[]>([]);
-  const [selectedFirm, setSelectedFirm] = useState<any>(null);
+  const [firms, setFirms] = useState<Firm[]>([]);
+  const [selectedFirm, setSelectedFirm] = useState<Firm | null>(null);
 
   useEffect(() => {
-    axios.get('http://localhost:8001/api/results/summary')
+    axios.get(apiUrl('/api/results/summary'))
       .then(res => {
         const cats = Object.keys(res.data).filter(k => k !== 'total').map(k => ({
           id: k,
@@ -22,7 +23,7 @@ export default function SummaryViewer() {
 
   useEffect(() => {
     if (selectedCategory) {
-      axios.get(`http://localhost:8001/api/results/${selectedCategory}`)
+      axios.get(apiUrl(`/api/results/${selectedCategory}`))
         .then(res => setFirms(res.data.firms))
         .catch(err => console.error(err));
     }

@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "A configurable web-based tool for filtering, searching, and summarizing firm/company information"
 readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "shin0105" }
 ]
@@ -21,7 +23,23 @@ dependencies = [
     "google-generativeai>=0.8.0",
     "supabase>=2.12.0",
     "pyyaml>=6.0.1",
+    "geopy>=2.4.1",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+firm-app = "firm_analyzer.web.app:main"
+firm-filter = "firm_analyzer.core.filter:main"
+firm-summarize = "firm_analyzer.core.summarize:main"
+firm-geocode = "firm_analyzer.core.geocoding:main"
+firm-parse-pdf = "firm_analyzer.core.pdf_parser_rule:main"
+firm-parse-pdf-llm = "firm_analyzer.core.pdf_parser_llm:main"
+firm-supabase-sync = "firm_analyzer.core.supabase_sync:main"
+firm-find-webpage = "firm_analyzer.utils.webpage_finder:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -29,3 +47,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/firm_analyzer"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

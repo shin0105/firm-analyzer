@@ -10,10 +10,10 @@ import unittest
 import sys
 import os
 
-# Add parent directory to path to import the module
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Allow running this file directly, without installing the package.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
-from firm_summary.parse_pdf_to_csv_extended import (
+from firm_analyzer.core.pdf_parser_rule import (
     extract_city_from_location,
     parse_column_mapping,
     match_columns,

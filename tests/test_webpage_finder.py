@@ -8,12 +8,12 @@ import sys
 import os
 
 # Add parent directory to path to import the module
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
 # Test 1: Module import
 print("Test 1: Checking module import...")
 try:
-    from firm_summary.find_firm_webpage import (
+    from firm_analyzer.utils.webpage_finder import (
         initialize_clients,
         find_firm_webpage,
         verify_firm_webpage,

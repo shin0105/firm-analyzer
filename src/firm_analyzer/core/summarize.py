@@ -21,14 +21,14 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from tavily import TavilyClient
 
-from src.firm_analyzer.config import load_config, BASE_DIR
+from firm_analyzer.config import load_config, BASE_DIR
 
 # Import firm webpage finder module with proper error handling
 WEBPAGE_FINDER_AVAILABLE = False
 find_firm_webpage = None
 
 try:
-    from src.firm_analyzer.utils.webpage_finder import find_firm_webpage as _find_firm_webpage
+    from firm_analyzer.utils.webpage_finder import find_firm_webpage as _find_firm_webpage
     find_firm_webpage = _find_firm_webpage
     WEBPAGE_FINDER_AVAILABLE = True
 except ImportError:

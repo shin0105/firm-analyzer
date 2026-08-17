@@ -1,17 +1,18 @@
+import { apiUrl, type AppConfig } from '../api';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 export default function ConfigPage() {
-  const [config, setConfig] = useState<any>(null);
+  const [config, setConfig] = useState<AppConfig | null>(null);
 
   useEffect(() => {
-    axios.get('http://localhost:8001/api/config')
+    axios.get(apiUrl('/api/config'))
       .then(res => setConfig(res.data))
       .catch(err => console.error(err));
   }, []);
 
   const handleSave = () => {
-    axios.post('http://localhost:8001/api/config', config)
+    axios.post(apiUrl('/api/config'), config)
       .then(() => alert('저장되었습니다!'))
       .catch(err => alert('오류: ' + err.message));
   };

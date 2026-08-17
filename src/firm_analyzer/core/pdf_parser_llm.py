@@ -1,6 +1,8 @@
+import argparse
 import os
 import csv
 import json
+import sys
 import time
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -50,10 +52,10 @@ def _parse_with_gemini(pdf_path: str, prompt: str) -> str:
     if sample_file.state.name == "FAILED":
         raise ValueError("PDF processing failed in Gemini.")
 
-    # Using the recent flash lite model
-    model = genai.GenerativeModel(model_name="gemini-3.1-flash-lite")
-    
-    print("Generating content with Gemini...")
+    model_name = os.getenv("GEMINI_PARSER_MODEL", "gemini-3.1-flash-lite")
+    model = genai.GenerativeModel(model_name=model_name)
+
+    print(f"Generating content with Gemini ({model_name})...")
     response = model.generate_content([sample_file, prompt])
     
     text = response.text.strip()
@@ -91,14 +93,17 @@ def _parse_with_openai(pdf_path: str, prompt: str) -> str:
     # To avoid exceeding context limits for very large PDFs, we might need to truncate, 
     # but gpt-5-mini has large context which is plenty for most PDFs.
     
-    print("Generating content with OpenAI (gpt-5-mini)...")
+    model = os.getenv("OPENAI_PARSER_MODEL", "gpt-5-mini")
+    print(f"Generating content with OpenAI ({model})...")
+    # No explicit temperature: the gpt-5 family only accepts the default value
+    # and rejects the request otherwise. Extraction is already deterministic
+    # enough for this prompt.
     response = client.chat.completions.create(
-        model="gpt-5-mini",
+        model=model,
         messages=[
             {"role": "system", "content": "You are a data extraction assistant."},
             {"role": "user", "content": f"{prompt}\n\nDocument Text:\n{text_content}"}
         ],
-        temperature=0.1
     )
     
     text = response.choices[0].message.content.strip()
@@ -144,5 +149,35 @@ def _process_json_to_csv(text: str, pdf_path: str) -> str:
         writer = csv.DictWriter(f, fieldnames=keys)
         writer.writeheader()
         writer.writerows(data)
-        
+
     return os.path.basename(output_filename)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Parse a PDF into CSV using an LLM (Gemini or OpenAI)."
+    )
+    parser.add_argument("pdf", help="Path to the PDF file to parse")
+    parser.add_argument(
+        "--provider",
+        choices=["gemini", "openai"],
+        default="gemini",
+        help="LLM provider to use (default: gemini)",
+    )
+    args = parser.parse_args()
+
+    if not os.path.isfile(args.pdf):
+        print(f"Error: {args.pdf} not found.")
+        sys.exit(1)
+
+    try:
+        output = parse_pdf_to_csv(args.pdf, provider=args.provider)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+    print(f"Wrote {output}")
+
+
+if __name__ == "__main__":
+    main()

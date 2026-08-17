@@ -1,3 +1,4 @@
+import { apiUrl, type UploadResult } from '../api';
 import { useState } from 'react';
 import axios from 'axios';
 import { UploadCloud, File, CheckCircle, AlertCircle } from 'lucide-react';
@@ -6,7 +7,7 @@ export default function OcrUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [provider, setProvider] = useState<string>('gemini');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{success: boolean, message?: string, output_file?: string, error?: string} | null>(null);
+  const [result, setResult] = useState<UploadResult | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -24,15 +25,18 @@ export default function OcrUpload() {
     formData.append('provider', provider);
 
     try {
-      const res = await axios.post('http://localhost:8001/api/upload-pdf', formData, {
+      const res = await axios.post(apiUrl('/api/upload-pdf'), formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setResult(res.data);
-    } catch (err: any) {
-      setResult({
-        success: false,
-        error: err.response?.data?.error || err.message
-      });
+    } catch (err: unknown) {
+      // Prefer the API's own error message, then axios's, then a fallback.
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error ?? err.message
+        : err instanceof Error
+          ? err.message
+          : '업로드에 실패했습니다.';
+      setResult({ success: false, error: message });
     } finally {
       setLoading(false);
     }
@@ -109,7 +113,7 @@ export default function OcrUpload() {
               <p style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>{result.message}</p>
               {result.output_file && (
                 <a 
-                  href={`http://localhost:8001/api/download/${result.output_file}`}
+                  href={apiUrl(`/api/download/${result.output_file}`)}
                   className="btn btn-primary"
                   style={{ display: 'inline-flex' }}
                 >

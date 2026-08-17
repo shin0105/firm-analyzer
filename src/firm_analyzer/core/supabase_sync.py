@@ -15,7 +15,7 @@ def clean_str(val):
     return str(val).replace('\x00', '')
 
 def read_summaries():
-    from src.firm_analyzer.config import load_config, BASE_DIR
+    from firm_analyzer.config import load_config, BASE_DIR
     config = load_config()
     out_dir_conf = config.get("output", {}).get("directory", "firm_results")
     results_dir = BASE_DIR / out_dir_conf
@@ -72,7 +72,7 @@ def read_summaries():
     return summaries
 
 def main():
-    from src.firm_analyzer.config import BASE_DIR
+    from firm_analyzer.config import BASE_DIR
 
     if not SUPABASE_URL or not SUPABASE_KEY:
         print("Error: SUPABASE_URL and SUPABASE_KEY must be set in environment.")

@@ -3,9 +3,30 @@ import json
 import yaml
 from pathlib import Path
 
-# Find the project root (where config.yml resides)
-# This assumes src/firm_analyzer/config.py -> parent is firm_analyzer -> parent is src -> parent is project root
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+def _find_base_dir() -> Path:
+    """Locate the project root that holds config.yml, data/ and firm_results/.
+
+    Resolution order:
+      1. $FIRM_ANALYZER_HOME, for installed or containerised deployments.
+      2. The repository root, when running from a source checkout
+         (src/firm_analyzer/config.py -> firm_analyzer -> src -> root).
+      3. The current working directory, as a last resort.
+
+    Step 2 must be guarded: once the package is pip-installed, walking three
+    parents up lands inside site-packages rather than a project root.
+    """
+    env_home = os.getenv("FIRM_ANALYZER_HOME")
+    if env_home:
+        return Path(env_home).expanduser().resolve()
+
+    checkout_root = Path(__file__).resolve().parent.parent.parent
+    if (checkout_root / "config.yml").exists() or (checkout_root / "pyproject.toml").exists():
+        return checkout_root
+
+    return Path.cwd()
+
+
+BASE_DIR = _find_base_dir()
 CONFIG_PATH = BASE_DIR / "config.yml"
 DEFAULT_INPUT_CSV = BASE_DIR / "data" / "2025_전문연구요원_인원배정.csv"
 

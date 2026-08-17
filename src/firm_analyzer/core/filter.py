@@ -13,7 +13,7 @@ import sys
 
 import pandas as pd
 
-from src.firm_analyzer.config import load_config, DEFAULT_INPUT_CSV, BASE_DIR
+from firm_analyzer.config import load_config, DEFAULT_INPUT_CSV, BASE_DIR
 
 def filter_by_location(
     df: pd.DataFrame,

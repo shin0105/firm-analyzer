@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Test script for Kakao Maps API geocoding.
+Manual check for Kakao Maps API geocoding (network + API key required).
 
 This script tests the geocoding functionality with sample Korean addresses
 to verify that the Kakao Maps API integration works correctly.
@@ -21,7 +21,7 @@ load_dotenv()
 # Get API key from environment
 KAKAO_API_KEY = os.environ.get('KAKAO_REST_API_KEY', '')
 
-def test_kakao_geocoding(address):
+def geocode_address(address):
     """Test geocoding a single address using Kakao Maps API."""
     if not KAKAO_API_KEY:
         print("❌ KAKAO_REST_API_KEY not set in environment")
@@ -108,7 +108,7 @@ def main():
     success_count = 0
     for i, address in enumerate(test_addresses, 1):
         print(f"{i}. Testing: {address}")
-        result = test_kakao_geocoding(address)
+        result = geocode_address(address)
         
         if result:
             print(f"   ✓ Geocoded successfully!")

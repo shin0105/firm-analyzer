@@ -44,3 +44,6 @@ instance/
 
 .env
 /.agents
+
+# Runtime-mutable config (the web UI writes to this). Ship config.example.yml instead.
+config.yml

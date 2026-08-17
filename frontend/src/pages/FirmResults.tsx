@@ -1,3 +1,4 @@
+import { apiUrl } from '../api';
 
 
 export default function FirmResults() {
@@ -8,7 +9,7 @@ export default function FirmResults() {
       
       <div style={{ flex: 1, borderRadius: '1rem', overflow: 'hidden', border: '1px solid var(--surface-border)' }}>
         <iframe 
-          src="http://localhost:8001/firms" 
+          src={apiUrl('/firms')} 
           style={{ width: '100%', height: '100%', border: 'none' }}
           title="Firm Viewer"
         />

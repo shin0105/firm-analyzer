@@ -1,3 +1,4 @@
+import { apiUrl } from '../api';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -6,7 +7,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     // Assuming backend runs on 8001
-    axios.get('http://localhost:8001/api/results/summary')
+    axios.get(apiUrl('/api/results/summary'))
       .then(res => setStats(res.data))
       .catch(err => console.error(err));
   }, []);

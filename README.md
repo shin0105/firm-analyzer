@@ -77,7 +77,12 @@ uv sync
 
 #### 3. Set Environment Variables
 
-Create a `.env` file:
+Copy the template and fill in your own values:
+```bash
+cp .env.example .env
+```
+
+`.env.example` documents every supported variable. The minimum to get running:
 ```
 TAVILY_API_KEY=your_tavily_api_key
 GITHUB_TOKEN=your_github_token
@@ -86,6 +91,8 @@ GITHUB_TOKEN=your_github_token
 KAKAO_REST_API_KEY=your_kakao_rest_api_key
 ```
 
+`.env` is git-ignored. Never commit it.
+
 **Note**: To get accurate map locations for Korean addresses, obtain a free Kakao REST API key at [https://developers.kakao.com/](https://developers.kakao.com/). Without this key, the system will use approximate regional coordinates.
 
 #### 4. Run the Web Interface
@@ -93,9 +100,16 @@ KAKAO_REST_API_KEY=your_kakao_rest_api_key
 ```bash
 # Run any Python script using uv run
 uv run python scripts/run_app.py
+
+# Or, once installed, use the console script
+uv run firm-app
 ```
 
 Open http://localhost:8001 in your browser.
+
+The server binds to `127.0.0.1` only. The API has no authentication and can
+start subprocesses, so expose it beyond loopback deliberately (`FLASK_HOST`)
+and only on a trusted network.
 
 #### 5. Run Command Line Scripts
 
@@ -106,6 +120,16 @@ uv run python scripts/run_filter.py
 # Search and summarize with options
 uv run python scripts/run_summarize.py --dry-run
 uv run python scripts/run_summarize.py --limit 10
+```
+
+Installing the package also provides console scripts: `firm-app`,
+`firm-filter`, `firm-summarize`, `firm-geocode`, `firm-parse-pdf`,
+`firm-parse-pdf-llm`, `firm-supabase-sync`, `firm-find-webpage`.
+
+#### 6. Run the Tests
+
+```bash
+uv sync --extra dev && uv run pytest tests/ -v
 ```
 
 ### Option B: Using pip (Traditional)
@@ -326,6 +350,14 @@ Example CSV files for different scenarios are provided in `data/samples/`:
 
 All settings are stored in `config.yml`. You can edit this file directly or use the web interface.
 
+`config.yml` is git-ignored, because the web UI rewrites it at runtime. The
+tracked template is `config.example.yml` — copy it to get started, or just run
+the app, which falls back to built-in defaults when no `config.yml` exists:
+
+```bash
+cp config.example.yml config.yml
+```
+
 ### Using the Dual-Page Interface
 
 The application provides two dedicated pages for managing firm summaries:
@@ -463,7 +495,9 @@ firm_websearch/
 │       ├── utils/          # Helper modules (webpage finder, etc.)
 │       └── config.py       # Primary configuration module
 ├── scripts/                # CLI wrapper scripts (run_app.py, run_filter.py, etc.)
-├── config.yml              # Primary configuration file (YAML)
+├── tests/                  # Test suite (`uv run pytest tests/`)
+├── config.example.yml      # Configuration template (config.yml is git-ignored)
+├── .env.example            # Environment variable template (.env is git-ignored)
 ├── docs/                   # Documentation and guides
 │   ├── ENGINES_GUIDE.md    # Multi-language guide for all 7 engines
 │   ├── FIRM_DATA_FORMAT.md # Guide on CSV data format specifications
