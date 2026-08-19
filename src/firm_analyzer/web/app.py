@@ -20,6 +20,7 @@ from flask_cors import CORS
 from supabase import create_client
 
 from firm_analyzer.config import load_config, save_config, get_default_config, BASE_DIR
+from firm_analyzer.llm import PROVIDER_IDS, describe_providers, resolve_provider_id
 
 load_dotenv()
 
@@ -236,6 +237,33 @@ def results_by_category(category_id):
 def get_columns():
     return jsonify({"columns": get_available_columns()})
 
+@app.route("/api/llm/providers", methods=["GET"])
+def llm_providers():
+    """The provider picker's data source.
+
+    `configured` reflects whether the API key is actually present in the
+    server's environment, so the UI can grey out a provider the user cannot run
+    instead of letting them pick it and fail on the first request. Key values
+    are never returned.
+    """
+    config = load_config()
+    return jsonify(
+        {
+            "providers": describe_providers(config),
+            "active": resolve_provider_id(None, config),
+        }
+    )
+
+@app.route("/api/taxonomy", methods=["GET"])
+def get_taxonomy():
+    """The segmentation taxonomy, for rendering filters and labels."""
+    try:
+        from firm_analyzer.core.segmentation import load_taxonomy
+
+        return jsonify(load_taxonomy())
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 def _script_response(result):
     """Shape a subprocess result for the client.
 
@@ -280,11 +308,18 @@ def run_summarize():
         if not 1 <= limit <= 10000:
             return jsonify({"success": False, "error": "limit out of range"}), 400
 
+    provider = data.get("provider")
+    if provider is not None:
+        provider = str(provider)
+        if provider not in PROVIDER_IDS:
+            return jsonify({"success": False, "error": "Unknown provider"}), 400
+
     try:
         script_path = BASE_DIR / "scripts" / "run_summarize.py"
         cmd = [sys.executable, str(script_path)]
         if dry_run: cmd.append("--dry-run")
         if limit: cmd.extend(["--limit", str(limit)])
+        if provider: cmd.extend(["--provider", provider])
 
         timeout = DRY_RUN_TIMEOUT if dry_run else SUMMARIZE_SCRIPT_TIMEOUT
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
@@ -304,8 +339,10 @@ def upload_pdf():
     if not filename:
         return jsonify({"success": False, "error": "Invalid file type, must be PDF"}), 400
 
-    provider = request.form.get('provider', 'gemini')
-    if provider not in {"gemini", "openai"}:
+    # Empty means "whatever config.yml selects"; anything else must be a known
+    # provider id, since it reaches a subprocess-free but still keyed code path.
+    provider = request.form.get('provider') or None
+    if provider is not None and provider not in PROVIDER_IDS:
         return jsonify({"success": False, "error": "Unknown provider"}), 400
 
     data_dir = (BASE_DIR / "data").resolve()

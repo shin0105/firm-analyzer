@@ -20,7 +20,11 @@ dependencies = [
     "httpx>=0.28.1",
     "tiktoken>=0.9.0",
     "flask-cors>=4.0.0",
-    "google-generativeai>=0.8.0",
+    # One SDK per selectable LLM provider. All three are imported lazily, so a
+    # missing package only breaks the provider that needs it.
+    "anthropic>=0.116.0",
+    "google-genai>=1.0.0",
+    "pypdf>=5.0.0",
     "supabase>=2.12.0",
     "pyyaml>=6.0.1",
     "geopy>=2.4.1",

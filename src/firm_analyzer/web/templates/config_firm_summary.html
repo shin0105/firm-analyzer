@@ -265,13 +265,25 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="app-model-selection">Model Selection</label>
-                        <select id="app-model-selection">
-                            <option value="gpt-4o">gpt-4o</option>
-                            <option value="gpt-4o-mini">gpt-4o-mini</option>
-                            <option value="gemini-3.1-flash">gemini-3.1-flash</option>
-                            <option value="gemini-3.1-pro">gemini-3.1-pro</option>
-                        </select>
+                        <label for="app-llm-provider">AI Provider</label>
+                        <!-- Options are filled from /api/llm/providers so the list
+                             always matches what the server can actually run. -->
+                        <select id="app-llm-provider"></select>
+                        <small id="app-llm-provider-hint"></small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="app-llm-model">Model override (blank = provider default)</label>
+                        <input type="text" id="app-llm-model" placeholder="e.g. gpt-5-mini">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Segmentation</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="app-segmentation-enabled"> Classify firms against taxonomy.yml</label>
+                        </div>
                     </div>
                 </div>
 
@@ -399,10 +411,49 @@
     <script>
         let currentConfig = {};
 
+        let llmProviders = [];
+
         // Load configuration on page load
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadProviders();
             loadConfig();
         });
+
+        async function loadProviders() {
+            try {
+                const response = await fetch('/api/llm/providers');
+                const data = await response.json();
+                llmProviders = data.providers || [];
+
+                const select = document.getElementById('app-llm-provider');
+                select.innerHTML = '';
+                llmProviders.forEach(provider => {
+                    const option = document.createElement('option');
+                    option.value = provider.id;
+                    option.textContent = provider.configured
+                        ? `${provider.label} (${provider.model})`
+                        : `${provider.label} — no API key`;
+                    select.appendChild(option);
+                });
+                select.onchange = updateProviderHint;
+            } catch (error) {
+                console.error('Error loading providers:', error);
+            }
+        }
+
+        function updateProviderHint() {
+            const selectedId = document.getElementById('app-llm-provider').value;
+            const provider = llmProviders.find(p => p.id === selectedId);
+            const hint = document.getElementById('app-llm-provider-hint');
+            if (!provider) {
+                hint.textContent = '';
+                return;
+            }
+            hint.textContent = provider.configured
+                ? `${provider.notes} PDF parser model: ${provider.parser_model}`
+                : `Set ${provider.key_env} in .env to use this provider.`;
+            document.getElementById('app-llm-model').placeholder = provider.model;
+        }
 
         async function loadConfig() {
             try {
@@ -420,7 +471,15 @@
             // App settings
             const appSettings = config.app || {};
             document.getElementById('app-data-source').value = appSettings.data_source || 'csv';
-            document.getElementById('app-model-selection').value = appSettings.model_selection || 'gpt-4o';
+            const activeProvider = appSettings.llm_provider
+                || (llmProviders.find(p => p.active) || {}).id
+                || 'openai';
+            document.getElementById('app-llm-provider').value = activeProvider;
+            document.getElementById('app-llm-model').value =
+                (appSettings.llm_models || {})[activeProvider] || '';
+            updateProviderHint();
+            document.getElementById('app-segmentation-enabled').checked =
+                (config.segmentation || {}).enabled !== false; // default true
             document.getElementById('app-enable-kakao-map').checked = appSettings.enable_kakao_map !== false; // default true
             document.getElementById('app-summary-config-path').value = appSettings.summary_config_path || '';
 
@@ -514,12 +573,23 @@
         async function saveConfig() {
             try {
                 // Collect app settings
+                const providerId = document.getElementById('app-llm-provider').value;
+                const modelOverrides = Object.assign(
+                    {}, (currentConfig.app || {}).llm_models || {}
+                );
+                modelOverrides[providerId] = document.getElementById('app-llm-model').value;
+
                 currentConfig.app = {
                     data_source: document.getElementById('app-data-source').value,
-                    model_selection: document.getElementById('app-model-selection').value,
+                    llm_provider: providerId,
+                    llm_models: modelOverrides,
                     enable_kakao_map: document.getElementById('app-enable-kakao-map').checked,
                     summary_config_path: document.getElementById('app-summary-config-path').value
                 };
+                currentConfig.segmentation = Object.assign(
+                    {}, currentConfig.segmentation || {},
+                    { enabled: document.getElementById('app-segmentation-enabled').checked }
+                );
 
                 // Collect summary settings
                 const focusAreas = Array.from(

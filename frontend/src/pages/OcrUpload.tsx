@@ -1,13 +1,25 @@
-import { apiUrl, type UploadResult } from '../api';
-import { useState } from 'react';
+import { apiUrl, type LLMProvider, type ProvidersResponse, type UploadResult } from '../api';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { UploadCloud, File, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function OcrUpload() {
   const [file, setFile] = useState<File | null>(null);
-  const [provider, setProvider] = useState<string>('gemini');
+  const [provider, setProvider] = useState<string>('');
+  const [providers, setProviders] = useState<LLMProvider[]>([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
+
+  useEffect(() => {
+    axios.get<ProvidersResponse>(apiUrl('/api/llm/providers'))
+      .then(res => {
+        setProviders(res.data.providers);
+        setProvider(res.data.active);
+      })
+      .catch(err => console.error(err));
+  }, []);
+
+  const selected = providers.find(p => p.id === provider);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -45,7 +57,7 @@ export default function OcrUpload() {
   return (
     <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto' }}>
       <h2 className="page-title">PDF OCR 변환</h2>
-      <p className="page-subtitle">PDF 문서를 업로드하여 Gemini AI를 통해 CSV 데이터로 변환합니다.</p>
+      <p className="page-subtitle">PDF 문서를 업로드하여 선택한 AI로 CSV 데이터로 변환합니다.</p>
       
       <div 
         style={{ 
@@ -76,24 +88,36 @@ export default function OcrUpload() {
       </div>
 
       <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-        <label className="form-label" style={{ textAlign: 'left', display: 'block' }}>AI 모델 선택 (AI Provider)</label>
-        <select 
-          className="form-input" 
-          value={provider} 
+        <label className="form-label" style={{ textAlign: 'left', display: 'block' }}>AI 선택 (AI Provider)</label>
+        <select
+          className="form-input"
+          value={provider}
           onChange={(e) => setProvider(e.target.value)}
         >
-          <option value="gemini">Gemini (3.1 Flash Lite)</option>
-          <option value="openai">OpenAI (GPT-5-mini)</option>
+          {providers.map(p => (
+            <option key={p.id} value={p.id} disabled={!p.configured}>
+              {p.label} ({p.parser_model}){p.configured ? '' : ' — API 키 없음'}
+            </option>
+          ))}
         </select>
+        {selected && (
+          <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.75, textAlign: 'left' }}>
+            {selected.supports_native_pdf
+              ? 'PDF를 그대로 읽습니다. 스캔 문서도 처리할 수 있습니다.'
+              : 'PDF에서 텍스트를 추출해 전달합니다. 스캔 문서는 인식되지 않습니다.'}
+          </p>
+        )}
       </div>
 
-      <button 
-        className="btn btn-primary" 
-        style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }} 
+      <button
+        className="btn btn-primary"
+        style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
         onClick={handleUpload}
-        disabled={!file || loading}
+        disabled={!file || loading || (selected ? !selected.configured : false)}
       >
-        {loading ? '변환 중... (Gemini AI가 문서를 분석 중입니다)' : 'CSV 변환 시작'}
+        {loading
+          ? `변환 중... (${selected?.label ?? 'AI'}가 문서를 분석 중입니다)`
+          : 'CSV 변환 시작'}
       </button>
 
       {result && (

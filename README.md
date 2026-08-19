@@ -6,6 +6,27 @@ A configurable web-based tool for filtering, searching, and summarizing firm/com
 
 ## Features
 
+### 🤖 Choose your AI
+- **Four back ends**: OpenAI, Claude (Anthropic), Google Gemini, or GitHub Models
+- **Pick it anywhere**: in the web UI, with `LLM_PROVIDER` in `.env`, via
+  `app.llm_provider` in `config.yml`, or `--provider` on any script
+- **Per-provider models**: sensible defaults with per-provider overrides, and a
+  separate cheaper model for PDF parsing
+- **Only one key needed**: the UI shows which providers actually have a key, so
+  a missing one is visible before you run anything
+
+### 🧭 Multi-axis firm segmentation
+- **Five axes instead of one label**: industry sector → subsector, technology
+  verticals (multi-label), business model, value-chain position, and
+  organisation profile
+- **Explicit tie-break rules**: product vendor vs SI, fabless vs foundry,
+  drug developer vs CRO, materials vs components, marketplace vs distributor
+- **Auditable**: per-axis confidence, an evidence sentence with a source URL,
+  and the keywords that drove the decision
+- **Editable as data**: everything lives in [`taxonomy.yml`](taxonomy.yml)
+
+📖 See [docs/segmentation.md](docs/segmentation.md) for the method and sources.
+
 ### 🎯 Dual-Page Workflow Interface
 - **Configuration Editor**: Dedicated page for editing all settings (filters, search, summaries, categories)
 - **Results Viewer**: Separate page for browsing and searching processed firm summaries
@@ -82,10 +103,15 @@ Copy the template and fill in your own values:
 cp .env.example .env
 ```
 
-`.env.example` documents every supported variable. The minimum to get running:
+`.env.example` documents every supported variable. The minimum to get running —
+a search key, and the key for whichever AI you choose:
 ```
 TAVILY_API_KEY=your_tavily_api_key
-GITHUB_TOKEN=your_github_token
+
+LLM_PROVIDER=openai          # openai | claude | gemini | github
+OPENAI_API_KEY=...           # if LLM_PROVIDER=openai
+# ANTHROPIC_API_KEY=...      # if LLM_PROVIDER=claude
+# GEMINI_API_KEY=...         # if LLM_PROVIDER=gemini
 
 # Optional: For accurate Korean address geocoding (recommended)
 KAKAO_REST_API_KEY=your_kakao_rest_api_key
@@ -180,8 +206,18 @@ python scripts/run_summarize.py --limit 10
 ### Optional Environment Variables
 
 ```bash
-# Custom OpenAI-compatible endpoint (default: GitHub Models)
-export OPENAI_BASE_URL="https://api.openai.com/v1"
+# Pick the AI without editing config.yml
+export LLM_PROVIDER="gemini"          # openai | claude | gemini | github
+
+# Override a provider's model (see .env.example for the defaults)
+export GEMINI_MODEL="gemini-3.5-flash"
+export OPENAI_PARSER_MODEL="gpt-5-mini"
+
+# Pages per PDF extraction request (lower it if output gets truncated)
+export PDF_PAGES_PER_CHUNK="6"
+
+# Endpoint for the `github` provider only
+export OPENAI_BASE_URL="https://models.github.ai/inference"
 
 # Enable Flask debug mode (default: false, for development only)
 export FLASK_DEBUG="true"
@@ -212,7 +248,7 @@ python scripts/run_filter.py --locations 서울 경기 --filter-type contains
 python scripts/run_filter.py -i my_firms.csv -o filtered.csv
 ```
 
-### Search and Summarize
+### Search, Summarize and Segment
 
 ```bash
 # Dry run (no API calls)
@@ -221,9 +257,18 @@ python scripts/run_summarize.py --dry-run
 # Process limited number of firms
 python scripts/run_summarize.py --limit 10
 
-# Use custom config
-python scripts/run_summarize.py --config my_config.yml
+# Pick the AI for this run
+python scripts/run_summarize.py --provider claude --limit 10
+python scripts/run_summarize.py --provider gemini --model gemini-3.5-flash
+
+# Summaries only, without the multi-axis segmentation
+python scripts/run_summarize.py --no-segmentation
 ```
+
+Each firm gets a `segmentation.json`, a `## 세분류` table in its `summary.md`,
+and flat columns in `<category>_firms.csv`.
+📖 See [docs/segmentation.md](docs/segmentation.md) for the taxonomy and the
+rules used to separate firms that look alike.
 
 ### Parse PDF to CSV (New!)
 
@@ -247,6 +292,20 @@ python scripts/run_pdf_parser_rule.py \
 
 # For detailed documentation
 See [docs/README_PDF_PARSER.md](docs/README_PDF_PARSER.md)
+```
+
+For PDFs the rule-based parser cannot read (irregular tables, scans), use the
+LLM parser. Documents longer than `PDF_PAGES_PER_CHUNK` pages are split across
+several requests and merged, since one response cannot hold a 28-page table:
+
+```bash
+# Uses the provider from config.yml / LLM_PROVIDER
+python scripts/run_pdf_parser_llm.py data/2026_전문연구요원_인원배정.pdf
+
+# Pick the AI explicitly. Claude and Gemini read the PDF itself, so they also
+# handle scanned documents; OpenAI reads the extracted text layer.
+python scripts/run_pdf_parser_llm.py data/list.pdf --provider claude
+python scripts/run_pdf_parser_llm.py data/list.pdf --provider gemini --pages-per-chunk 4
 ```
 
 ## UV Package Management Guide

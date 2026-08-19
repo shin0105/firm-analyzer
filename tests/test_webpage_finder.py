@@ -1,64 +1,56 @@
 #!/usr/bin/env python3
-"""
-Test script for the firm webpage finder module.
-Tests the module structure and basic functionality.
-"""
+"""Structure tests for the firm webpage finder (no network, no API keys)."""
 
-import sys
+import inspect
 import os
+import sys
 
-# Add parent directory to path to import the module
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
-# Test 1: Module import
-print("Test 1: Checking module import...")
-try:
-    from firm_analyzer.utils.webpage_finder import (
-        initialize_clients,
-        find_firm_webpage,
-        verify_firm_webpage,
-    )
-    print("✓ Module imported successfully")
-    print("  - initialize_clients: OK")
-    print("  - find_firm_webpage: OK")
-    print("  - verify_firm_webpage: OK")
-except ImportError as e:
-    print(f"✗ Failed to import module: {e}")
-    sys.exit(1)
+from firm_analyzer.utils.webpage_finder import (  # noqa: E402
+    find_firm_webpage,
+    initialize_clients,
+    verify_firm_webpage,
+)
 
-# Test 2: Check function signatures
-print("\nTest 2: Checking function signatures...")
-import inspect
 
-# Check initialize_clients
-sig = inspect.signature(initialize_clients)
-print(f"  - initialize_clients() -> {sig.return_annotation if hasattr(sig, 'return_annotation') else 'tuple'}")
+def test_public_functions_exist():
+    for fn in (initialize_clients, find_firm_webpage, verify_firm_webpage):
+        assert callable(fn)
 
-# Check find_firm_webpage
-sig = inspect.signature(find_firm_webpage)
-params = list(sig.parameters.keys())
-expected_params = ['firm_name', 'tavily_client', 'openai_client']
-if all(p in params for p in expected_params):
-    print(f"  - find_firm_webpage({', '.join(params[:3])}, ...) ✓")
-else:
-    print(f"  - find_firm_webpage: Missing expected parameters ✗")
-    sys.exit(1)
 
-# Check verify_firm_webpage
-sig = inspect.signature(verify_firm_webpage)
-params = list(sig.parameters.keys())
-expected_params = ['firm_name', 'candidates', 'openai_client']
-if all(p in params for p in expected_params):
-    print(f"  - verify_firm_webpage({', '.join(params)}) ✓")
-else:
-    print(f"  - verify_firm_webpage: Missing expected parameters ✗")
-    sys.exit(1)
+def test_find_firm_webpage_signature():
+    params = list(inspect.signature(find_firm_webpage).parameters)
+    assert params[:3] == ["firm_name", "tavily_client", "llm"]
 
-# Test 3: Module structure
-print("\nTest 3: Module structure check...")
-print("✓ All tests passed!")
-print("\nNote: To fully test the module, you need:")
-print("  - TAVILY_API_KEY in .env file")
-print("  - GITHUB_TOKEN in .env file")
-print("\nUsage: python find_firm_webpage.py <firm_name>")
-print("Example: python find_firm_webpage.py '카카오'")
+
+def test_verify_firm_webpage_signature():
+    params = list(inspect.signature(verify_firm_webpage).parameters)
+    assert params[:3] == ["firm_name", "candidates", "llm"]
+
+
+def test_verification_uses_the_provider_and_survives_bad_json(monkeypatch):
+    """A non-dict LLM answer must return None rather than raising."""
+
+    class StubProvider:
+        label = "Stub"
+        model = "stub-1"
+
+        def complete_json(self, prompt, system=None, max_output_tokens=None):
+            return ["not", "an", "object"]
+
+    assert verify_firm_webpage("테스트", [{"url": "https://example.com"}], StubProvider()) is None
+
+
+def test_verification_returns_the_selected_url():
+    class StubProvider:
+        label = "Stub"
+        model = "stub-1"
+
+        def complete_json(self, prompt, system=None, max_output_tokens=None):
+            assert "테스트" in prompt
+            return {"url": "https://example.com", "confidence": "high", "reasoning": "도메인 일치"}
+
+    result = verify_firm_webpage("테스트", [{"url": "https://example.com"}], StubProvider())
+    assert result["url"] == "https://example.com"
+    assert result["confidence"] == "high"

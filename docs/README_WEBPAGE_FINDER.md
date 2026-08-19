@@ -30,22 +30,26 @@ The `find_firm_webpage.py` module provides functionality to automatically find a
 ### Standalone
 
 ```bash
-python find_firm_webpage.py "카카오"
+python scripts/run_webpage_finder.py "카카오"
+
+# Verify with a specific AI
+python scripts/run_webpage_finder.py "카카오" --provider claude
 ```
 
 ### Integration in Scripts
 
 ```python
-from find_firm_webpage import find_firm_webpage, initialize_clients
+from firm_analyzer.utils.webpage_finder import find_firm_webpage, initialize_clients
 
-# Initialize clients
-tavily_client, openai_client = initialize_clients()
+# Initialize the Tavily client and the selected LLM provider.
+# Pass a provider id to override config.yml / LLM_PROVIDER.
+tavily_client, llm = initialize_clients()
 
 # Find webpage
 result = find_firm_webpage(
     firm_name="카카오",
     tavily_client=tavily_client,
-    openai_client=openai_client,
+    llm=llm,
     max_candidates=5
 )
 
@@ -79,16 +83,14 @@ When a firm is processed with webpage finding enabled, the following files are c
 ## Requirements
 
 - `TAVILY_API_KEY`: Required for Tavily search
-- `GITHUB_TOKEN`: Required for OpenAI API access via GitHub Models
-- `OPENAI_BASE_URL`: Optional, defaults to `https://models.github.ai/inference`
+- A key for the selected LLM provider — `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`,
+  `GEMINI_API_KEY`, or `GITHUB_TOKEN`. Choose the provider with `LLM_PROVIDER`,
+  `app.llm_provider` in `config.yml`, or `--provider`.
 
 ## Testing
 
-Run the test script to verify module structure:
-
 ```bash
-cd firm_summary
-python test_webpage_finder.py
+pytest tests/test_webpage_finder.py
 ```
 
 ## Error Handling

@@ -36,8 +36,22 @@ def get_default_config():
         "app": {
             "data_source": "csv",
             "enable_kakao_map": True,
-            "model_selection": "gpt-4o",
+            # Which LLM back end to run. Overridden by the LLM_PROVIDER env var
+            # and by --provider on the CLIs. See firm_analyzer.llm.
+            "llm_provider": "openai",
+            # Per-provider model override; empty means use the provider default.
+            "llm_models": {
+                "openai": "",
+                "claude": "",
+                "gemini": "",
+                "github": "",
+            },
             "summary_config_path": ""
+        },
+        "segmentation": {
+            # Multi-axis classification against taxonomy.yml, produced in the
+            # same model call as the summary.
+            "enabled": True,
         },
         "filters": {
             "location": {
