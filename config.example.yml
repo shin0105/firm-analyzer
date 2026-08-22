@@ -1,3 +1,22 @@
+app:
+  data_source: csv
+  enable_kakao_map: true
+  # Which LLM to use: openai | claude | gemini | github.
+  # Overridden by the LLM_PROVIDER env var, and by --provider on the CLIs.
+  llm_provider: openai
+  # Leave a value empty to use that provider's built-in default model.
+  llm_models:
+    openai: ''
+    claude: ''
+    gemini: ''
+    github: ''
+  summary_config_path: ''
+segmentation:
+  # Multi-axis classification against taxonomy.yml, produced in the same model
+  # call as the summary. Turn off to get summaries only.
+  enabled: true
+# Coarse buckets kept for the output directory layout and the dashboard.
+# The detailed segmentation lives in taxonomy.yml.
 categories:
 - color: '#4CAF50'
   description: Finance, Financial Services, Quant Trading

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { AlertTriangle, Check, RotateCcw, Save } from 'lucide-react';
 import { api, errorMessage } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
-import type { AppConfig } from '../lib/types';
+import type { AppConfig, LLMProvider, ProvidersResponse } from '../lib/types';
 import { ErrorState, LoadingState, Spinner } from '../components/States';
 
 type SaveState =
@@ -14,6 +14,13 @@ type SaveState =
 export default function ConfigPage() {
   const loaded = useAsync(async () => {
     const res = await api.get<AppConfig>('/api/config');
+    return res.data;
+  });
+
+  // Which AI back ends this server can actually run. Loaded separately so a
+  // provider listing failure never blocks editing the rest of the config.
+  const providersState = useAsync(async () => {
+    const res = await api.get<ProvidersResponse>('/api/llm/providers');
     return res.data;
   });
 
@@ -36,6 +43,24 @@ export default function ConfigPage() {
       const base = prev ?? loaded.data;
       if (!base) return prev;
       return { ...base, summary: { ...base.summary, ...patch } };
+    });
+    setSaveState({ kind: 'idle' });
+  };
+
+  const updateApp = (patch: Record<string, unknown>) => {
+    setDraft((prev) => {
+      const base = prev ?? loaded.data;
+      if (!base) return prev;
+      return { ...base, app: { ...base.app, ...patch } };
+    });
+    setSaveState({ kind: 'idle' });
+  };
+
+  const updateSegmentation = (patch: Record<string, unknown>) => {
+    setDraft((prev) => {
+      const base = prev ?? loaded.data;
+      if (!base) return prev;
+      return { ...base, segmentation: { ...base.segmentation, ...patch } };
     });
     setSaveState({ kind: 'idle' });
   };
@@ -84,11 +109,19 @@ export default function ConfigPage() {
 
   const saving = saveState.kind === 'saving';
 
+  const providers: LLMProvider[] = providersState.data?.providers ?? [];
+  const selectedProviderId =
+    (config.app?.llm_provider as string | undefined) ??
+    providersState.data?.active ??
+    'openai';
+  const selectedProvider = providers.find((p) => p.id === selectedProviderId);
+  const modelOverrides = (config.app?.llm_models ?? {}) as Record<string, string>;
+
   return (
     <div className="glass-card" style={{ maxWidth: '800px' }}>
       <div className="page-header">
         <h2 className="page-title">설정 변경</h2>
-        <p className="page-subtitle">필터 및 요약 설정</p>
+        <p className="page-subtitle">AI 모델, 필터 및 요약 설정</p>
       </div>
 
       <form
@@ -97,6 +130,106 @@ export default function ConfigPage() {
           void handleSave();
         }}
       >
+        <div className="form-group">
+          <label className="form-label" htmlFor="llm-provider">
+            사용할 AI (LLM Provider)
+          </label>
+          <select
+            id="llm-provider"
+            className="form-input"
+            value={selectedProviderId}
+            disabled={providersState.status === 'loading'}
+            onChange={(e) => updateApp({ llm_provider: e.target.value })}
+          >
+            {providers.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+                {p.configured ? '' : ' — API 키 없음'}
+              </option>
+            ))}
+          </select>
+
+          {providersState.status === 'error' && (
+            <p className="form-hint">
+              사용 가능한 AI 목록을 불러오지 못했습니다: {providersState.error}
+            </p>
+          )}
+
+          {selectedProvider && (
+            <div
+              className={selectedProvider.configured ? 'alert alert-success' : 'alert alert-error'}
+              style={{ marginTop: '0.75rem' }}
+            >
+              {selectedProvider.configured ? (
+                <Check size={20} aria-hidden="true" color="var(--success-color)" />
+              ) : (
+                <AlertTriangle size={20} aria-hidden="true" color="var(--danger-color)" />
+              )}
+              <div className="alert-body">
+                {selectedProvider.configured ? (
+                  <>
+                    기본 모델 <code>{selectedProvider.model}</code> · PDF 파싱{' '}
+                    <code>{selectedProvider.parser_model}</code>
+                  </>
+                ) : (
+                  <>
+                    <code>{selectedProvider.key_env}</code> 값을 <code>.env</code> 파일에 추가해야
+                    사용할 수 있습니다.
+                  </>
+                )}
+                {selectedProvider.notes && (
+                  <div style={{ opacity: 0.75, marginTop: '0.25rem' }}>{selectedProvider.notes}</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {selectedProvider && (
+          <div className="form-group">
+            <label className="form-label" htmlFor="llm-model">
+              모델 직접 지정
+            </label>
+            <input
+              id="llm-model"
+              className="form-input"
+              type="text"
+              placeholder={selectedProvider.model}
+              value={modelOverrides[selectedProvider.id] ?? ''}
+              onChange={(e) =>
+                updateApp({
+                  llm_models: { ...modelOverrides, [selectedProvider.id]: e.target.value },
+                })
+              }
+            />
+            <p className="form-hint">
+              비워두면 provider 기본 모델을 사용합니다. 환경변수{' '}
+              <code>{selectedProvider.id.toUpperCase()}_MODEL</code> 로도 지정할 수 있습니다.
+            </p>
+          </div>
+        )}
+
+        <div className="form-group">
+          <label className="form-label" htmlFor="segmentation-enabled">
+            세분류 (다축 분류)
+          </label>
+          <label
+            className="checkbox-row"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <input
+              id="segmentation-enabled"
+              type="checkbox"
+              checked={config.segmentation?.enabled !== false}
+              onChange={(e) => updateSegmentation({ enabled: e.target.checked })}
+            />
+            <span>taxonomy.yml 기준으로 업체를 다축 분류합니다</span>
+          </label>
+          <p className="form-hint">
+            산업 섹터·기술 버티컬·사업모델·밸류체인·조직 프로파일을 요약과 함께 생성합니다.
+          </p>
+        </div>
+
         <div className="form-group">
           <label className="form-label" htmlFor="summary-language">
             기본 프롬프트 언어

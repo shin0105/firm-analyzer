@@ -25,8 +25,39 @@ export interface FirmsResponse {
   count: number;
 }
 
+/** One LLM back end as returned by `GET /api/llm/providers`. */
+export interface LLMProvider {
+  id: string;
+  label: string;
+  /** True when the server has an API key for this provider. */
+  configured: boolean;
+  /** True when this is the provider `config.yml` currently selects. */
+  active: boolean;
+  model: string;
+  parser_model: string;
+  /** Env var that supplies the key, for the "missing key" hint. */
+  key_env: string;
+  supports_native_pdf: boolean;
+  notes: string;
+}
+
+/** `GET /api/llm/providers` */
+export interface ProvidersResponse {
+  providers: LLMProvider[];
+  active: string;
+}
+
 /** `GET /api/config` */
 export interface AppConfig {
+  app?: {
+    llm_provider?: string;
+    llm_models?: Record<string, string>;
+    [key: string]: unknown;
+  };
+  segmentation?: {
+    enabled?: boolean;
+    [key: string]: unknown;
+  };
   summary?: {
     language?: string;
     output_format?: string;

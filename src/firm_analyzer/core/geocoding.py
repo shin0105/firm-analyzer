@@ -44,7 +44,7 @@ KAKAO_API_KEY = os.environ.get('KAKAO_REST_API_KEY', '')
 KAKAO_API_AVAILABLE = REQUESTS_AVAILABLE and bool(KAKAO_API_KEY)
 
 # Get the parent directory (project root)
-from src.firm_analyzer.config import BASE_DIR
+from firm_analyzer.config import BASE_DIR
 DATA_DIR = os.path.join(BASE_DIR, "data")
 WEB_DIR = os.path.join(BASE_DIR, "src", "firm_analyzer", "web")
 

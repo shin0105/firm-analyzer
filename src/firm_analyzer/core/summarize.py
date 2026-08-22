@@ -2,9 +2,10 @@
 """
 Configurable Firm Search and Summarize Script
 
-This script searches for firm information and generates summaries based on
-user-defined configuration. Categories, prompts, and output format can all
-be customized via config.json or command-line arguments.
+This script searches for firm information, generates summaries, and places each
+firm on the multi-axis taxonomy in taxonomy.yml. Categories, prompts, output
+format, and which LLM provider to use are all set in config.yml or overridden
+on the command line.
 """
 
 import argparse
@@ -18,17 +19,18 @@ from pathlib import Path
 
 import pandas as pd
 from dotenv import load_dotenv
-from openai import OpenAI
 from tavily import TavilyClient
 
-from src.firm_analyzer.config import load_config, BASE_DIR
+from firm_analyzer.config import load_config, BASE_DIR
+from firm_analyzer.core import segmentation as seg
+from firm_analyzer.llm import LLMError, LLMProvider, PROVIDER_IDS, get_provider
 
 # Import firm webpage finder module with proper error handling
 WEBPAGE_FINDER_AVAILABLE = False
 find_firm_webpage = None
 
 try:
-    from src.firm_analyzer.utils.webpage_finder import find_firm_webpage as _find_firm_webpage
+    from firm_analyzer.utils.webpage_finder import find_firm_webpage as _find_firm_webpage
     find_firm_webpage = _find_firm_webpage
     WEBPAGE_FINDER_AVAILABLE = True
 except ImportError:
@@ -47,12 +49,23 @@ def sanitize_filename(name: str) -> str:
     return re.sub(r'[\\/*?:"<>|]', "", name)
 
 
+def segmentation_enabled(config: dict) -> bool:
+    """Whether to ask for the multi-axis segmentation alongside the summary."""
+    return bool(config.get("segmentation", {}).get("enabled", True))
+
+
 def build_summary_prompt(
     firm_name: str,
     search_results: list,
     config: dict,
+    taxonomy: Optional[dict] = None,
 ) -> str:
-    """Build the summary prompt based on configuration."""
+    """Build the summary prompt based on configuration.
+
+    When segmentation is enabled the taxonomy and its output contract are
+    appended, so one model call produces both the prose summary and the
+    structured classification instead of paying for two round trips per firm.
+    """
     summary_config = config.get("summary", {})
     search_config = config.get("search", {})
     categories = config.get("categories", [])
@@ -95,6 +108,10 @@ def build_summary_prompt(
     categories_text = "\n".join(category_descriptions)
     category_ids = [cat["id"] for cat in categories]
 
+    segmentation_block = ""
+    if taxonomy is not None:
+        segmentation_block = seg.build_segmentation_section(taxonomy, language)
+
     # Use custom prompt if provided, otherwise build default
     if custom_prompt:
         prompt = custom_prompt.format(
@@ -106,8 +123,22 @@ def build_summary_prompt(
             search_results=json.dumps(search_results, ensure_ascii=False),
             output_format=output_format,
             search_context=search_context,
+            segmentation_block=segmentation_block,
         )
+        # A custom prompt written before segmentation existed has no
+        # {segmentation_block} placeholder; append it rather than silently
+        # dropping the classification the caller asked for.
+        if segmentation_block and "segmentation" not in custom_prompt:
+            prompt = f"{prompt}\n\n{segmentation_block}"
     else:
+        segmentation_step = ""
+        segmentation_field = ""
+        if segmentation_block:
+            segmentation_step = f"\n3. Segment the firm on every axis below.\n\n{segmentation_block}\n"
+            # Plain string: interpolated verbatim into the f-string below, so
+            # braces here must not be doubled.
+            segmentation_field = ',\n  "segmentation": { ...위 구조... }'
+
         prompt = f"""
 You are a helpful assistant. Analyze the search results for the firm '{firm_name}'.
 
@@ -117,11 +148,11 @@ You are a helpful assistant. Analyze the search results for the firm '{firm_name
 
 2. Classify the firm into ONE of these categories:
 {categories_text}
-
+{segmentation_step}
 Return your response in the following JSON format:
 {{
   "summary": "Markdown string in {language}...",
-  "category": "category_id from {category_ids}"
+  "category": "category_id from {category_ids}"{segmentation_field}
 }}
 
 Search Results:
@@ -153,48 +184,41 @@ def detect_rate_limit_message(message: str) -> bool:
 def summarize_firm(
     firm_name: str,
     search_results: list,
-    openai_client: OpenAI,
+    provider: LLMProvider,
     config: dict,
+    taxonomy: Optional[dict] = None,
 ) -> Optional[dict]:
-    """Summarize firm information using LLM."""
+    """Summarize and segment one firm with the selected LLM provider."""
     summary_config = config.get("summary", {})
     system_prompt = summary_config.get("system_prompt") or DEFAULT_SYSTEM_PROMPT
-    prompt = build_summary_prompt(firm_name, search_results, config)
+    if taxonomy is not None:
+        system_prompt = f"{system_prompt}\n\n{seg.SEGMENTATION_SYSTEM_PROMPT}"
+
+    prompt = build_summary_prompt(firm_name, search_results, config, taxonomy)
 
     try:
-        model_name = config.get("app", {}).get("model_selection", "gpt-4o")
-        response = openai_client.chat.completions.create(
-            model=model_name,
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt,
-                },
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.5,
-            response_format={"type": "json_object"},
-        )
-    except Exception as e:
+        result_json = provider.complete_json(prompt, system=system_prompt)
+    except LLMError as e:
+        # Quota and rate-limit problems are worth stopping the whole run for:
+        # continuing would burn through the remaining firms producing nothing.
+        if detect_rate_limit_message(str(e)):
+            raise RuntimeError(
+                f"{provider.label} reported a rate limit or quota issue: {e}"
+            ) from e
         print(f"Error summarizing {firm_name}: {e}")
         return None
 
-    if not response.choices:
-        raise ValueError(f"No response returned for {firm_name}.")
+    if not isinstance(result_json, dict):
+        raise ValueError(f"Expected a JSON object for {firm_name}, got {type(result_json).__name__}.")
 
-    message_content = response.choices[0].message.content or ""
-    if not message_content.strip():
-        raise ValueError(f"Empty response returned for {firm_name}.")
-
-    if detect_rate_limit_message(message_content):
-        raise RuntimeError(
-            "LLM indicated a rate limit or quota issue. Please check your API usage."
-        )
-
-    result_json = json.loads(message_content)
     summary_text = result_json.get("summary")
     if not summary_text:
         raise ValueError(f"LLM did not return a summary for {firm_name}.")
+
+    if taxonomy is not None:
+        result_json["segmentation"] = seg.validate_segmentation(
+            result_json.get("segmentation"), taxonomy
+        )
 
     return result_json
 
@@ -234,35 +258,53 @@ def main():
         default=None,
         help="Limit number of firms to process"
     )
+    parser.add_argument(
+        "--provider",
+        choices=PROVIDER_IDS,
+        default=None,
+        help="LLM provider to use (default: app.llm_provider in config.yml)",
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Override the provider's model for this run",
+    )
+    parser.add_argument(
+        "--no-segmentation",
+        action="store_true",
+        help="Skip the multi-axis taxonomy classification",
+    )
 
     args = parser.parse_args()
 
     # Load configuration
     config = load_config()
 
-    # Get API keys
-    tavily_api_key = os.getenv("TAVILY_API_KEY")
-    github_token = os.getenv("GITHUB_TOKEN")
-    openai_base_url = os.getenv("OPENAI_BASE_URL", "https://models.github.ai/inference")
+    use_segmentation = segmentation_enabled(config) and not args.no_segmentation
+    taxonomy = seg.load_taxonomy() if use_segmentation else None
 
+    tavily_api_key = os.getenv("TAVILY_API_KEY")
+
+    # Initialize clients
     if not args.dry_run:
         if not tavily_api_key:
             print("Error: TAVILY_API_KEY not found in environment variables.")
             sys.exit(1)
-        if not github_token:
-            print("Error: GITHUB_TOKEN not found in environment variables.")
-            sys.exit(1)
 
-    # Initialize clients
-    if not args.dry_run:
         tavily_client = TavilyClient(api_key=tavily_api_key)
-        openai_client = OpenAI(
-            base_url=openai_base_url,
-            api_key=github_token,
-        )
+        try:
+            provider = get_provider(args.provider, config=config, model=args.model)
+            # Fail here, before the first search, rather than after paying for one.
+            provider.api_key()
+        except LLMError as exc:
+            print(f"Error: {exc}")
+            sys.exit(1)
+        print(f"Using {provider.label} ({provider.model})")
+        if use_segmentation:
+            print(f"Segmentation: on ({len(taxonomy['sectors'])} sectors)")
     else:
         tavily_client = None
-        openai_client = None
+        provider = None
 
     # Get output directory
     out_dir_conf = config.get("output", {}).get("directory", "firm_results")
@@ -350,19 +392,20 @@ def main():
                 webpage_result = find_firm_webpage(
                     firm_name,
                     tavily_client,
-                    openai_client,
+                    provider,
                     max_candidates=5
                 )
             except Exception as e:
                 print(f"  -> Warning: Could not find webpage: {e}")
 
-        # Summarize and classify
+        # Summarize, classify and segment
         try:
             result_data = summarize_firm(
                 firm_name,
                 search_response.get("results", []),
-                openai_client,
+                provider,
                 config,
+                taxonomy,
             )
         except Exception as err:
             print(f"Stopping execution: {err}")
@@ -372,7 +415,16 @@ def main():
             raise RuntimeError(f"Summarization failed for {firm_name}.")
 
         summary = result_data.get("summary", "")
-        category_id = result_data.get("category", "general")
+        segmentation = result_data.get("segmentation")
+
+        # The coarse category decides the output directory. Prefer the one
+        # implied by the segmented sector, so the two never disagree.
+        if segmentation:
+            category_id = seg.legacy_category(
+                segmentation, taxonomy, {cat["id"] for cat in categories}
+            )
+        else:
+            category_id = result_data.get("category", "general")
         category_info = get_category_info(category_id, config)
 
         # Create output directory for this firm
@@ -391,18 +443,27 @@ def main():
             with open(firm_dir / "webpage.json", "w", encoding="utf-8") as f:
                 json.dump(webpage_result, f, ensure_ascii=False, indent=2)
 
+        # Save the segmentation on its own so downstream tools (Supabase sync,
+        # notebooks) can read the structured record without parsing Markdown.
+        if segmentation:
+            with open(firm_dir / "segmentation.json", "w", encoding="utf-8") as f:
+                json.dump(segmentation, f, ensure_ascii=False, indent=2)
+
         # Save summary
         with open(firm_dir / "summary.md", "w", encoding="utf-8") as f:
             f.write(f"# {firm_name}\n\n")
             f.write(f"**Address:** {address}\n")
             f.write(f"**Category:** {category_info['name']}\n")
-            
+
             # Add webpage URL if found
             if webpage_result and webpage_result.get("url"):
                 f.write(f"**Official Webpage:** [{webpage_result['url']}]({webpage_result['url']})\n")
                 f.write(f"**Webpage Confidence:** {webpage_result.get('confidence', 'unknown')}\n")
-            
+
             f.write("\n")
+            if segmentation:
+                f.write(seg.segmentation_markdown(segmentation, taxonomy))
+                f.write("\n\n")
             f.write(summary)
 
         # Track for CSV summary
@@ -412,7 +473,9 @@ def main():
             "category": category_info["name"],
             "summary_snippet": summary[:100] + "..." if len(summary) > 100 else summary,
         }
-        
+        if segmentation:
+            firm_data.update(seg.segmentation_columns(segmentation))
+
         # Add webpage URL if found
         if webpage_result and webpage_result.get("url"):
             firm_data["webpage"] = webpage_result["url"]
@@ -423,7 +486,17 @@ def main():
         
         category_firms[category_id].append(firm_data)
 
-        print(f"  -> Classified as {category_info['name']}")
+        if segmentation:
+            verticals = ", ".join(segmentation.get("verticals") or []) or "-"
+            print(
+                f"  -> {segmentation['sector']}/{segmentation.get('subsector') or '-'}"
+                f" | verticals: {verticals}"
+                f" | model: {segmentation.get('business_model')}"
+                f" | chain: {segmentation.get('value_chain')}"
+                f" (confidence {segmentation['confidence'].get('sector')})"
+            )
+        else:
+            print(f"  -> Classified as {category_info['name']}")
         time.sleep(1)  # Respect rate limits
 
     # Save category CSV summaries
@@ -434,7 +507,20 @@ def main():
                 csv_path = output_dir / f"{category_id}_firms.csv"
 
                 if csv_path.exists():
-                    firms_df.to_csv(
+                    # A CSV written before segmentation existed has fewer
+                    # columns. Append against its header so the extra columns
+                    # don't shift every field one place to the right.
+                    existing_columns = list(
+                        pd.read_csv(str(csv_path), nrows=0, encoding="utf-8-sig").columns
+                    )
+                    missing = [c for c in firms_df.columns if c not in existing_columns]
+                    if missing:
+                        print(
+                            f"  Note: {csv_path.name} predates columns {missing}; "
+                            "they are dropped for this append. Delete the file to "
+                            "get the full schema."
+                        )
+                    firms_df.reindex(columns=existing_columns).to_csv(
                         str(csv_path), mode="a", header=False, index=False, encoding="utf-8-sig"
                     )
                     print(f"Appended {len(firms_list)} firms to {csv_path}")

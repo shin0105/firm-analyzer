@@ -1,0 +1,458 @@
+# Firm segmentation taxonomy
+#
+# Five independent axes, deliberately not one flat list of categories:
+#
+#   sectors        what the firm mainly DOES        (single label, 2 levels)
+#   verticals      which technologies it BUILDS ON  (multi-label, orthogonal)
+#   business_models how it MAKES MONEY              (single label)
+#   value_chain    where it SITS in the chain       (single label)
+#   profile        organisation shape and R&D role  (fixed enums)
+#
+# Why axes instead of a longer category list: a fabless AI-chip startup is
+# "semiconductor" on the sector axis, "AI/ML" and "chip design" on the vertical
+# axis, "component supplier" on the value chain, and "hardware product" as a
+# business model. A single flat taxonomy forces those four facts to compete for
+# one slot, which is what makes a flat list feel wrong for roughly a third of
+# firms. Standard taxonomies split the same way: KSIC/NAICS classify by
+# principal activity, while Crunchbase and PitchBook keep technology
+# "verticals" separate from sector precisely because they cross-cut it.
+#
+# `distinguish` entries are the tie-break rules that get injected into the
+# classification prompt. They exist because the hard cases are almost never
+# "which sector is this" but "which of these two adjacent sectors", and the
+# answer is usually a revenue-model question rather than a topical one.
+#
+# Edit freely: ids are the contract (they end up in CSVs and Supabase rows),
+# labels and keywords are free text.
+
+version: 2
+
+# ---------------------------------------------------------------------------
+# Axis 1 — Sector and subsector (single label, hierarchical)
+# ---------------------------------------------------------------------------
+sectors:
+  - id: ict_software
+    name: ICT·소프트웨어
+    name_en: ICT & Software
+    color: '#3B82F6'
+    legacy_category: ai_ml
+    keywords: [소프트웨어, SaaS, 플랫폼, 앱, 클라우드, 개발, 솔루션, 정보보안, 게임]
+    subsectors:
+      - id: app_platform_sw
+        name: 응용SW·플랫폼
+        keywords: [업무용SW, ERP, CRM, 협업툴, B2B SaaS]
+      - id: system_infra_sw
+        name: 시스템SW·인프라
+        keywords: [OS, DBMS, 미들웨어, 가상화, 클라우드 인프라, 쿠버네티스]
+      - id: data_ai_solution
+        name: 데이터·AI 솔루션
+        keywords: [인공지능, 머신러닝, 데이터분석, MLOps, 추천엔진, LLM]
+      - id: security
+        name: 정보보안
+        keywords: [보안, 암호, 침해대응, 관제, 인증, 개인정보보호]
+      - id: game
+        name: 게임
+        keywords: [게임, 게임엔진, 모바일게임, 퍼블리싱]
+      - id: it_service_si
+        name: IT서비스·SI
+        keywords: [SI, 시스템통합, 구축, 컨설팅, 유지보수, 파견]
+    distinguish:
+      - 자체 제품을 여러 고객에게 반복 판매하면 응용SW·플랫폼, 고객별 맞춤 구축을 프로젝트 단가로 청구하면 IT서비스·SI.
+      - AI를 사내 업무 효율화에만 쓰는 회사는 data_ai_solution이 아니다. AI 모델·알고리즘 자체가 판매 대상이거나 핵심 차별점일 때만 해당한다.
+
+  - id: semiconductor_hardware
+    name: 반도체·전자부품
+    name_en: Semiconductor & Electronic Components
+    color: '#8B5CF6'
+    legacy_category: general
+    keywords: [반도체, 웨이퍼, 팹리스, 파운드리, 디스플레이, 전자부품, 소부장]
+    subsectors:
+      - id: fabless_design
+        name: 반도체 설계(팹리스)
+        keywords: [팹리스, IP, SoC, ASIC, RTL, 설계자산, NPU, AP]
+      - id: semi_materials
+        name: 반도체 소재
+        keywords: [포토레지스트, CMP, 전구체, 특수가스, 웨이퍼 소재]
+      - id: semi_equipment
+        name: 반도체·디스플레이 장비
+        keywords: [식각장비, 증착, 검사장비, 노광, 세정장비, 공정장비]
+      - id: display
+        name: 디스플레이
+        keywords: [OLED, LCD, 마이크로LED, 패널, 백라이트]
+      - id: passive_pcb
+        name: PCB·수동부품
+        keywords: [PCB, 기판, MLCC, 커넥터, 인덕터]
+      - id: sensor_optics
+        name: 센서·광학
+        keywords: [센서, 이미지센서, 라이다, 렌즈, 광모듈, MEMS]
+    distinguish:
+      - 설계 IP를 보유하고 생산은 외주하면 fabless_design, 타사 설계를 위탁 생산하면 value_chain=parts 의 파운드리로 보고 sector 는 semiconductor_hardware 유지.
+      - 반도체를 "만드는 장비"를 제조하면 semi_equipment, 반도체 공정에 투입되는 화학물·가스라면 semi_materials.
+      - 최종 산출물이 화합물·원재료 형태면 chem_materials_energy, 기능을 갖춘 부품·모듈이면 semiconductor_hardware.
+
+  - id: bio_health
+    name: 바이오·헬스케어
+    name_en: Bio & Healthcare
+    color: '#10B981'
+    legacy_category: healthcare
+    keywords: [바이오, 제약, 신약, 의료기기, 진단, 헬스케어, 병원, 임상]
+    subsectors:
+      - id: drug_discovery
+        name: 신약개발
+        keywords: [신약, 파이프라인, 임상시험, 항체, 저분자, 유전자치료]
+      - id: diagnostics_device
+        name: 진단·의료기기
+        keywords: [진단키트, 체외진단, 의료영상, 의료기기, 초음파, 내시경]
+      - id: digital_health
+        name: 디지털헬스
+        keywords: [디지털치료제, 의료AI, 원격의료, 건강관리앱, EMR]
+      - id: cro_cdmo
+        name: CRO·CDMO·수탁분석
+        keywords: [위탁개발, 위탁생산, CRO, CDMO, 비임상, 분석시험]
+      - id: cosmetic_food
+        name: 화장품·건강기능식품
+        keywords: [화장품, 기능성식품, 건강기능식품, 원료, 발효]
+    distinguish:
+      - 자체 파이프라인과 적응증을 보유하면 drug_discovery, 타사 물질을 위탁 개발·생산·분석하면 cro_cdmo.
+      - 의료영상을 판독하는 AI 제품은 digital_health(sector) + 컴퓨터비전·AI(vertical) 로 함께 태그한다.
+
+  - id: finance
+    name: 금융·핀테크
+    name_en: Finance & Fintech
+    color: '#F59E0B'
+    legacy_category: finance
+    keywords: [금융, 투자, 자산운용, 핀테크, 퀀트, 트레이딩, 보험, 결제]
+    subsectors:
+      - id: asset_quant
+        name: 자산운용·퀀트
+        keywords: [자산운용, 퀀트, 알고리즘 트레이딩, 헤지펀드, 자문]
+      - id: bank_insurance
+        name: 은행·보험·증권
+        keywords: [은행, 증권, 보험, 여신, 카드]
+      - id: payments
+        name: 결제·페이먼트
+        keywords: [결제, PG, 송금, 간편결제, 정산]
+      - id: digital_assets
+        name: 블록체인·디지털자산
+        keywords: [블록체인, 가상자산, 거래소, 지갑, 토큰]
+      - id: credit_risk
+        name: 신용·리스크분석
+        keywords: [신용평가, 리스크관리, 스코어링, 이상거래탐지]
+    distinguish:
+      - 금융회사에 소프트웨어를 판매하는 벤더는 ict_software 이고, 자기 자본이나 고객 자산을 운용·중개해 수익을 얻으면 finance.
+
+  - id: mobility_machinery
+    name: 모빌리티·기계·로봇
+    name_en: Mobility, Machinery & Robotics
+    color: '#EF4444'
+    legacy_category: general
+    keywords: [자동차, 부품, 자율주행, 로봇, 기계, 항공, 방산, 전장]
+    subsectors:
+      - id: auto_parts
+        name: 자동차부품
+        keywords: [자동차부품, 구동계, 샤시, 내장재, 모터]
+      - id: autonomous_electronics
+        name: 자율주행·전장
+        keywords: [자율주행, ADAS, 전장, 차량용SW, V2X, 인포테인먼트]
+      - id: aerospace_defense
+        name: 항공우주·방위
+        keywords: [항공, 우주, 위성, 발사체, 방산, 드론, 무기체계]
+      - id: robotics_automation
+        name: 로봇·자동화
+        keywords: [로봇, 협동로봇, 물류자동화, 스마트팩토리, FA]
+      - id: industrial_machinery
+        name: 산업기계·정밀기계
+        keywords: [공작기계, 정밀가공, 펌프, 유압, 계측기]
+    distinguish:
+      - 로봇 하드웨어를 제조하면 robotics_automation, 남의 로봇에 올리는 제어·인식 소프트웨어만 판매하면 ict_software + 로보틱스(vertical).
+
+  - id: chem_materials_energy
+    name: 화학·소재·에너지
+    name_en: Chemicals, Materials & Energy
+    color: '#0EA5E9'
+    legacy_category: general
+    keywords: [화학, 소재, 배터리, 2차전지, 에너지, 태양광, 수소, 환경]
+    subsectors:
+      - id: fine_chemicals
+        name: 정밀화학
+        keywords: [정밀화학, 촉매, 첨가제, 접착제, 코팅]
+      - id: battery_storage
+        name: 2차전지·에너지저장
+        keywords: [2차전지, 배터리, 양극재, 음극재, 전해질, ESS]
+      - id: renewable_energy
+        name: 신재생에너지
+        keywords: [태양광, 풍력, 수소, 연료전지, 발전]
+      - id: metals_ceramics
+        name: 금속·세라믹 소재
+        keywords: [합금, 분말, 세라믹, 복합소재, 표면처리]
+      - id: environment_recycle
+        name: 환경·자원순환
+        keywords: [폐기물, 재활용, 수처리, 대기환경, 탄소포집]
+    subsector_note: 배터리 셀 제조와 양극재·전해질 소재 생산은 모두 battery_storage 이며 value_chain 축에서 구분한다.
+    distinguish:
+      - 판매 형태가 원료·화합물·분말이면 이 섹터, 조립된 기능 부품이면 semiconductor_hardware 또는 mobility_machinery.
+
+  - id: comms_media
+    name: 통신·미디어·콘텐츠
+    name_en: Communications, Media & Content
+    color: '#EC4899'
+    legacy_category: general
+    keywords: [통신, 네트워크, 5G, 방송, 미디어, 콘텐츠, 광고]
+    subsectors:
+      - id: network_equipment
+        name: 통신장비·네트워크
+        keywords: [기지국, 광전송, 라우터, 안테나, 위성통신]
+      - id: broadcast_media
+        name: 방송·미디어
+        keywords: [방송, 송출, OTT, 스트리밍, 영상처리]
+      - id: content_entertainment
+        name: 콘텐츠·엔터테인먼트
+        keywords: [콘텐츠, 웹툰, 음악, 영상제작, 엔터테인먼트]
+      - id: adtech
+        name: 광고·마케팅테크
+        keywords: [광고, 애드테크, 마케팅, 퍼포먼스, DSP]
+
+  - id: consumer_commerce
+    name: 소비재·유통·서비스
+    name_en: Consumer, Commerce & Services
+    color: '#84CC16'
+    legacy_category: general
+    keywords: [이커머스, 유통, 물류, 식품, 소비재, 교육, 여행]
+    subsectors:
+      - id: ecommerce_platform
+        name: 이커머스·플랫폼
+        keywords: [이커머스, 오픈마켓, 중개, 예약, 배달]
+      - id: logistics_supply
+        name: 물류·공급망
+        keywords: [물류, 풀필먼트, 운송, 창고, SCM]
+      - id: food_agri
+        name: 식품·농축산
+        keywords: [식품, 가공, 농업, 축산, 대체식품, 스마트팜]
+      - id: consumer_goods
+        name: 생활소비재
+        keywords: [생활용품, 의류, 가전, 리테일]
+      - id: education
+        name: 교육
+        keywords: [교육, 에듀테크, 학습, 이러닝]
+    distinguish:
+      - 재고를 직접 매입해 마진으로 판매하면 유통(value_chain=distribution), 제3자 거래를 중개해 수수료를 받으면 marketplace_platform.
+
+  - id: construction_infra
+    name: 건설·인프라·공간정보
+    name_en: Construction, Infrastructure & Geospatial
+    color: '#A16207'
+    legacy_category: general
+    keywords: [건설, 엔지니어링, 토목, 플랜트, 공간정보, GIS, 스마트시티]
+    subsectors:
+      - id: construction_engineering
+        name: 건설·엔지니어링
+        keywords: [건설, 시공, 설계, 감리, 플랜트]
+      - id: geospatial
+        name: 공간정보·GIS
+        keywords: [공간정보, GIS, 측량, 지도, 원격탐사, 드론측량]
+      - id: smart_city_energy
+        name: 스마트시티·에너지관리
+        keywords: [스마트시티, BEMS, 교통시스템, 시설관리]
+
+  - id: research_institute
+    name: 연구기관·시험인증·기타
+    name_en: Research Institutes, Testing & Other
+    color: '#64748B'
+    legacy_category: general
+    keywords: [연구원, 연구소, 진흥원, 산학협력, 시험인증, 재단]
+    subsectors:
+      - id: government_research
+        name: 정부출연·공공연구기관
+        keywords: [출연연, 국책연구, 진흥원, 연구원]
+      - id: university_industry
+        name: 대학·산학협력
+        keywords: [산학협력단, 대학, 부설연구소]
+      - id: testing_certification
+        name: 시험인증·기술컨설팅
+        keywords: [시험, 인증, 검사, 표준, 기술컨설팅]
+      - id: other
+        name: 기타·분류불가
+        keywords: []
+    distinguish:
+      - 수입의 상당 부분이 정부 출연금·과제비이고 영리 제품 매출이 없으면 research_institute, 제품·서비스 매출이 주력이면 해당 산업 섹터로 분류한다.
+      - 지주회사는 실제 사업 실체가 없으면 other, 사업 자회사를 실질적으로 운영하면 그 사업의 섹터로 분류한다.
+
+# ---------------------------------------------------------------------------
+# Axis 2 — Technology verticals (multi-label, cross-cuts every sector)
+# ---------------------------------------------------------------------------
+verticals:
+  - id: ai_ml
+    name: AI·머신러닝
+    keywords: [인공지능, 머신러닝, 딥러닝, 예측모델]
+  - id: genai_llm
+    name: 생성AI·LLM
+    keywords: [생성AI, LLM, 파운데이션모델, 프롬프트, RAG]
+  - id: computer_vision
+    name: 컴퓨터비전
+    keywords: [비전, 영상인식, 객체검출, OCR, 영상분석]
+  - id: nlp_speech
+    name: 자연어·음성
+    keywords: [자연어처리, NLP, 음성인식, STT, TTS, 번역]
+  - id: data_engineering
+    name: 데이터엔지니어링·분석
+    keywords: [데이터파이프라인, 빅데이터, 데이터웨어하우스, BI]
+  - id: cloud_devops
+    name: 클라우드·DevOps
+    keywords: [클라우드, 쿠버네티스, MLOps, CI/CD, SRE]
+  - id: chip_design
+    name: 반도체 설계·EDA
+    keywords: [RTL, 검증, EDA, 회로설계, 저전력설계]
+  - id: embedded_firmware
+    name: 임베디드·펌웨어
+    keywords: [임베디드, 펌웨어, RTOS, MCU, 제어보드]
+  - id: robotics
+    name: 로보틱스·제어
+    keywords: [로봇제어, SLAM, 매니퓰레이션, 모션제어]
+  - id: bioinformatics
+    name: 바이오인포매틱스
+    keywords: [생물정보, 시퀀싱분석, 단백질구조, 신약AI]
+  - id: genomics_omics
+    name: 유전체·오믹스
+    keywords: [유전체, NGS, 오믹스, 유전자편집, CRISPR]
+  - id: advanced_materials
+    name: 신소재·나노
+    keywords: [나노, 신소재, 복합재, 박막]
+  - id: quantum
+    name: 양자기술
+    keywords: [양자컴퓨팅, 양자암호, 큐비트]
+  - id: xr_graphics
+    name: XR·그래픽스
+    keywords: [AR, VR, XR, 3D, 렌더링, 디지털트윈]
+  - id: blockchain
+    name: 블록체인·분산원장
+    keywords: [블록체인, 스마트컨트랙트, 분산원장]
+  - id: security_crypto
+    name: 보안·암호기술
+    keywords: [암호, 보안, PQC, 인증, 취약점]
+  - id: wireless_comm
+    name: 무선통신·5G/6G
+    keywords: [5G, 6G, RF, 안테나, 모뎀, 위성통신]
+  - id: simulation_cae
+    name: 시뮬레이션·CAE
+    keywords: [해석, CFD, FEM, 시뮬레이션, 디지털트윈해석]
+  - id: precision_control
+    name: 정밀계측·제어
+    keywords: [계측, 센싱, 정밀제어, 캘리브레이션]
+  - id: none
+    name: 해당 없음
+    keywords: []
+
+vertical_rules:
+  - 최대 3개까지만 부여한다. 근거 문장을 댈 수 없는 태그는 붙이지 않는다.
+  - 기술을 "사용"하는 것과 "개발·판매"하는 것을 구분한다. 태그는 후자에만 부여한다.
+  - 섹터와 중복되어도 무방하다(예: 팹리스 기업 = sector semiconductor_hardware + vertical chip_design).
+
+# ---------------------------------------------------------------------------
+# Axis 3 — Business model (how revenue is earned)
+# ---------------------------------------------------------------------------
+business_models:
+  - id: b2b_saas
+    name: B2B SaaS·구독
+    signal: 동일 제품을 다수 기업 고객에 구독·라이선스로 반복 판매
+  - id: b2b_solution
+    name: B2B 솔루션·엔터프라이즈 구축
+    signal: 라이선스 + 구축·커스터마이징이 결합된 대형 계약
+  - id: b2c_service
+    name: B2C 서비스·앱
+    signal: 개인 이용자에게 직접 과금하거나 광고로 수익화
+  - id: marketplace_platform
+    name: 플랫폼·중개
+    signal: 제3자 간 거래를 중개하고 수수료를 수취
+  - id: hardware_product
+    name: 완제품 하드웨어 판매
+    signal: 자사 브랜드 완제품을 제조·판매
+  - id: component_supplier
+    name: 부품·소재 공급
+    signal: 다른 제조사의 생산 공정에 투입되는 부품·소재를 납품
+  - id: oem_odm
+    name: OEM·ODM·수탁제조
+    signal: 고객 설계·브랜드로 위탁 생산
+  - id: rnd_service
+    name: 연구·시험 용역(CRO/CDMO/분석)
+    signal: 고객 과제 단위로 연구·시험·분석을 수탁
+  - id: si_consulting
+    name: SI·컨설팅·인력공급
+    signal: 프로젝트 공수(man-month) 기준 청구
+  - id: licensing_ip
+    name: 기술이전·IP 라이선싱
+    signal: 특허·설계자산·물질 권리 이전과 마일스톤·로열티
+  - id: public_research
+    name: 공공·비영리 연구
+    signal: 출연금·국가과제가 주 재원
+  - id: unknown
+    name: 판단 불가
+    signal: 수익 모델을 알 수 있는 근거가 없음
+
+business_model_rules:
+  - 회사 소개 문구가 아니라 "누가 무엇에 대해 돈을 지불하는가"로 판단한다.
+  - 제품 판매와 구축 용역을 함께 하면 매출 비중이 큰 쪽을 고른다. 비중을 알 수 없으면 b2b_solution 을 쓰고 confidence 를 낮춘다.
+
+# ---------------------------------------------------------------------------
+# Axis 4 — Position in the value chain
+# ---------------------------------------------------------------------------
+value_chain:
+  - id: basic_research
+    name: 원천·선행연구
+  - id: materials
+    name: 소재·원재료
+  - id: parts
+    name: 부품·디바이스 제조
+  - id: module_equipment
+    name: 모듈·장비 제조
+  - id: finished_product
+    name: 완제품 제조
+  - id: system_integration
+    name: 시스템 통합·구축
+  - id: service_operation
+    name: 서비스 운영
+  - id: distribution
+    name: 유통·판매
+  - id: platform_intermediary
+    name: 플랫폼 중개
+  - id: unknown
+    name: 판단 불가
+
+# ---------------------------------------------------------------------------
+# Axis 5 — Organisation profile (fixed enums, evidence-driven)
+# ---------------------------------------------------------------------------
+profile:
+  size_tier:
+    - {id: large, name: 대기업}
+    - {id: mid, name: 중견기업}
+    - {id: sme, name: 중소기업}
+    - {id: startup, name: 스타트업}
+    - {id: research_org, name: 연구기관}
+    - {id: public, name: 공공기관}
+    - {id: unknown, name: 불명}
+  rnd_intensity:
+    - {id: high, name: 높음, signal: 전담 연구조직·다수 특허·매출 대비 큰 R&D 지출}
+    - {id: medium, name: 보통, signal: 연구개발 활동은 있으나 부서 규모가 작음}
+    - {id: low, name: 낮음, signal: 운영·영업 중심, 연구 언급 거의 없음}
+    - {id: unknown, name: 불명}
+  # 전문연구요원 관점에서 실제로 어떤 일을 하게 되는지.
+  research_role:
+    - {id: basic_applied, name: 기초·선행연구}
+    - {id: applied_dev, name: 응용개발}
+    - {id: product_dev, name: 제품개발·양산기술}
+    - {id: data_analytics, name: 데이터·분석}
+    - {id: service_ops, name: 서비스 운영·지원}
+    - {id: unknown, name: 불명}
+
+# ---------------------------------------------------------------------------
+# Global tie-break rules (injected verbatim into the prompt)
+# ---------------------------------------------------------------------------
+rules:
+  - 주된 산업활동 기준(한국표준산업분류 원칙): 기업이 여러 활동을 겸업하면 부가가치가 가장 큰 활동으로 분류한다. 부가가치를 알 수 없으면 매출액, 그다음 종업원 수 순으로 판단한다.
+  - 자기 소개보다 매출원을 우선한다. "AI 기반", "플랫폼", "종합 솔루션" 같은 홍보 문구는 근거로 쓰지 않는다.
+  - 계열사·지주 구조에서는 이 업체명에 해당하는 사업 실체만 분류한다. 모회사의 사업을 끌어오지 않는다.
+  - 근거가 없으면 추측하지 말고 unknown 또는 other 를 선택하고 confidence 를 low 로 둔다.
+  - 모든 축의 라벨은 반드시 이 분류체계에 정의된 id 중에서 고른다. 새 id 를 만들지 않는다.
+  - evidence 에는 검색 결과에서 실제로 확인한 근거를 한국어 한 문장으로 쓰고, 가능하면 출처 URL 을 함께 넣는다.
+
+confidence_levels: [high, medium, low]
+max_verticals: 3

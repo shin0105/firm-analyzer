@@ -1,37 +1,60 @@
 # Test Files
 
-This directory contains test scripts for various components of the firm_websearch application.
+Unit tests (no network, no API keys) plus a couple of manual scripts that do
+hit live services.
 
-## Available Tests
+## Unit tests
 
-### test_url.py
-Tests OpenAI API connection with GitHub Models endpoint.
-
-### test_pdf_parser.py
-Tests PDF parsing functionality for firm data extraction.
-
-### test_kakao_geocoding.py
-Tests Kakao Maps API for Korean address geocoding.
-
-### test_webpage_finder.py
-Tests webpage finder functionality for locating firm websites.
-
-## Running Tests
+Run everything from the project root:
 
 ```bash
-# Run a specific test
-python tests/test_url.py
+pytest
+```
+
+### test_llm_providers.py
+Provider selection precedence (argument → `LLM_PROVIDER` → `config.yml` →
+default), per-provider model resolution, and the tolerant JSON extraction that
+handles each vendor's response style.
+
+### test_segmentation.py
+Taxonomy integrity (`taxonomy.yml`), prompt assembly, and the validation that
+replaces model-invented labels with `unknown` instead of letting them into CSV
+columns.
+
+### test_pdf_parser.py
+Rule-based PDF parsing for firm data extraction.
+
+### test_webpage_finder.py
+Structure and response handling for the webpage finder.
+
+## Manual scripts (spend real API calls)
+
+### live_provider_check.py
+One small JSON round trip per configured provider. Providers without a key are
+skipped, not failed.
+
+```bash
+python tests/live_provider_check.py           # every configured provider
+python tests/live_provider_check.py gemini    # just one
+```
+
+### test_kakao_geocoding.py
+Kakao Maps geocoding against sample Korean addresses.
+
+```bash
 python tests/test_kakao_geocoding.py
-python tests/test_pdf_parser.py
-python tests/test_webpage_finder.py
 ```
 
-## Environment Variables Required
+## Environment variables
 
-Make sure you have the following environment variables set (in `.env` file):
+Copy `.env.example` to `.env` and fill in what you need. Only the key for the
+provider you actually select is required:
 
 ```
-GITHUB_TOKEN=your_github_token
-TAVILY_API_KEY=your_tavily_api_key
-KAKAO_REST_API_KEY=your_kakao_rest_api_key  # Optional, for geocoding tests
+TAVILY_API_KEY=...          # search
+LLM_PROVIDER=openai         # openai | claude | gemini | github
+OPENAI_API_KEY=...          # if LLM_PROVIDER=openai
+ANTHROPIC_API_KEY=...       # if LLM_PROVIDER=claude
+GEMINI_API_KEY=...          # if LLM_PROVIDER=gemini
+KAKAO_REST_API_KEY=...      # geocoding only
 ```

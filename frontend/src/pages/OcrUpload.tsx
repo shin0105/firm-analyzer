@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AlertCircle,
   CheckCircle,
@@ -8,15 +8,10 @@ import {
   X,
 } from 'lucide-react';
 import { api, apiUrl, errorMessage } from '../lib/api';
-import type { OcrResult } from '../lib/types';
+import type { LLMProvider, OcrResult, ProvidersResponse } from '../lib/types';
 import { Spinner } from '../components/States';
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
-
-const PROVIDERS = [
-  { value: 'gemini', label: 'Gemini (3.1 Flash Lite)' },
-  { value: 'openai', label: 'OpenAI (GPT-5-mini)' },
-] as const;
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -26,7 +21,8 @@ function formatBytes(bytes: number): string {
 
 export default function OcrUpload() {
   const [file, setFile] = useState<File | null>(null);
-  const [provider, setProvider] = useState<string>('gemini');
+  const [provider, setProvider] = useState<string>('');
+  const [providers, setProviders] = useState<LLMProvider[]>([]);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -34,7 +30,28 @@ export default function OcrUpload() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
-  const providerLabel = PROVIDERS.find((p) => p.value === provider)?.label ?? provider;
+  // Which back ends this server can run, and which one config.yml selects.
+  // Fetched rather than hardcoded so a provider without an API key can be
+  // shown as unavailable instead of failing on upload.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<ProvidersResponse>('/api/llm/providers')
+      .then((res) => {
+        if (cancelled) return;
+        setProviders(res.data.providers);
+        setProvider(res.data.active);
+      })
+      .catch(() => {
+        /* Leave the picker empty; the upload button stays disabled. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedProvider = providers.find((p) => p.id === provider);
+  const providerLabel = selectedProvider?.label ?? provider;
 
   /** Validate before the user waits on a doomed upload. */
   const acceptFile = (candidate: File | undefined) => {
@@ -171,14 +188,22 @@ export default function OcrUpload() {
           className="form-input"
           value={provider}
           onChange={(e) => setProvider(e.target.value)}
-          disabled={loading}
+          disabled={loading || providers.length === 0}
         >
-          {PROVIDERS.map((p) => (
-            <option key={p.value} value={p.value}>
-              {p.label}
+          {providers.map((p) => (
+            <option key={p.id} value={p.id} disabled={!p.configured}>
+              {p.label} ({p.parser_model})
+              {p.configured ? '' : ' — API 키 없음'}
             </option>
           ))}
         </select>
+        {selectedProvider && (
+          <p className="form-hint">
+            {selectedProvider.supports_native_pdf
+              ? 'PDF를 그대로 읽습니다. 스캔 문서도 처리할 수 있습니다.'
+              : 'PDF에서 텍스트를 추출해 전달합니다. 스캔 문서는 인식되지 않습니다.'}
+          </p>
+        )}
       </div>
 
       <button
@@ -186,7 +211,7 @@ export default function OcrUpload() {
         className="btn btn-primary btn-block"
         style={{ padding: '1rem' }}
         onClick={() => void handleUpload()}
-        disabled={!file || loading}
+        disabled={!file || loading || !selectedProvider?.configured}
       >
         {loading ? (
           <>
