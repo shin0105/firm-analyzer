@@ -1,7 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_API_BASE_URL?: string;
+  /** Base URL of the Flask backend; see `.env.example`. */
+  readonly VITE_API_BASE?: string;
 }
 
 interface ImportMeta {
