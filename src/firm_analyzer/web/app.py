@@ -21,7 +21,16 @@ from supabase import create_client
 
 from firm_analyzer.config import load_config, save_config, get_default_config, results_dir, BASE_DIR
 from firm_analyzer.llm import PROVIDER_IDS, describe_providers, resolve_provider_id
-from firm_analyzer.core.results import load_json
+from firm_analyzer.core.results import (
+    iter_firm_dirs,
+    load_json,
+    parse_summary_header,
+    plain_text,
+    read_text,
+    resolve_firm_dir,
+    snippet,
+    summary_body,
+)
 
 load_dotenv()
 
@@ -37,6 +46,9 @@ TEMPLATE_DIR = WEB_DIR / "templates"
 STATIC_DIR = WEB_DIR / "static"
 
 app = Flask(__name__, static_folder=str(STATIC_DIR), template_folder=str(TEMPLATE_DIR))
+# Send Korean as UTF-8 rather than \uXXXX escapes, which roughly halves the
+# size of firm lists and summaries.
+app.json.ensure_ascii = False
 
 # Only allow the frontend dev server by default. This API has no authentication
 # and can start subprocesses, so a wildcard origin would let any site the user
@@ -150,6 +162,120 @@ def get_firms_by_category(category_id):
 
     return sorted(firms, key=lambda x: x["name"])
 
+
+class BadFilter(ValueError):
+    """A /api/firms query parameter that names no configured id."""
+
+
+def _load_taxonomy_or_none() -> Optional[dict]:
+    try:
+        from firm_analyzer.core.segmentation import load_taxonomy
+
+        return load_taxonomy()
+    except Exception as e:
+        print(f"Could not load taxonomy: {e}", file=sys.stderr)
+        return None
+
+
+def parse_firm_filters(args, config: dict, taxonomy: Optional[dict]) -> dict:
+    """Validate /api/firms query parameters against config and taxonomy ids."""
+    filters = {key: (args.get(key) or "").strip() for key in
+               ("q", "category", "sector", "vertical", "business_model", "confidence", "segmented")}
+
+    if filters["category"] and filters["category"] not in valid_category_ids(config):
+        raise BadFilter(f"Unknown category: {filters['category']}")
+
+    axes = {"sector": "sectors", "vertical": "verticals", "business_model": "business_models"}
+    for param, section in axes.items():
+        value = filters[param]
+        if not value:
+            continue
+        if taxonomy is None:
+            raise BadFilter("The segmentation taxonomy could not be loaded")
+        allowed = {entry.get("id") for entry in taxonomy.get(section) or [] if isinstance(entry, dict)}
+        if value not in allowed:
+            raise BadFilter(f"Unknown {param}: {value}")
+
+    levels = (taxonomy or {}).get("confidence_levels") or ["high", "medium", "low"]
+    if filters["confidence"] and filters["confidence"] not in levels:
+        raise BadFilter(f"Unknown confidence: {filters['confidence']}")
+
+    segmented = filters["segmented"].lower()
+    if segmented in ("", "any"):
+        filters["segmented"] = None
+    elif segmented in ("true", "1", "yes"):
+        filters["segmented"] = True
+    elif segmented in ("false", "0", "no"):
+        filters["segmented"] = False
+    else:
+        raise BadFilter(f"segmented must be true or false, not {filters['segmented']}")
+
+    return filters
+
+
+def _matches_segmentation(segmentation: Optional[dict], filters: dict) -> bool:
+    if filters["segmented"] is not None and (segmentation is not None) != filters["segmented"]:
+        return False
+    if not (filters["sector"] or filters["vertical"] or filters["business_model"] or filters["confidence"]):
+        return True
+    if segmentation is None:
+        return False
+    if filters["sector"] and segmentation.get("sector") != filters["sector"]:
+        return False
+    if filters["vertical"] and filters["vertical"] not in (segmentation.get("verticals") or []):
+        return False
+    if filters["business_model"] and segmentation.get("business_model") != filters["business_model"]:
+        return False
+    confidence = segmentation.get("confidence") or {}
+    if filters["confidence"] and confidence.get("sector") != filters["confidence"]:
+        return False
+    return True
+
+
+def search_firms(config: dict, filters: dict, taxonomy: Optional[dict]) -> tuple[list, int]:
+    """Light rows for every firm folder that passes `filters`, plus the number scanned.
+
+    Sorted by firm name across categories, except that firms whose name
+    matches `q` come before those that only match in their summary text.
+    """
+    names = {cat["id"]: cat.get("name", cat["id"]) for cat in config.get("categories", []) if cat.get("id")}
+    category_ids = [filters["category"]] if filters["category"] else list(names)
+    needle = filters["q"].casefold()
+
+    rows = []
+    total = 0
+    for category_id, firm_dir in iter_firm_dirs(results_dir(config), category_ids):
+        if firm_dir.is_symlink():
+            continue  # summarize never writes one, and firm_detail refuses them
+        total += 1
+        segmentation = load_json(firm_dir / "segmentation.json")
+        segmentation = segmentation if isinstance(segmentation, dict) else None
+        if not _matches_segmentation(segmentation, filters):
+            continue
+
+        text = read_text(firm_dir / "summary.md")
+        name_match = bool(needle) and needle in firm_dir.name.casefold()
+        if needle and not name_match and needle not in text.casefold():
+            continue
+
+        seg_record = segmentation or {}
+        rows.append(((not name_match, firm_dir.name, category_id), {
+            "name": firm_dir.name,
+            "category_id": category_id,
+            "category": names[category_id],
+            "address": parse_summary_header(text).fields.get("Address", ""),
+            "segmented": segmentation is not None,
+            "sector": seg_record.get("sector") or None,
+            "subsector": seg_record.get("subsector") or None,
+            "verticals": seg_record.get("verticals") or [],
+            "business_model": seg_record.get("business_model") or None,
+            "sector_confidence": (seg_record.get("confidence") or {}).get("sector") or None,
+            "snippet": snippet(plain_text(summary_body(text, segmentation, taxonomy)), filters["q"]),
+        }))
+
+    rows.sort(key=lambda row: row[0])
+    return [row for _, row in rows], total
+
 def get_available_columns():
     """Get available columns from input CSV."""
     from firm_analyzer.config import DEFAULT_INPUT_CSV
@@ -238,6 +364,49 @@ def results_by_category(category_id):
             
     firms = get_firms_by_category(category_id)
     return jsonify({"firms": firms, "count": len(firms)})
+
+# The two /api/firms endpoints read the local result folders even when
+# app.data_source is "supabase": segmentation.json lives only there, and the
+# Supabase `firms` table has no segmentation columns to filter on.
+
+@app.route("/api/firms", methods=["GET"])
+def list_firms():
+    """Search firms across categories; light rows only, no full summaries."""
+    config = load_config()
+    taxonomy = _load_taxonomy_or_none()
+    try:
+        filters = parse_firm_filters(request.args, config, taxonomy)
+    except BadFilter as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+    firms, total = search_firms(config, filters, taxonomy)
+    return jsonify({"firms": firms, "count": len(firms), "total": total})
+
+@app.route("/api/firms/<category_id>/<firm_name>", methods=["GET"])
+def firm_detail(category_id, firm_name):
+    """One firm's full summary.md and segmentation."""
+    config = load_config()
+    if category_id not in valid_category_ids(config):
+        return jsonify({"success": False, "error": "Unknown category"}), 404
+
+    firm_dir = resolve_firm_dir(results_dir(config) / category_id, firm_name)
+    if firm_dir is None:
+        return jsonify({"success": False, "error": "Unknown firm"}), 404
+
+    text = read_text(firm_dir / "summary.md")
+    segmentation = load_json(firm_dir / "segmentation.json")
+    category_name = next(
+        (cat.get("name", category_id) for cat in config.get("categories", []) if cat.get("id") == category_id),
+        category_id,
+    )
+    return jsonify({
+        "name": firm_dir.name,
+        "category_id": category_id,
+        "category": category_name,
+        "address": parse_summary_header(text).fields.get("Address", ""),
+        "summary": text,
+        "segmentation": segmentation if isinstance(segmentation, dict) else None,
+    })
 
 @app.route("/api/export.csv", methods=["GET"])
 def export_csv():

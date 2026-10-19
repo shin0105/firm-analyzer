@@ -34,8 +34,11 @@ directory.
 `firm-export` CSV rebuilt from the result folders.
 
 ### test_web_api.py
-The Flask API through its test client: results and export endpoints, and the
-input checks on category ids, summarize parameters and upload filenames.
+The Flask API through its test client: results and export endpoints, firm
+search (`q`, each filter, 400 on unknown ids) and firm detail, including the
+guard that only serves a firm folder directly inside its category (no "..",
+separators or outward symlinks), plus the input checks on category ids,
+summarize parameters and upload filenames.
 
 ### test_pdf_parser.py
 Rule-based PDF parsing for firm data extraction.
