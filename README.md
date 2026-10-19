@@ -626,10 +626,30 @@ firm_websearch/
 | `/api/config` | POST | Update configuration |
 | `/api/config/reset` | POST | Reset to default configuration |
 | `/api/results/summary` | GET | Get summary of processed results |
-| `/api/results/<category_id>` | GET | Get firms in a category, with each firm's segmentation |
+| `/api/results/<category_id>` | GET | Get firms in a category, with each firm's full summary and segmentation |
+| `/api/firms` | GET | Search firms across all categories; light rows only (name, category, address, sector/subsector/verticals, sector confidence, summary snippet). See the query parameters below |
+| `/api/firms/<category_id>/<firm_name>` | GET | One firm's full `summary.md` and segmentation; 404 for an unknown category or anything but a firm folder directly inside it |
+| `/api/taxonomy` | GET | The segmentation taxonomy (`taxonomy.yml`), with Korean labels, for filters and badges |
 | `/api/export.csv` | GET | Download every processed firm as one CSV |
 | `/api/run/filter` | POST | Run filter script |
 | `/api/run/summarize` | POST | Run search/summarize script |
+
+`GET /api/firms` query parameters (all optional, combined with AND; an empty value means "any"):
+
+| Parameter | Matches |
+|-----------|---------|
+| `q` | Firm name or summary text, case-insensitive. Name matches are listed first |
+| `category` | A category id from `config.yml` |
+| `sector` | A sector id from `taxonomy.yml` |
+| `vertical` | A vertical id from `taxonomy.yml`; the firm lists it among its verticals |
+| `business_model` | A business model id from `taxonomy.yml` |
+| `confidence` | The sector confidence: `high`, `medium` or `low` |
+| `segmented` | `true` for firms with a `segmentation.json`, `false` for those without |
+
+An id that is not in `config.yml` or `taxonomy.yml` returns 400. The response is
+`{"firms": [...], "count": <matches>, "total": <firms scanned>}`. Both `/api/firms`
+endpoints read the local result folders even when `app.data_source` is `supabase`,
+because segmentation is stored only there.
 
 ## Use Cases
 

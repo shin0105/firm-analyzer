@@ -26,6 +26,9 @@ from firm_analyzer.core import segmentation as seg
 
 HEADER_FIELD = re.compile(r"^\*\*([^*]+?):\*\*\s*(.*)$")
 SEGMENTATION_HEADING = "## 세분류 (Segmentation)"
+# Inline emphasis and list markers, stripped when flattening prose to a snippet.
+MARKDOWN_NOISE = re.compile(r"\*\*|`|^\s*(?:[-*+]|\d+\.)\s+")
+MARKDOWN_LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
 
 
 @dataclass
@@ -83,6 +86,76 @@ def iter_firm_dirs(output_dir: Path, category_ids: Iterable[str]) -> Iterator[tu
         for firm_dir in sorted(category_path.iterdir()):
             if firm_dir.is_dir():
                 yield category_id, firm_dir
+
+
+def resolve_firm_dir(category_path: Path, firm_name: str) -> Optional[Path]:
+    """The folder `firm_name` names inside `category_path`, or None.
+
+    `firm_name` comes from a URL, so it must resolve to a direct child folder:
+    "..", separators and symlinks that point elsewhere are all refused.
+    """
+    if not firm_name or firm_name in {".", ".."}:
+        return None
+    if any(ch in firm_name for ch in ("/", "\\", "\x00")):
+        return None
+    try:
+        base = category_path.resolve(strict=True)
+        candidate = (base / firm_name).resolve(strict=True)
+    except (OSError, RuntimeError, ValueError):
+        return None
+    if candidate.parent != base or not candidate.is_dir():
+        return None
+    return candidate
+
+
+def summary_body(text: str, segmentation: Optional[dict] = None, taxonomy: Optional[dict] = None) -> str:
+    """summary.md without its header lines and 세분류 block, i.e. the prose."""
+    header = parse_summary_header(text)
+    body = "\n".join(text.splitlines()[header.end_line:])
+    if SEGMENTATION_HEADING not in body:
+        return body.strip()
+
+    block = seg.segmentation_markdown(segmentation, taxonomy) if segmentation and taxonomy else None
+    if block and block in body:
+        return body.replace(block, "", 1).strip()
+
+    # A hand-edited block, or no record to rebuild it from: drop everything
+    # from its heading up to the next heading.
+    lines = body.splitlines()
+    start = next(i for i, line in enumerate(lines) if line.strip() == SEGMENTATION_HEADING)
+    end = next(
+        (i for i in range(start + 1, len(lines)) if lines[i].startswith("#")),
+        len(lines),
+    )
+    return "\n".join(lines[:start] + lines[end:]).strip()
+
+
+def plain_text(markdown: str) -> str:
+    """Flatten Markdown prose to one line: no headings, tables or emphasis."""
+    parts = []
+    for line in markdown.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("#", "|")):
+            continue
+        stripped = MARKDOWN_LINK.sub(r"\1", stripped)
+        parts.append(MARKDOWN_NOISE.sub("", stripped).strip())
+    return " ".join(part for part in parts if part)
+
+
+def snippet(text: str, needle: str = "", width: int = 90) -> str:
+    """About `width` characters of `text`, centred on `needle` when it occurs."""
+    position = text.casefold().find(needle.casefold()) if needle else -1
+    if position < 0 or len(text) <= width:
+        start = 0
+    else:
+        start = max(0, min(position - width // 3, len(text) - width))
+    end = start + width
+    out = text[start:end].strip()
+    if start > 0:
+        out = "…" + out
+    if end < len(text):
+        out += "…"
+    return out
 
 
 def firm_record(category_id: str, category_name: str, firm_dir: Path) -> dict:

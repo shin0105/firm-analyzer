@@ -624,7 +624,8 @@ select.form-input option {
 
 .split-view {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) 2fr;
+  /* minmax(0, …) so a long nowrap firm name truncates instead of widening the track. */
+  grid-template-columns: minmax(300px, 2fr) minmax(0, 3fr);
   gap: 1.5rem;
   align-items: stretch;
   min-height: 0;
@@ -741,6 +742,106 @@ select.form-input option {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.12);
   color: inherit;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.filter-row select.form-input {
+  width: auto;
+  flex: 1 1 9rem;
+  min-width: 0;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+  font-size: 0.875rem;
+  background-position: calc(100% - 1.15rem) 0.95rem, calc(100% - 0.85rem) 0.95rem;
+}
+
+.filter-row select.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.list-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.25rem;
+}
+
+.firm-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.firm-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.firm-item-category {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.firm-item-snippet {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.firm-item-snippet mark {
+  background: rgba(250, 204, 21, 0.28);
+  color: var(--text-primary);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* Tinted from the sector's taxonomy.yml colour, passed in as --badge-color. */
+.sector-badge {
+  --badge-color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--badge-color) 55%, white);
+  background: color-mix(in srgb, var(--badge-color) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 45%, transparent);
+}
+
+/* A low-confidence sector reads as tentative. */
+.sector-badge[data-confidence='low'] {
+  border-style: dashed;
+}
+
+.sector-badge--none {
+  color: var(--text-muted);
+  background: transparent;
+}
+
+.firm-detail-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
 /* -------------------------------------------------------- Markdown body */
@@ -983,7 +1084,7 @@ select.form-input option {
   }
 
   .split-view {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   /* Stacked panes scroll with the page instead of fighting for viewport height. */

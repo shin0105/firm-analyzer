@@ -40,6 +40,73 @@ export interface FirmsResponse {
   count: number;
 }
 
+/** One row of `GET /api/firms`: enough to list and filter, no full summary. */
+export interface FirmListItem {
+  name: string;
+  category_id: string;
+  category: string;
+  address: string;
+  segmented: boolean;
+  sector: string | null;
+  subsector: string | null;
+  verticals: string[];
+  business_model: string | null;
+  sector_confidence: string | null;
+  /** ~90 characters of summary prose, centred on the search term if any. */
+  snippet: string;
+}
+
+/** Query parameters accepted by `GET /api/firms`; empty means "any". */
+export interface FirmQuery {
+  q?: string;
+  category?: string;
+  sector?: string;
+  vertical?: string;
+  business_model?: string;
+  confidence?: string;
+  segmented?: 'true' | 'false';
+}
+
+/** `GET /api/firms` */
+export interface FirmListResponse {
+  firms: FirmListItem[];
+  count: number;
+  /** Firms scanned before `q` and the filters (all of them, or one category's). */
+  total: number;
+}
+
+/** `GET /api/firms/:categoryId/:firmName` */
+export interface FirmDetail {
+  name: string;
+  category_id: string;
+  category: string;
+  address: string;
+  summary: string;
+  segmentation: Segmentation | null;
+}
+
+/** An id/label pair from `taxonomy.yml`. */
+export interface TaxonomyEntry {
+  id: string;
+  name: string;
+  name_en?: string;
+  color?: string;
+}
+
+export interface TaxonomySector extends TaxonomyEntry {
+  subsectors?: TaxonomyEntry[];
+}
+
+/** `GET /api/taxonomy` — the parts of `taxonomy.yml` the UI reads. */
+export interface Taxonomy {
+  sectors: TaxonomySector[];
+  verticals: TaxonomyEntry[];
+  business_models: TaxonomyEntry[];
+  value_chain: TaxonomyEntry[];
+  profile: Record<string, TaxonomyEntry[]>;
+  confidence_levels?: string[];
+}
+
 /** One LLM back end as returned by `GET /api/llm/providers`. */
 export interface LLMProvider {
   id: string;
