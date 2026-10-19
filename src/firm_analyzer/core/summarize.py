@@ -21,7 +21,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from tavily import TavilyClient
 
-from firm_analyzer.config import load_config, BASE_DIR
+from firm_analyzer.config import load_config, BASE_DIR, FILTERED_CSV
 from firm_analyzer.core import segmentation as seg
 from firm_analyzer.llm import LLMError, LLMProvider, PROVIDER_IDS, get_provider
 
@@ -47,6 +47,59 @@ DEFAULT_SYSTEM_PROMPT = (
 def sanitize_filename(name: str) -> str:
     """Sanitize string for use as filename."""
     return re.sub(r'[\\/*?:"<>|]', "", name)
+
+
+class QuotaExhausted(RuntimeError):
+    """The provider reported a rate limit or spent quota; stop the whole run."""
+
+
+def render_template(template: str, **values) -> str:
+    """Fill `{name}` placeholders in a user-written template.
+
+    str.format is tried first so templates that escape braces as `{{ }}` keep
+    working. A template that str.format rejects — typically a custom prompt
+    with a literal JSON example in it — falls back to replacing only the known
+    placeholders and leaving every other brace alone, instead of crashing the
+    run on the first firm.
+    """
+    try:
+        return template.format(**values)
+    except (KeyError, IndexError, ValueError):
+        pattern = re.compile(r"\{(" + "|".join(map(re.escape, values)) + r")\}")
+        return pattern.sub(lambda m: str(values[m.group(1)]), template)
+
+
+def resolve_category_id(raw: object, valid_ids: set) -> str:
+    """Map a model-chosen category onto a configured id.
+
+    The id becomes a directory name, so an invented or path-like value
+    ("fintech", "../x") must never reach the filesystem.
+    """
+    candidate = str(raw or "").strip()
+    if candidate in valid_ids:
+        return candidate
+    if "general" in valid_ids or not valid_ids:
+        return "general"
+    return sorted(valid_ids)[0]
+
+
+def append_csv_row(csv_path: Path, row: dict) -> list:
+    """Append one firm to a category CSV, aligned to the file's existing header.
+
+    Written per firm rather than at the end of the run, so a run that stops
+    part-way still records every firm it finished. Returns the columns the
+    existing header lacks (dropped for this append).
+    """
+    frame = pd.DataFrame([row])
+    if not csv_path.exists():
+        frame.to_csv(str(csv_path), index=False, encoding="utf-8-sig")
+        return []
+
+    existing_columns = list(pd.read_csv(str(csv_path), nrows=0, encoding="utf-8-sig").columns)
+    frame.reindex(columns=existing_columns).to_csv(
+        str(csv_path), mode="a", header=False, index=False, encoding="utf-8-sig"
+    )
+    return [c for c in frame.columns if c not in existing_columns]
 
 
 def segmentation_enabled(config: dict) -> bool:
@@ -114,7 +167,8 @@ def build_summary_prompt(
 
     # Use custom prompt if provided, otherwise build default
     if custom_prompt:
-        prompt = custom_prompt.format(
+        prompt = render_template(
+            custom_prompt,
             firm_name=firm_name,
             language=language,
             focus_areas=focus_text,
@@ -202,7 +256,7 @@ def summarize_firm(
         # Quota and rate-limit problems are worth stopping the whole run for:
         # continuing would burn through the remaining firms producing nothing.
         if detect_rate_limit_message(str(e)):
-            raise RuntimeError(
+            raise QuotaExhausted(
                 f"{provider.label} reported a rate limit or quota issue: {e}"
             ) from e
         print(f"Error summarizing {firm_name}: {e}")
@@ -239,8 +293,8 @@ def main():
     )
     parser.add_argument(
         "-i", "--input",
-        default="filtered_firms.csv",
-        help="Input CSV file with firms to process"
+        default=str(FILTERED_CSV),
+        help="Input CSV file with firms to process (default: the filter's output)"
     )
     parser.add_argument(
         "-o", "--output-dir",
@@ -346,14 +400,29 @@ def main():
     if args.limit:
         firms_to_process = df.head(args.limit)
 
-    category_firms = {cat["id"]: [] for cat in categories}
+    valid_ids = {cat["id"] for cat in categories}
+    write_csv = config.get("output", {}).get("create_csv_summary", True)
+    csv_counts: dict = {}
+    warned_csvs: set = set()
+    processed_count = 0
+    skipped_count = 0
+    failures: list = []
+    stopped_reason = None
 
     for row_number, (_, row) in enumerate(firms_to_process.iterrows(), start=1):
-        firm_name = row["업체명"]
+        raw_name = row.get("업체명")
+        if pd.isna(raw_name) or not str(raw_name).strip():
+            print(f"Skipping row {row_number}: no firm name.")
+            continue
+        firm_name = str(raw_name).strip()
         address = row.get("소재지", "")
+        address = "" if pd.isna(address) else str(address)
 
         # Check if already processed
         safe_name = sanitize_filename(firm_name)
+        if safe_name in ("", ".", ".."):
+            failures.append((firm_name, "name is not usable as a folder name"))
+            continue
         already_processed = False
         for cat in categories:
             cat_path = output_dir / cat["id"] / safe_name
@@ -363,11 +432,12 @@ def main():
 
         if already_processed:
             print(f"Skipping {firm_name} (already processed).")
+            skipped_count += 1
             continue
 
         print(f"Processing [{row_number}/{len(firms_to_process)}] {firm_name}...")
 
-        base_query = query_template.format(firm_name=firm_name)
+        base_query = render_template(query_template, firm_name=firm_name)
         query = f"{base_query} {search_context}" if search_context else base_query
 
         if args.dry_run:
@@ -383,6 +453,7 @@ def main():
             )
         except Exception as e:
             print(f"Error searching for {firm_name}: {e}")
+            failures.append((firm_name, f"search failed: {e}"))
             continue
 
         # Find firm webpage if enabled
@@ -398,7 +469,9 @@ def main():
             except Exception as e:
                 print(f"  -> Warning: Could not find webpage: {e}")
 
-        # Summarize, classify and segment
+        # Summarize, classify and segment. Only a spent quota stops the run;
+        # any other failure is confined to this firm, which is left unwritten
+        # so the next run retries it.
         try:
             result_data = summarize_firm(
                 firm_name,
@@ -407,12 +480,17 @@ def main():
                 config,
                 taxonomy,
             )
+        except QuotaExhausted as err:
+            stopped_reason = str(err)
+            break
         except Exception as err:
-            print(f"Stopping execution: {err}")
-            raise SystemExit(1) from err
+            print(f"  -> Failed: {err}")
+            failures.append((firm_name, str(err)))
+            continue
 
         if result_data is None:
-            raise RuntimeError(f"Summarization failed for {firm_name}.")
+            failures.append((firm_name, "summarization failed"))
+            continue
 
         summary = result_data.get("summary", "")
         segmentation = result_data.get("segmentation")
@@ -424,7 +502,7 @@ def main():
                 segmentation, taxonomy, {cat["id"] for cat in categories}
             )
         else:
-            category_id = result_data.get("category", "general")
+            category_id = resolve_category_id(result_data.get("category"), valid_ids)
         category_info = get_category_info(category_id, config)
 
         # Create output directory for this firm
@@ -484,7 +562,18 @@ def main():
             firm_data["webpage"] = ""
             firm_data["webpage_confidence"] = ""
         
-        category_firms[category_id].append(firm_data)
+        if write_csv:
+            csv_path = output_dir / f"{category_id}_firms.csv"
+            missing = append_csv_row(csv_path, firm_data)
+            if missing and csv_path not in warned_csvs:
+                warned_csvs.add(csv_path)
+                print(
+                    f"  Note: {csv_path.name} predates columns {missing}; "
+                    "they are dropped from its rows. Run firm-export for the "
+                    "full schema, or delete the file to start it afresh."
+                )
+            csv_counts[csv_path] = csv_counts.get(csv_path, 0) + 1
+        processed_count += 1
 
         if segmentation:
             verticals = ", ".join(segmentation.get("verticals") or []) or "-"
@@ -499,34 +588,21 @@ def main():
             print(f"  -> Classified as {category_info['name']}")
         time.sleep(1)  # Respect rate limits
 
-    # Save category CSV summaries
-    if config.get("output", {}).get("create_csv_summary", True):
-        for category_id, firms_list in category_firms.items():
-            if firms_list:
-                firms_df = pd.DataFrame(firms_list)
-                csv_path = output_dir / f"{category_id}_firms.csv"
+    for csv_path, count in csv_counts.items():
+        print(f"Wrote {count} firm(s) to {csv_path}")
 
-                if csv_path.exists():
-                    # A CSV written before segmentation existed has fewer
-                    # columns. Append against its header so the extra columns
-                    # don't shift every field one place to the right.
-                    existing_columns = list(
-                        pd.read_csv(str(csv_path), nrows=0, encoding="utf-8-sig").columns
-                    )
-                    missing = [c for c in firms_df.columns if c not in existing_columns]
-                    if missing:
-                        print(
-                            f"  Note: {csv_path.name} predates columns {missing}; "
-                            "they are dropped for this append. Delete the file to "
-                            "get the full schema."
-                        )
-                    firms_df.reindex(columns=existing_columns).to_csv(
-                        str(csv_path), mode="a", header=False, index=False, encoding="utf-8-sig"
-                    )
-                    print(f"Appended {len(firms_list)} firms to {csv_path}")
-                else:
-                    firms_df.to_csv(str(csv_path), index=False, encoding="utf-8-sig")
-                    print(f"Saved {len(firms_list)} firms to {csv_path}")
+    print(
+        f"Summary: {processed_count} processed, {skipped_count} already done, "
+        f"{len(failures)} failed."
+    )
+    if failures:
+        print("Failed firms (re-run to retry them):")
+        for name, reason in failures:
+            print(f"  - {name}: {reason}")
+
+    if stopped_reason:
+        print(f"Stopping execution: {stopped_reason}")
+        raise SystemExit(1)
 
     print("Done!")
 

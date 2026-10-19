@@ -118,8 +118,7 @@ uv run python scripts/run_filter.py -i data/custom_companies.csv -o data/filtere
 
 **Arguments / 옵션:**
 - `-i`, `--input`: Input CSV file path (Default: `2025_전문연구요원_인원배정.csv`)
-- `-o`, `--output`: Output CSV file path (Default: auto-generated based on locations e.g. `seoul_firms.csv`)
-- `-c`, `--config`: Path to the configuration file (Default: `config.yml`)
+- `-o`, `--output`: Output CSV file path (Default: `data/filtered_firms.csv`, the file summarize reads by default)
 - `-l`, `--locations`: One or more location values to filter on (overrides config)
 - `--column`: CSV column name to apply filter on (Default: `소재지`)
 - `--filter-type`: Pattern matching strategy (`contains`, `exact`, `startswith`)
@@ -158,13 +157,12 @@ uv run python scripts/run_summarize.py --dry-run
 # 2. Run summarization for only the first 5 firms (처음 5개 기업만 요약 생성 진행)
 uv run python scripts/run_summarize.py --limit 5
 
-# 3. Process with custom configuration (사용자 정의 구성 파일 적용하여 실행)
-uv run python scripts/run_summarize.py --config my_custom_config.yml --input filtered_firms.csv
+# 3. Process a different input file (다른 입력 파일로 실행)
+uv run python scripts/run_summarize.py --input data/my_firms.csv
 ```
 
 **Arguments / 옵션:**
-- `-i`, `--input`: Input filtered CSV file (Default: `seoul_firms.csv`)
-- `-c`, `--config`: Configuration file path (Default: `config.yml`)
+- `-i`, `--input`: Input filtered CSV file (Default: `data/filtered_firms.csv`, the filter's output)
 - `-o`, `--output-dir`: Output directory path (Default: defined in config as `firm_results/`)
 - `--dry-run`: Validates input and logs queries without performing live web search or LLM generation
 - `--limit`: Limits the number of firms processed in a single run (useful for testing and budget control)

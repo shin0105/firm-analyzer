@@ -808,6 +808,29 @@ select.form-input option {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.markdown-body .table-scroll {
+  overflow-x: auto;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--surface-border);
+  padding: 0.45rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-body th {
+  background: rgba(255, 255, 255, 0.04);
+  font-weight: 600;
+}
+
 .markdown-body pre {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid var(--surface-border);
@@ -931,6 +954,12 @@ select.form-input option {
 
 .header-row .page-header {
   margin-bottom: 0;
+}
+
+.button-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 /* Visually hidden but still announced by screen readers. */
