@@ -149,8 +149,9 @@ uv run python scripts/run_summarize.py --limit 10
 ```
 
 Installing the package also provides console scripts: `firm-app`,
-`firm-filter`, `firm-summarize`, `firm-geocode`, `firm-parse-pdf`,
-`firm-parse-pdf-llm`, `firm-supabase-sync`, `firm-find-webpage`.
+`firm-filter`, `firm-summarize`, `firm-segment`, `firm-export`,
+`firm-geocode`, `firm-parse-pdf`, `firm-parse-pdf-llm`, `firm-supabase-sync`,
+`firm-find-webpage`.
 
 #### 6. Run the Tests
 
@@ -248,6 +249,9 @@ python scripts/run_filter.py --locations 서울 경기 --filter-type contains
 python scripts/run_filter.py -i my_firms.csv -o filtered.csv
 ```
 
+The filter writes `data/filtered_firms.csv` by default, which is also what
+summarize reads by default, so the two stages chain with no arguments.
+
 ### Search, Summarize and Segment
 
 ```bash
@@ -269,6 +273,45 @@ Each firm gets a `segmentation.json`, a `## 세분류` table in its `summary.md`
 and flat columns in `<category>_firms.csv`.
 📖 See [docs/segmentation.md](docs/segmentation.md) for the taxonomy and the
 rules used to separate firms that look alike.
+
+A failed firm (bad model output, a search error) is reported and skipped
+rather than ending the run; only a rate-limit or quota error stops it. Failed
+firms leave no folder behind, so re-running the same command retries exactly
+those firms.
+
+### Segment Firms Summarized Earlier
+
+Firms summarized before segmentation existed have no `segmentation.json`, and
+summarize skips them because their folder already exists. `firm-segment`
+classifies them from the `raw_search.json` saved in each folder: one model
+call per firm and no new searches.
+
+```bash
+# See what would be segmented
+python scripts/run_segment.py --dry-run
+
+# Segment the first 20, then everything else
+python scripts/run_segment.py --limit 20
+python scripts/run_segment.py
+
+# Also move each firm into the category its sector maps to
+python scripts/run_segment.py --relocate
+
+# Re-classify firms that already have a segmentation (e.g. after editing taxonomy.yml)
+python scripts/run_segment.py --force --category general
+```
+
+### Export Every Firm to One CSV
+
+The `<category>_firms.csv` files are appended to per run and drift from the
+result folders. `firm-export` rebuilds one CSV from the folders, with the
+segmentation columns, as UTF-8 with a BOM so Excel shows Korean correctly. The
+dashboard's **CSV 내보내기** button downloads the same file.
+
+```bash
+python scripts/run_export.py                      # -> firm_results/firms_export.csv
+python scripts/run_export.py -o data/all_firms.csv
+```
 
 ### Parse PDF to CSV (New!)
 
@@ -583,7 +626,8 @@ firm_websearch/
 | `/api/config` | POST | Update configuration |
 | `/api/config/reset` | POST | Reset to default configuration |
 | `/api/results/summary` | GET | Get summary of processed results |
-| `/api/results/<category_id>` | GET | Get firms in a category |
+| `/api/results/<category_id>` | GET | Get firms in a category, with each firm's segmentation |
+| `/api/export.csv` | GET | Download every processed firm as one CSV |
 | `/api/run/filter` | POST | Run filter script |
 | `/api/run/summarize` | POST | Run search/summarize script |
 

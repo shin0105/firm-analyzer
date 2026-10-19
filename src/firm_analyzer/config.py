@@ -29,6 +29,14 @@ def _find_base_dir() -> Path:
 BASE_DIR = _find_base_dir()
 CONFIG_PATH = BASE_DIR / "config.yml"
 DEFAULT_INPUT_CSV = BASE_DIR / "data" / "2025_전문연구요원_인원배정.csv"
+# The hand-off between the two pipeline stages: the filter writes it and
+# summarize reads it, so both default to this one path.
+FILTERED_CSV = BASE_DIR / "data" / "filtered_firms.csv"
+
+
+def results_dir(config: dict) -> Path:
+    """Where per-firm result folders live (`output.directory`, relative to BASE_DIR)."""
+    return BASE_DIR / config.get("output", {}).get("directory", "firm_results")
 
 def get_default_config():
     """Return default configuration."""

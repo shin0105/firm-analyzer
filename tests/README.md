@@ -21,6 +21,22 @@ Taxonomy integrity (`taxonomy.yml`), prompt assembly, and the validation that
 replaces model-invented labels with `unknown` instead of letting them into CSV
 columns.
 
+### test_pipeline.py
+The filter → summarize hand-off (`data/filtered_firms.csv`), and summarize's
+failure handling with stubbed search and LLM clients: a failed firm is skipped
+and retried on the next run, a quota error stops the run without losing the
+CSV rows already written, and an invented category id never becomes a
+directory.
+
+### test_resegment_export.py
+`firm-segment` backfill (which firms it picks, where the 세분류 table goes,
+`--relocate`, `--force`, failure and quota handling, `--dry-run`) and the
+`firm-export` CSV rebuilt from the result folders.
+
+### test_web_api.py
+The Flask API through its test client: results and export endpoints, and the
+input checks on category ids, summarize parameters and upload filenames.
+
 ### test_pdf_parser.py
 Rule-based PDF parsing for firm data extraction.
 

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { Building2, RotateCw } from 'lucide-react';
-import { api } from '../lib/api';
+import { Building2, Download, RotateCw } from 'lucide-react';
+import { api, apiUrl } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { parseResultsSummary, type ResultsSummaryResponse } from '../lib/types';
 import { EmptyState, ErrorState } from '../components/States';
@@ -33,15 +33,22 @@ export default function Dashboard() {
           <h2 className="page-title">대시보드</h2>
           <p className="page-subtitle">기업 분석 시스템 개요</p>
         </div>
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm"
-          onClick={reload}
-          disabled={status === 'loading'}
-        >
-          <RotateCw size={16} aria-hidden="true" />
-          새로고침
-        </button>
+        <div className="button-row">
+          {/* Rebuilt server-side from every result folder, with segmentation columns. */}
+          <a className="btn btn-secondary btn-sm" href={apiUrl('/api/export.csv')} download>
+            <Download size={16} aria-hidden="true" />
+            CSV 내보내기
+          </a>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={reload}
+            disabled={status === 'loading'}
+          >
+            <RotateCw size={16} aria-hidden="true" />
+            새로고침
+          </button>
+        </div>
       </div>
 
       {status === 'error' && (

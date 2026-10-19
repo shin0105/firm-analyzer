@@ -10,10 +10,11 @@ import argparse
 import os
 import re
 import sys
+from pathlib import Path
 
 import pandas as pd
 
-from firm_analyzer.config import load_config, DEFAULT_INPUT_CSV, BASE_DIR
+from firm_analyzer.config import load_config, DEFAULT_INPUT_CSV, BASE_DIR, FILTERED_CSV
 
 def filter_by_location(
     df: pd.DataFrame,
@@ -53,7 +54,7 @@ def main():
     parser.add_argument(
         "-o", "--output",
         default=None,
-        help="Output CSV file path (default: filtered_firms.csv in data/)"
+        help="Output CSV file path (default: data/filtered_firms.csv, which summarize reads)"
     )
     parser.add_argument(
         "-l", "--locations",
@@ -79,18 +80,19 @@ def main():
     config = load_config()
     filter_config = config.get("filters", {}).get("location", {})
 
-    # Command-line args override config
+    # Command-line args override config. A filter switched off in config.yml
+    # contributes no values, so every row passes unless -l is given.
     column = args.column or filter_config.get("column", "소재지")
-    locations = args.locations or filter_config.get("values", [])
+    config_values = filter_config.get("values", []) if filter_config.get("enabled", True) else []
+    locations = args.locations or config_values
     filter_type = args.filter_type or filter_config.get("type", "contains")
 
-    # Default output filename based on filter
+    # One fixed default, not a name derived from the filter values: summarize
+    # reads FILTERED_CSV, and the web UI runs the two stages back to back.
     if args.output:
         output_file = Path(args.output) if os.path.isabs(args.output) else BASE_DIR / "data" / args.output
-    elif locations:
-        output_file = BASE_DIR / "data" / f"{'_'.join(locations)}_firms.csv"
     else:
-        output_file = BASE_DIR / "data" / "filtered_firms.csv"
+        output_file = FILTERED_CSV
 
     # Check input file
     input_path = os.path.abspath(args.input) if os.path.isabs(args.input) else str(BASE_DIR / args.input)
@@ -124,7 +126,6 @@ def main():
         print("No filter applied, using all rows")
 
     # Save result
-    from pathlib import Path
     os.makedirs(Path(output_file).parent, exist_ok=True)
     filtered_df.to_csv(str(output_file), index=False, encoding="utf-8")
     print(f"Filtered {len(filtered_df)} firms.")

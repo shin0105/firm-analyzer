@@ -153,6 +153,27 @@ loosely (소부장, 팹리스, 출연연).
 Turn the whole thing off with `segmentation.enabled: false` in `config.yml`, or
 `--no-segmentation` on `scripts/run_summarize.py`.
 
+## Segmenting firms that were already summarized
+
+summarize segments only the firms it processes, and it skips any firm whose
+folder already exists. Firms summarized before the taxonomy existed, or before
+an edit to it, are re-classified with `scripts/run_segment.py`
+(`firm-segment`). It sends the standalone segmentation prompt
+(`build_segmentation_prompt`) over each folder's saved `raw_search.json`, so it
+costs one model call per firm and no searches, and it runs the result through
+the same `validate_segmentation()`.
+
+- Default: firms without `segmentation.json`. `--force` re-does the rest too.
+- The `## 세분류` table goes between the summary.md header and its body. With
+  `--force` the old table is replaced only if it matches the previous
+  `segmentation.json` exactly; a hand-edited table is left alone and reported.
+- `--relocate` moves each folder to the sector's `legacy_category` and updates
+  the `**Category:**` line. It never overwrites an existing folder.
+- Per-firm failures are skipped and listed; a rate-limit or quota error stops
+  the run. Re-running picks up where it stopped.
+- The `<category>_firms.csv` files are not rewritten. Use `firm-export` for a
+  CSV that includes every firm's segmentation columns.
+
 ## Sources
 
 Taxonomy design follows established practice; the tie-break rules and the

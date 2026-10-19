@@ -6,7 +6,7 @@ import { Fragment, type ReactNode } from 'react';
  * model-generated summary text cannot inject markup.
  *
  * Supported: ATX headings, `-`/`*`/`1.` lists, `---` rules, blockquotes,
- * fenced and inline code, bold, italic and links.
+ * pipe tables, fenced and inline code, bold, italic and links.
  */
 
 type Inline = { text: string; key: number };
@@ -63,6 +63,52 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
   return nodes;
 }
 
+/** A `| a | b |` row, split into trimmed cells. */
+function splitRow(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\|/, '')
+    .replace(/\|$/, '')
+    .split('|')
+    .map((cell) => cell.trim());
+}
+
+/** The `| --- | :---: |` line that turns the row above it into a table header. */
+function isTableSeparator(line: string | undefined): boolean {
+  // Requiring a pipe keeps a `---` rule under a `|` line from becoming a table.
+  return line !== undefined && line.includes('|') && /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/.test(line);
+}
+
+type Table = { header: string[]; rows: string[][] };
+
+function renderTable(table: Table, key: string): ReactNode {
+  const width = table.header.length;
+  return (
+    <div className="table-scroll" key={key}>
+      <table>
+        <thead>
+          <tr>
+            {table.header.map((cell, i) => (
+              <th key={i} scope="col">
+                {renderInline(cell, `${key}-h${i}`)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {table.rows.map((row, r) => (
+            <tr key={r}>
+              {Array.from({ length: width }, (_, c) => (
+                <td key={c}>{renderInline(row[c] ?? '', `${key}-${r}-${c}`)}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function renderList(items: Inline[], ordered: boolean, key: string): ReactNode {
   const children = items.map((item) => (
     <li key={item.key}>{renderInline(item.text, `${key}-${item.key}`)}</li>
@@ -78,6 +124,8 @@ export default function Markdown({ content }: { content: string }) {
   let listOrdered = false;
   let paragraph: string[] = [];
   let codeLines: string[] | null = null;
+  let table: Table | null = null;
+  let separatorIndex = -1;
 
   const flushList = (index: number) => {
     if (listItems.length === 0) return;
@@ -92,8 +140,24 @@ export default function Markdown({ content }: { content: string }) {
     paragraph = [];
   };
 
+  const flushTable = (index: number) => {
+    if (table === null) return;
+    blocks.push(renderTable(table, `table-${index}`));
+    table = null;
+  };
+
   lines.forEach((rawLine, index) => {
     const line = rawLine.trimEnd();
+    if (index === separatorIndex) return;
+
+    // Table rows continue until the first line that is not a `|` row.
+    if (table !== null) {
+      if (line.trim().startsWith('|')) {
+        table.rows.push(splitRow(line));
+        return;
+      }
+      flushTable(index);
+    }
 
     // Fenced code blocks are passed through verbatim.
     if (/^\s*```/.test(line)) {
@@ -119,6 +183,14 @@ export default function Markdown({ content }: { content: string }) {
     if (line.trim() === '') {
       flushParagraph(index);
       flushList(index);
+      return;
+    }
+
+    if (line.trim().startsWith('|') && isTableSeparator(lines[index + 1])) {
+      flushParagraph(index);
+      flushList(index);
+      table = { header: splitRow(line), rows: [] };
+      separatorIndex = index + 1;
       return;
     }
 
@@ -168,6 +240,7 @@ export default function Markdown({ content }: { content: string }) {
 
   flushParagraph(lines.length);
   flushList(lines.length);
+  flushTable(lines.length);
   // An unterminated fence still gets rendered rather than dropped. (TypeScript
   // cannot see the assignments made inside the loop's closure, hence the cast.)
   const trailingCode = codeLines as string[] | null;

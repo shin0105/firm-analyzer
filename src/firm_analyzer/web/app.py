@@ -15,12 +15,13 @@ from pathlib import Path, PurePosixPath
 from typing import Optional
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import Flask, Response, jsonify, render_template, request, send_from_directory
 from flask_cors import CORS
 from supabase import create_client
 
-from firm_analyzer.config import load_config, save_config, get_default_config, BASE_DIR
+from firm_analyzer.config import load_config, save_config, get_default_config, results_dir, BASE_DIR
 from firm_analyzer.llm import PROVIDER_IDS, describe_providers, resolve_provider_id
+from firm_analyzer.core.results import load_json
 
 load_dotenv()
 
@@ -88,7 +89,7 @@ def valid_category_ids(config: dict) -> set:
 def get_results_summary():
     """Get summary of processed results."""
     config = load_config()
-    output_dir = BASE_DIR / config.get("output", {}).get("directory", "firm_results")
+    output_dir = results_dir(config)
     categories = config.get("categories", [])
 
     summary = {}
@@ -125,8 +126,7 @@ def get_firms_by_category(category_id):
     if category_id not in valid_category_ids(config):
         return []
 
-    output_dir = BASE_DIR / config.get("output", {}).get("directory", "firm_results")
-    cat_path = output_dir / category_id
+    cat_path = results_dir(config) / category_id
 
     firms = []
     if cat_path.is_dir():
@@ -138,9 +138,15 @@ def get_firms_by_category(category_id):
                     with open(summary_path, "r", encoding="utf-8") as f:
                         summary_content = f.read()
 
+                segmentation = load_json(firm_dir / "segmentation.json")
+
                 # Deliberately no absolute path here: it would leak the
                 # server's filesystem layout to every API consumer.
-                firms.append({"name": firm_dir.name, "summary": summary_content})
+                firms.append({
+                    "name": firm_dir.name,
+                    "summary": summary_content,
+                    "segmentation": segmentation if isinstance(segmentation, dict) else None,
+                })
 
     return sorted(firms, key=lambda x: x["name"])
 
@@ -232,6 +238,17 @@ def results_by_category(category_id):
             
     firms = get_firms_by_category(category_id)
     return jsonify({"firms": firms, "count": len(firms)})
+
+@app.route("/api/export.csv", methods=["GET"])
+def export_csv():
+    """Every processed firm as one CSV, rebuilt from the result folders."""
+    from firm_analyzer.core.export import DEFAULT_EXPORT, export_csv_bytes
+
+    return Response(
+        export_csv_bytes(load_config()),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{DEFAULT_EXPORT}"'},
+    )
 
 @app.route("/api/columns", methods=["GET"])
 def get_columns():

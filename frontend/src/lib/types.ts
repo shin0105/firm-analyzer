@@ -13,10 +13,25 @@ export type ResultsSummaryResponse = Record<
   { name: string; count: number; color?: string } | number
 >;
 
+/** `segmentation.json` for a firm — see `taxonomy.yml` for the ids. */
+export interface Segmentation {
+  sector: string;
+  subsector: string | null;
+  verticals: string[];
+  business_model: string;
+  value_chain: string;
+  profile: Record<string, string>;
+  confidence: Record<string, string>;
+  evidence: Record<string, string>;
+  signals: string[];
+}
+
 export interface Firm {
   name: string;
   summary: string;
-  path: string;
+  /** Null until the firm is segmented (summarize or `firm-segment`). */
+  segmentation?: Segmentation | null;
+  path?: string;
 }
 
 /** `GET /api/results/:categoryId` */
