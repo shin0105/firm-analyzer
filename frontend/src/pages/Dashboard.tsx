@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router-dom';
-import { Building2, Download, RotateCw } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Building2, Download, Play, RotateCw } from 'lucide-react';
 import { api, apiUrl } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { parseResultsSummary, type ResultsSummaryResponse } from '../lib/types';
@@ -91,8 +91,14 @@ export default function Dashboard() {
             <div className="glass-card">
               <EmptyState
                 title="분석된 기업이 없습니다"
-                hint="필터와 요약 스크립트를 먼저 실행해 주세요."
+                hint="필터와 검색·요약을 먼저 실행해 주세요."
               />
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <Link className="btn btn-primary btn-sm" to="/pipeline">
+                  <Play size={16} aria-hidden="true" />
+                  파이프라인 실행으로 이동
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="dashboard-grid">

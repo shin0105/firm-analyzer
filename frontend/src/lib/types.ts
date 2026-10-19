@@ -157,6 +157,50 @@ export interface OcrResult {
   error?: string;
 }
 
+/** What a background job runs: one script, or filter then summarize. */
+export type JobKind = 'filter' | 'summarize' | 'segment' | 'pipeline';
+
+export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
+
+/** A pipeline run, as returned by `/api/jobs` (see `web/jobs.py`). Times are epoch seconds. */
+export interface Job {
+  id: string;
+  kind: JobKind;
+  options: Record<string, unknown>;
+  status: JobStatus;
+  /** Script names in run order; `step_index` points at the current one. */
+  steps: string[];
+  step_index: number;
+  created_at: number;
+  started_at: number | null;
+  finished_at: number | null;
+  /** Seconds run so far (or in total), computed by the server. */
+  elapsed: number | null;
+  returncode: number | null;
+  error: string | null;
+  /** From the `[i/n]` the scripts print per firm; null until the first one. */
+  progress: { current: number; total: number } | null;
+  /** The script's closing `Summary: …` line, once printed. */
+  summary: string | null;
+  log_lines: number;
+}
+
+/** `GET /api/jobs/:id?since=n` — the job plus log lines from index `log_start`. */
+export interface JobWithLog extends Job {
+  log: string[];
+  log_start: number;
+  /** Pass as `since` on the next poll. */
+  log_next: number;
+  /** Lines before `log_start` were dropped from the server's bounded buffer. */
+  log_truncated: boolean;
+}
+
+/** `GET /api/jobs` */
+export interface JobsResponse {
+  jobs: Job[];
+  active: string | null;
+}
+
 /** Split a summary response into ordered categories and a total. */
 export function parseResultsSummary(data: ResultsSummaryResponse): {
   categories: CategorySummary[];
