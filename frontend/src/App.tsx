@@ -16,15 +16,18 @@ import {
   Menu,
   X,
   Compass,
+  Play,
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import FirmResults from './pages/FirmResults';
 import ConfigPage from './pages/ConfigPage';
 import SummaryViewer from './pages/SummaryViewer';
 import OcrUpload from './pages/OcrUpload';
+import Pipeline from './pages/Pipeline';
 
 const NAV_ITEMS = [
   { to: '/', label: '대시보드', icon: LayoutDashboard, title: '대시보드' },
+  { to: '/pipeline', label: '파이프라인 실행', icon: Play, title: '파이프라인 실행' },
   { to: '/firms', label: '기업 검색 결과', icon: Map, title: '기업 검색 결과' },
   { to: '/summary', label: '요약 결과 보기', icon: FileText, title: '요약 결과 보기' },
   { to: '/ocr', label: 'PDF OCR 변환', icon: FileUp, title: 'PDF OCR 변환' },
@@ -132,6 +135,7 @@ function Shell() {
       <main className="main-content" id="main-content" tabIndex={-1}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/pipeline" element={<Pipeline />} />
           <Route path="/firms" element={<FirmResults />} />
           <Route path="/config" element={<ConfigPage />} />
           <Route path="/summary" element={<SummaryViewer />} />

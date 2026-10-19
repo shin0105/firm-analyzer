@@ -431,7 +431,7 @@ def main():
                 break
 
         if already_processed:
-            print(f"Skipping {firm_name} (already processed).")
+            print(f"Skipping [{row_number}/{len(firms_to_process)}] {firm_name} (already processed).")
             skipped_count += 1
             continue
 

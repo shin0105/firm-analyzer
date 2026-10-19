@@ -55,7 +55,8 @@ A configurable web-based tool for filtering, searching, and summarizing firm/com
 ### 🌐 Web Interface
 - **Visual configuration**: No need to edit JSON files
 - **Real-time results**: View processed firms by category
-- **Run controls**: Execute filter and summarize scripts from the browser
+- **Pipeline page**: Run filter, summarize (or both in sequence) and the segmentation
+  backfill as background jobs, with a live progress bar, log and cancel button
 
 ### 📄 PDF to CSV Parser (New!)
 - **Flexible column mapping**: Parse any PDF table format with custom column names
@@ -223,10 +224,15 @@ export OPENAI_BASE_URL="https://models.github.ai/inference"
 # Enable Flask debug mode (default: false, for development only)
 export FLASK_DEBUG="true"
 
-# Script timeout settings (in seconds)
+# Timeouts for the synchronous /api/run/* endpoints (in seconds)
 export FILTER_SCRIPT_TIMEOUT="60"
 export SUMMARIZE_SCRIPT_TIMEOUT="300"
 export DRY_RUN_TIMEOUT="60"
+
+# Background jobs (the Pipeline page): kill a job after this many seconds
+# (0 = no limit, the default) and keep this many log lines per job
+export JOB_TIMEOUT_SECONDS="0"
+export JOB_LOG_LINES="5000"
 ```
 
 ## Command Line Usage
@@ -631,8 +637,12 @@ firm_websearch/
 | `/api/firms/<category_id>/<firm_name>` | GET | One firm's full `summary.md` and segmentation; 404 for an unknown category or anything but a firm folder directly inside it |
 | `/api/taxonomy` | GET | The segmentation taxonomy (`taxonomy.yml`), with Korean labels, for filters and badges |
 | `/api/export.csv` | GET | Download every processed firm as one CSV |
-| `/api/run/filter` | POST | Run filter script |
-| `/api/run/summarize` | POST | Run search/summarize script |
+| `/api/jobs` | POST | Start a background job: `{"kind": "filter" \| "summarize" \| "segment" \| "pipeline", "options": {...}}`. 202 with the job, 400 for invalid options, 409 while another job runs |
+| `/api/jobs` | GET | Recent jobs, newest first, and the id of the active one |
+| `/api/jobs/<job_id>?since=<n>` | GET | One job's status, progress and summary, plus log lines from index `n` (poll with the returned `log_next`) |
+| `/api/jobs/<job_id>/cancel` | POST | Stop a running job |
+| `/api/run/filter` | POST | Run the filter synchronously (legacy; 409 while a job runs) |
+| `/api/run/summarize` | POST | Run summarize synchronously with a timeout (legacy; 409 while a job runs) |
 
 `GET /api/firms` query parameters (all optional, combined with AND; an empty value means "any"):
 
@@ -650,6 +660,25 @@ An id that is not in `config.yml` or `taxonomy.yml` returns 400. The response is
 `{"firms": [...], "count": <matches>, "total": <firms scanned>}`. Both `/api/firms`
 endpoints read the local result folders even when `app.data_source` is `supabase`,
 because segmentation is stored only there.
+
+### Background jobs
+
+The **파이프라인 실행** page and `POST /api/jobs` run the CLI scripts as
+subprocesses, so a run over hundreds of firms does not hold an HTTP request
+open. `pipeline` is filter followed by summarize. Options map onto fixed
+flags and are validated (no other text reaches the command line):
+
+| Kind | Options |
+|------|---------|
+| `filter` | none |
+| `summarize`, `pipeline` | `dry_run`, `limit`, `provider`, `no_segmentation` |
+| `segment` | `dry_run`, `limit`, `provider`, `relocate`, `force`, `categories` |
+
+Only one job runs at a time, because every stage writes the same `data/` and
+results folders. Progress comes from the `[i/n]` the scripts print per firm. The
+log returns stdout only; stderr (tracebacks) goes to the server log. Jobs live
+in server memory: they are lost on restart, and running ones are stopped when
+the server exits.
 
 ## Use Cases
 

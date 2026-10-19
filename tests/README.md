@@ -33,6 +33,14 @@ directory.
 `--relocate`, `--force`, failure and quota handling, `--dry-run`) and the
 `firm-export` CSV rebuilt from the result folders.
 
+### test_jobs.py
+Background pipeline jobs: option validation (only fixed flags and checked ids
+reach the command line), progress and summary parsing, log windowing, and the
+runner against real `python -c` subprocesses — stdout streamed but stderr kept
+out of the API, failure, cancel, timeout, and one job at a time. Also the
+`/api/jobs` endpoints (including 409 on the legacy `/api/run/*` while a job
+runs) and one real filter → summarize dry run in a throwaway project home.
+
 ### test_web_api.py
 The Flask API through its test client: results and export endpoints, firm
 search (`q`, each filter, 400 on unknown ids) and firm detail, including the

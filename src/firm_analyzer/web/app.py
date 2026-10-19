@@ -5,9 +5,10 @@ Firm Analyzer Web Application
 A Flask-based web interface for:
 - Managing filter and summary configuration
 - Viewing processed firm results
-- Running filter and summarize operations
+- Running filter, summarize and segment as background jobs (see jobs.py)
 """
 
+import atexit
 import os
 import subprocess
 import sys
@@ -31,6 +32,7 @@ from firm_analyzer.core.results import (
     snippet,
     summary_body,
 )
+from firm_analyzer.web.jobs import JobConflict, JobError, JobManager, build_steps
 
 load_dotenv()
 
@@ -67,6 +69,11 @@ app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_UPLOAD_BYTES", str(32 * 10
 FILTER_SCRIPT_TIMEOUT = int(os.getenv("FILTER_SCRIPT_TIMEOUT", "60"))
 SUMMARIZE_SCRIPT_TIMEOUT = int(os.getenv("SUMMARIZE_SCRIPT_TIMEOUT", "300"))
 DRY_RUN_TIMEOUT = int(os.getenv("DRY_RUN_TIMEOUT", "60"))
+
+# Pipeline runs started from the UI. Running jobs are terminated with the
+# server so no orphaned summarize keeps spending API quota.
+jobs = JobManager()
+atexit.register(jobs.shutdown)
 
 
 def safe_upload_name(raw_name: str) -> Optional[str]:
@@ -466,8 +473,68 @@ def _script_response(result):
         "error": None if result.returncode == 0 else "Script failed; see server logs for details.",
     })
 
+def _busy_response():
+    """409 when a background job is writing the same files a sync run would."""
+    active = jobs.active()
+    if active is None:
+        return None
+    return jsonify({
+        "success": False,
+        "error": f"A {active.kind} job is already running.",
+        "active": active.id,
+    }), 409
+
+@app.route("/api/jobs", methods=["GET"])
+def list_jobs():
+    """Recent jobs, newest first, without their logs."""
+    active = jobs.active()
+    return jsonify({
+        "jobs": [job.to_dict() for job in jobs.list()],
+        "active": active.id if active else None,
+    })
+
+@app.route("/api/jobs", methods=["POST"])
+def create_job():
+    """Start filter, summarize, segment or pipeline (filter then summarize).
+
+    Body: {"kind": "...", "options": {...}}. Returns 202 with the job, 400 for
+    invalid options, 409 while another job is running.
+    """
+    data = request.get_json(silent=True) or {}
+    kind = data.get("kind")
+    options = data.get("options") or {}
+    try:
+        steps = build_steps(kind, options, load_config())
+    except JobError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    try:
+        job = jobs.start(kind, options, steps)
+    except JobConflict as e:
+        return jsonify({"success": False, "error": str(e), "active": e.active.id}), 409
+    return jsonify(job.to_dict(since=0)), 202
+
+@app.route("/api/jobs/<job_id>", methods=["GET"])
+def job_status(job_id):
+    """One job, with log lines from `?since=<n>` on, for incremental polling."""
+    job = jobs.get(job_id)
+    if job is None:
+        return jsonify({"success": False, "error": "Unknown job"}), 404
+    since = request.args.get("since", default=0, type=int)
+    return jsonify(job.to_dict(since=max(since, 0)))
+
+@app.route("/api/jobs/<job_id>/cancel", methods=["POST"])
+def cancel_job(job_id):
+    job = jobs.cancel(job_id)
+    if job is None:
+        return jsonify({"success": False, "error": "Unknown job"}), 404
+    return jsonify(job.to_dict())
+
 @app.route("/api/run/filter", methods=["POST"])
 def run_filter():
+    """Synchronous filter run. Prefer POST /api/jobs, which streams progress."""
+    busy = _busy_response()
+    if busy:
+        return busy
     try:
         script_path = BASE_DIR / "scripts" / "run_filter.py"
         result = subprocess.run(
@@ -482,6 +549,10 @@ def run_filter():
 
 @app.route("/api/run/summarize", methods=["POST"])
 def run_summarize():
+    """Synchronous summarize run, capped by a timeout. Prefer POST /api/jobs."""
+    busy = _busy_response()
+    if busy:
+        return busy
     data = request.get_json() or {}
     dry_run = bool(data.get("dry_run", True))
     limit = data.get("limit", 5)
