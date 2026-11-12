@@ -4,7 +4,8 @@
 Layout, one folder per firm::
 
     <output.directory>/<category_id>/<firm>/
-        summary.md          # "# name", **Field:** header lines, then the body
+        summary.md          # "# name", **Field:** header lines, the AI notice,
+                            # then the body and a 출처 (Sources) list
         raw_search.json     # the Tavily response the summary was built from
         webpage.json        # optional: verified official webpage
         segmentation.json   # optional: multi-axis taxonomy record
@@ -23,6 +24,7 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator, Optional
 
 from firm_analyzer.core import segmentation as seg
+from firm_analyzer.notice import AI_NOTICE_MARKDOWN, NOTICE_MARKER, SOURCES_HEADING
 
 HEADER_FIELD = re.compile(r"^\*\*([^*]+?):\*\*\s*(.*)$")
 SEGMENTATION_HEADING = "## 세분류 (Segmentation)"
@@ -109,9 +111,12 @@ def resolve_firm_dir(category_path: Path, firm_name: str) -> Optional[Path]:
 
 
 def summary_body(text: str, segmentation: Optional[dict] = None, taxonomy: Optional[dict] = None) -> str:
-    """summary.md without its header lines and 세분류 block, i.e. the prose."""
+    """summary.md without its header, AI notice, 세분류 block and sources: the prose."""
     header = parse_summary_header(text)
-    body = "\n".join(text.splitlines()[header.end_line:])
+    lines = [line for line in text.splitlines()[header.end_line:] if not line.startswith(NOTICE_MARKER)]
+    if SOURCES_HEADING in lines:
+        lines = lines[: lines.index(SOURCES_HEADING)]
+    body = "\n".join(lines)
     if SEGMENTATION_HEADING not in body:
         return body.strip()
 
@@ -128,6 +133,23 @@ def summary_body(text: str, segmentation: Optional[dict] = None, taxonomy: Optio
         len(lines),
     )
     return "\n".join(lines[:start] + lines[end:]).strip()
+
+
+def with_notice(text: str) -> str:
+    """summary.md text with the AI notice after its header, added only if missing.
+
+    For summaries written before the notice existed, so anything that copies
+    them elsewhere (Supabase, exports) still carries the label.
+    """
+    if NOTICE_MARKER in text:
+        return text
+    header = parse_summary_header(text)
+    lines = text.splitlines()
+    rest = lines[header.end_line:]
+    while rest and not rest[0].strip():
+        rest.pop(0)
+    joined = "\n".join(lines[: header.end_line] + ["", AI_NOTICE_MARKDOWN, ""] + rest)
+    return joined + "\n" if text.endswith("\n") else joined
 
 
 def plain_text(markdown: str) -> str:
@@ -190,10 +212,10 @@ def collect_records(output_dir: Path, categories: list) -> list[dict]:
 
 
 def insert_segmentation_block(text: str, block: str) -> str:
-    """Place a 세분류 block between the summary.md header and its body.
+    """Place a 세분류 block between the summary.md header (and AI notice) and its body.
 
-    Mirrors the layout summarize writes: header lines, a blank line, the
-    block, a blank line, then the body.
+    Mirrors the layout summarize writes: header lines, the notice, the block,
+    then the body, separated by blank lines.
     """
     header = parse_summary_header(text)
     lines = text.splitlines()
@@ -201,8 +223,13 @@ def insert_segmentation_block(text: str, block: str) -> str:
     rest = lines[header.end_line:]
     while rest and not rest[0].strip():
         rest.pop(0)
+    notice = []
+    if rest and rest[0].startswith(NOTICE_MARKER):
+        notice = ["", rest.pop(0)]
+        while rest and not rest[0].strip():
+            rest.pop(0)
 
-    new_lines = head + [""] + block.splitlines() + [""] + rest
+    new_lines = head + notice + [""] + block.splitlines() + [""] + rest
     joined = "\n".join(new_lines)
     return joined + "\n" if text.endswith("\n") else joined
 

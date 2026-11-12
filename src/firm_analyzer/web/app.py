@@ -1,26 +1,29 @@
 #!/usr/bin/env python3
 """
-Firm Analyzer Web Application
+Firm Analyzer web application.
 
-A Flask-based web interface for:
-- Managing filter and summary configuration
-- Viewing processed firm results
-- Running filter, summarize and segment as background jobs (see jobs.py)
+A Flask JSON API for the React frontend (frontend/), which it also serves at
+"/" once built (`npm run build`), plus the map view at /map.
+
+- Configuration, results, firm search and CSV export
+- The yearly 인원배정 list: import, compare, activate (see core/roster.py)
+- Filter, summarize and segment as background jobs (see jobs.py)
 """
 
 import atexit
 import os
-import subprocess
 import sys
+import tempfile
 from pathlib import Path, PurePosixPath
 from typing import Optional
+from urllib.parse import quote
 
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, render_template, request, send_from_directory
+from flask import Flask, Response, abort, jsonify, render_template, request, send_from_directory
 from flask_cors import CORS
-from supabase import create_client
 
 from firm_analyzer.config import load_config, save_config, get_default_config, results_dir, BASE_DIR
+from firm_analyzer.core import roster
 from firm_analyzer.llm import PROVIDER_IDS, describe_providers, resolve_provider_id
 from firm_analyzer.core.results import (
     iter_firm_dirs,
@@ -40,21 +43,26 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase_client = None
 if SUPABASE_URL and SUPABASE_KEY:
+    from supabase import create_client
+
     supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Define paths
 WEB_DIR = Path(__file__).resolve().parent
 TEMPLATE_DIR = WEB_DIR / "templates"
 STATIC_DIR = WEB_DIR / "static"
+#: The React build, served at "/" when present. `npm run dev` proxies to this API instead.
+FRONTEND_DIST = Path(os.getenv("FRONTEND_DIST", str(BASE_DIR / "frontend" / "dist")))
 
-app = Flask(__name__, static_folder=str(STATIC_DIR), template_folder=str(TEMPLATE_DIR))
+app = Flask(__name__, static_folder=None, template_folder=str(TEMPLATE_DIR))
 # Send Korean as UTF-8 rather than \uXXXX escapes, which roughly halves the
 # size of firm lists and summaries.
 app.json.ensure_ascii = False
 
 # Only allow the frontend dev server by default. This API has no authentication
 # and can start subprocesses, so a wildcard origin would let any site the user
-# visits drive it over localhost.
+# visits drive it over localhost. The dev server proxies /api, so this only
+# matters when VITE_API_BASE points the frontend at another origin.
 ALLOWED_ORIGINS = [
     o.strip()
     for o in os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
@@ -65,24 +73,22 @@ CORS(app, origins=ALLOWED_ORIGINS)
 # Reject oversized uploads before they are buffered to disk.
 app.config["MAX_CONTENT_LENGTH"] = int(os.getenv("MAX_UPLOAD_BYTES", str(32 * 1024 * 1024)))
 
-# Configurable timeout values (in seconds)
-FILTER_SCRIPT_TIMEOUT = int(os.getenv("FILTER_SCRIPT_TIMEOUT", "60"))
-SUMMARIZE_SCRIPT_TIMEOUT = int(os.getenv("SUMMARIZE_SCRIPT_TIMEOUT", "300"))
-DRY_RUN_TIMEOUT = int(os.getenv("DRY_RUN_TIMEOUT", "60"))
-
 # Pipeline runs started from the UI. Running jobs are terminated with the
 # server so no orphaned summarize keeps spending API quota.
 jobs = JobManager()
 atexit.register(jobs.shutdown)
 
+#: File types the 명단 import accepts.
+UPLOAD_EXTENSIONS = (".pdf", ".csv")
 
-def safe_upload_name(raw_name: str) -> Optional[str]:
+
+def safe_upload_name(raw_name: str, extensions: tuple = UPLOAD_EXTENSIONS) -> Optional[str]:
     """Reduce a client-supplied upload name to a bare, safe filename.
 
     Werkzeug preserves whatever the client sends, including "../" segments, so
-    an unchecked name escapes the data directory. We deliberately avoid
+    an unchecked name escapes the target directory. We deliberately avoid
     werkzeug's secure_filename here because it strips non-ASCII characters and
-    every input PDF in this project has a Korean name.
+    every input list in this project has a Korean name.
     """
     if not raw_name:
         return None
@@ -95,7 +101,7 @@ def safe_upload_name(raw_name: str) -> Optional[str]:
         return None
     if candidate.startswith("."):
         return None
-    if not candidate.lower().endswith(".pdf"):
+    if not candidate.lower().endswith(extensions):
         return None
 
     return candidate
@@ -105,34 +111,27 @@ def valid_category_ids(config: dict) -> set:
     """The set of category ids the config actually declares."""
     return {c["id"] for c in config.get("categories", []) if c.get("id")}
 
+
 def get_results_summary():
-    """Get summary of processed results."""
+    """Number of processed firms per category."""
     config = load_config()
     output_dir = results_dir(config)
-    categories = config.get("categories", [])
 
     summary = {}
     total = 0
-
-    for cat in categories:
+    for cat in config.get("categories", []):
         cat_path = output_dir / cat["id"]
-        if cat_path.is_dir():
-            count = len([d for d in cat_path.iterdir() if d.is_dir()])
-            summary[cat["id"]] = {
-                "name": cat["name"],
-                "count": count,
-                "color": cat.get("color", "#607D8B"),
-            }
-            total += count
-        else:
-            summary[cat["id"]] = {
-                "name": cat["name"],
-                "count": 0,
-                "color": cat.get("color", "#607D8B"),
-            }
+        count = len([d for d in cat_path.iterdir() if d.is_dir()]) if cat_path.is_dir() else 0
+        summary[cat["id"]] = {
+            "name": cat["name"],
+            "count": count,
+            "color": cat.get("color", "#607D8B"),
+        }
+        total += count
 
     summary["total"] = total
     return summary
+
 
 def get_firms_by_category(category_id):
     """Get list of firms in a category.
@@ -151,19 +150,12 @@ def get_firms_by_category(category_id):
     if cat_path.is_dir():
         for firm_dir in cat_path.iterdir():
             if firm_dir.is_dir():
-                summary_path = firm_dir / "summary.md"
-                summary_content = ""
-                if summary_path.exists():
-                    with open(summary_path, "r", encoding="utf-8") as f:
-                        summary_content = f.read()
-
                 segmentation = load_json(firm_dir / "segmentation.json")
-
                 # Deliberately no absolute path here: it would leak the
                 # server's filesystem layout to every API consumer.
                 firms.append({
                     "name": firm_dir.name,
-                    "summary": summary_content,
+                    "summary": read_text(firm_dir / "summary.md"),
                     "segmentation": segmentation if isinstance(segmentation, dict) else None,
                 })
 
@@ -283,37 +275,40 @@ def search_firms(config: dict, filters: dict, taxonomy: Optional[dict]) -> tuple
     rows.sort(key=lambda row: row[0])
     return [row for _, row in rows], total
 
+
 def get_available_columns():
-    """Get available columns from input CSV."""
-    from firm_analyzer.config import DEFAULT_INPUT_CSV
-    if DEFAULT_INPUT_CSV.exists():
-        import pandas as pd
-        df = pd.read_csv(DEFAULT_INPUT_CSV, nrows=0)
-        return list(df.columns)
-    return []
+    """Columns of the active 인원배정 list, for the filter column picker."""
+    path = roster.active_roster_path(load_config())
+    if path is None or not path.exists():
+        return []
+    return roster.normalize_columns(roster.read_roster(path).columns)
 
-@app.route("/")
-def index():
-    return render_template("config_firm_summary.html")
 
-@app.route("/config/firm-summary")
-def config_firm_summary():
-    return render_template("config_firm_summary.html")
+def _attachment(filename: str) -> str:
+    """A Content-Disposition value that survives a Korean filename (RFC 5987)."""
+    return f"attachment; filename=\"download.csv\"; filename*=UTF-8''{quote(filename)}"
 
-@app.route("/view/firm-summary")
-def view_firm_summary():
-    return render_template("view_firm_summary.html")
 
-@app.route("/firms")
-def firms_viewer():
-    kakao_api_key = os.getenv("KAKAO_JS_API_KEY", "")
-    config = load_config()
-    enable_kakao_map = config.get("app", {}).get("enable_kakao_map", True)
-    return render_template("firms_viewer.html", static_endpoint="serve_static", kakao_api_key=kakao_api_key, enable_kakao_map=enable_kakao_map)
+def _busy_response():
+    """409 while a background job may be reading or writing the same files."""
+    active = jobs.active()
+    if active is None:
+        return None
+    return jsonify({
+        "success": False,
+        "error": f"A {active.kind} job is already running.",
+        "active": active.id,
+    }), 409
+
+
+# ---------------------------------------------------------------------------
+# Configuration and results
+# ---------------------------------------------------------------------------
 
 @app.route("/api/config", methods=["GET"])
 def get_config():
     return jsonify(load_config())
+
 
 @app.route("/api/config", methods=["POST"])
 def update_config():
@@ -323,11 +318,13 @@ def update_config():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 400
 
+
 @app.route("/api/config/reset", methods=["POST"])
 def reset_config():
     config = get_default_config()
     save_config(config)
     return jsonify({"success": True, "config": config})
+
 
 @app.route("/api/results/summary", methods=["GET"])
 def results_summary():
@@ -337,21 +334,21 @@ def results_summary():
         try:
             response = supabase_client.table("firms").select("category").execute()
             data = response.data
-            categories = config.get("categories", [])
-            summary = {}
-            total = len(data)
-            for cat in categories:
-                summary[cat["id"]] = {"name": cat["name"], "count": 0, "color": cat.get("color", "#607D8B")}
+            summary = {
+                cat["id"]: {"name": cat["name"], "count": 0, "color": cat.get("color", "#607D8B")}
+                for cat in config.get("categories", [])
+            }
             for row in data:
                 cat_id = row.get("category")
                 if cat_id and cat_id in summary:
                     summary[cat_id]["count"] += 1
-            summary["total"] = total
+            summary["total"] = len(data)
             return jsonify(summary)
         except Exception as e:
-            print(f"Error fetching from supabase: {e}")
-            
+            print(f"Error fetching from supabase: {e}", file=sys.stderr)
+
     return jsonify(get_results_summary())
+
 
 @app.route("/api/results/<category_id>", methods=["GET"])
 def results_by_category(category_id):
@@ -367,10 +364,11 @@ def results_by_category(category_id):
             firms = sorted(firms, key=lambda x: x["name"])
             return jsonify({"firms": firms, "count": len(firms)})
         except Exception as e:
-            print(f"Error fetching from supabase: {e}")
-            
+            print(f"Error fetching from supabase: {e}", file=sys.stderr)
+
     firms = get_firms_by_category(category_id)
     return jsonify({"firms": firms, "count": len(firms)})
+
 
 # The two /api/firms endpoints read the local result folders even when
 # app.data_source is "supabase": segmentation.json lives only there, and the
@@ -388,6 +386,7 @@ def list_firms():
 
     firms, total = search_firms(config, filters, taxonomy)
     return jsonify({"firms": firms, "count": len(firms), "total": total})
+
 
 @app.route("/api/firms/<category_id>/<firm_name>", methods=["GET"])
 def firm_detail(category_id, firm_name):
@@ -415,6 +414,7 @@ def firm_detail(category_id, firm_name):
         "segmentation": segmentation if isinstance(segmentation, dict) else None,
     })
 
+
 @app.route("/api/export.csv", methods=["GET"])
 def export_csv():
     """Every processed firm as one CSV, rebuilt from the result folders."""
@@ -426,9 +426,11 @@ def export_csv():
         headers={"Content-Disposition": f'attachment; filename="{DEFAULT_EXPORT}"'},
     )
 
+
 @app.route("/api/columns", methods=["GET"])
 def get_columns():
     return jsonify({"columns": get_available_columns()})
+
 
 @app.route("/api/llm/providers", methods=["GET"])
 def llm_providers():
@@ -447,6 +449,7 @@ def llm_providers():
         }
     )
 
+
 @app.route("/api/taxonomy", methods=["GET"])
 def get_taxonomy():
     """The segmentation taxonomy, for rendering filters and labels."""
@@ -457,32 +460,137 @@ def get_taxonomy():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-def _script_response(result):
-    """Shape a subprocess result for the client.
 
-    stdout is the script's own progress output and is safe to show. stderr is
-    a Python traceback on failure, which carries absolute paths and sometimes
-    fragments of API keys, so it is logged server-side instead of returned.
-    """
-    if result.returncode != 0:
-        print(f"Script failed (exit {result.returncode}):\n{result.stderr}", file=sys.stderr)
+# ---------------------------------------------------------------------------
+# The yearly 인원배정 list (명단)
+# ---------------------------------------------------------------------------
 
+def _roster_error(exc: Exception, status: int = 400):
+    return jsonify({"success": False, "error": str(exc)}), status
+
+
+def _form_bool(name: str, default: bool) -> bool:
+    value = request.form.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ("1", "true", "yes", "on")
+
+
+@app.route("/api/rosters", methods=["GET"])
+def list_rosters():
+    """Every list in data/, newest year first, and which one the filter reads."""
+    config = load_config()
     return jsonify({
-        "success": result.returncode == 0,
-        "stdout": result.stdout,
-        "error": None if result.returncode == 0 else "Script failed; see server logs for details.",
+        "rosters": [vars(info) for info in roster.list_rosters(config)],
+        "active": roster.active_roster_name(config),
     })
 
-def _busy_response():
-    """409 when a background job is writing the same files a sync run would."""
-    active = jobs.active()
-    if active is None:
-        return None
-    return jsonify({
-        "success": False,
-        "error": f"A {active.kind} job is already running.",
-        "active": active.id,
-    }), 409
+
+@app.route("/api/rosters/import", methods=["POST"])
+def import_roster():
+    """Import a new list from an uploaded PDF or CSV.
+
+    Form fields: file, year (optional when the filename holds it), method
+    (rule | llm), provider (llm only), overwrite, activate. The AI method can
+    take minutes on a long PDF; the frontend allows for that.
+    """
+    upload = request.files.get("file")
+    if upload is None or not upload.filename:
+        return jsonify({"success": False, "error": "파일을 선택해 주세요."}), 400
+    filename = safe_upload_name(upload.filename)
+    if not filename:
+        return jsonify({"success": False, "error": "PDF 또는 CSV 파일만 가져올 수 있습니다."}), 400
+
+    method = request.form.get("method") or "rule"
+    if method not in roster.IMPORT_METHODS:
+        return jsonify({"success": False, "error": "Unknown method"}), 400
+    provider = request.form.get("provider") or None
+    if provider is not None and provider not in PROVIDER_IDS:
+        return jsonify({"success": False, "error": "Unknown provider"}), 400
+
+    activate = _form_bool("activate", True)
+    if activate:
+        busy = _busy_response()
+        if busy:
+            return busy
+
+    # Parse from a private temp dir; only the normalised CSV (and the source
+    # PDF, kept as provenance) land in data/.
+    with tempfile.TemporaryDirectory() as work_dir:
+        source = Path(work_dir) / filename
+        upload.save(str(source))
+        try:
+            result = roster.import_roster(
+                source,
+                year=request.form.get("year") or None,
+                method=method,
+                provider=provider,
+                overwrite=_form_bool("overwrite", False),
+                activate=activate,
+                config=load_config(),
+            )
+        except roster.RosterError as exc:
+            return _roster_error(exc)
+        except Exception as exc:
+            # Provider errors can quote request details; keep them server-side.
+            print(f"Roster import failed: {exc!r}", file=sys.stderr)
+            return jsonify({"success": False, "error": "가져오기에 실패했습니다. 서버 로그를 확인해 주세요."}), 500
+
+    return jsonify({"success": True, **result.to_dict()})
+
+
+@app.route("/api/rosters/active", methods=["POST"])
+def activate_roster():
+    """Make a list the filter's input. Body: {"name": "<csv in data/>"}."""
+    busy = _busy_response()
+    if busy:
+        return busy
+    name = str((request.get_json(silent=True) or {}).get("name") or "")
+    try:
+        roster.set_active_roster(name, load_config())
+    except roster.RosterError as exc:
+        return _roster_error(exc)
+    return jsonify({"success": True, "active": name})
+
+
+@app.route("/api/rosters/compare", methods=["GET"])
+def compare_rosters():
+    """Firms new in `target`, gone from `base`, and the count in both."""
+    try:
+        diff = roster.compare_rosters(request.args.get("base", ""), request.args.get("target", ""))
+    except roster.RosterError as exc:
+        return _roster_error(exc)
+    return jsonify(diff.to_dict())
+
+
+@app.route("/api/rosters/compare.csv", methods=["GET"])
+def compare_rosters_csv():
+    """One side of a comparison (`part` = added | removed) as a CSV download."""
+    part = request.args.get("part", "added")
+    try:
+        diff = roster.compare_rosters(request.args.get("base", ""), request.args.get("target", ""))
+        body = roster.diff_csv_bytes(diff, part)
+    except roster.RosterError as exc:
+        return _roster_error(exc)
+    label = "신규" if part == "added" else "제외"
+    filename = f"{Path(diff.base).stem}_vs_{Path(diff.target).stem}_{label}.csv"
+    return Response(body, mimetype="text/csv", headers={"Content-Disposition": _attachment(filename)})
+
+
+@app.route("/api/rosters/<name>/download", methods=["GET"])
+def download_roster(name):
+    try:
+        path = roster.roster_path(name)
+    except roster.RosterError:
+        abort(404)
+    if not roster.is_roster_file(path):
+        abort(404)
+    return send_from_directory(str(path.parent), path.name, as_attachment=True)
+
+
+# ---------------------------------------------------------------------------
+# Background jobs
+# ---------------------------------------------------------------------------
 
 @app.route("/api/jobs", methods=["GET"])
 def list_jobs():
@@ -492,6 +600,7 @@ def list_jobs():
         "jobs": [job.to_dict() for job in jobs.list()],
         "active": active.id if active else None,
     })
+
 
 @app.route("/api/jobs", methods=["POST"])
 def create_job():
@@ -513,6 +622,7 @@ def create_job():
         return jsonify({"success": False, "error": str(e), "active": e.active.id}), 409
     return jsonify(job.to_dict(since=0)), 202
 
+
 @app.route("/api/jobs/<job_id>", methods=["GET"])
 def job_status(job_id):
     """One job, with log lines from `?since=<n>` on, for incremental polling."""
@@ -522,6 +632,7 @@ def job_status(job_id):
     since = request.args.get("since", default=0, type=int)
     return jsonify(job.to_dict(since=max(since, 0)))
 
+
 @app.route("/api/jobs/<job_id>/cancel", methods=["POST"])
 def cancel_job(job_id):
     job = jobs.cancel(job_id)
@@ -529,114 +640,62 @@ def cancel_job(job_id):
         return jsonify({"success": False, "error": "Unknown job"}), 404
     return jsonify(job.to_dict())
 
-@app.route("/api/run/filter", methods=["POST"])
-def run_filter():
-    """Synchronous filter run. Prefer POST /api/jobs, which streams progress."""
-    busy = _busy_response()
-    if busy:
-        return busy
-    try:
-        script_path = BASE_DIR / "scripts" / "run_filter.py"
-        result = subprocess.run(
-            [sys.executable, str(script_path)],
-            capture_output=True, text=True, timeout=FILTER_SCRIPT_TIMEOUT
-        )
-        return _script_response(result)
-    except subprocess.TimeoutExpired:
-        return jsonify({"success": False, "error": "Script timed out"}), 408
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route("/api/run/summarize", methods=["POST"])
-def run_summarize():
-    """Synchronous summarize run, capped by a timeout. Prefer POST /api/jobs."""
-    busy = _busy_response()
-    if busy:
-        return busy
-    data = request.get_json() or {}
-    dry_run = bool(data.get("dry_run", True))
-    limit = data.get("limit", 5)
+# ---------------------------------------------------------------------------
+# Pages
+# ---------------------------------------------------------------------------
 
-    if limit is not None:
-        try:
-            limit = int(limit)
-        except (TypeError, ValueError):
-            return jsonify({"success": False, "error": "limit must be an integer"}), 400
-        if not 1 <= limit <= 10000:
-            return jsonify({"success": False, "error": "limit out of range"}), 400
+@app.route("/map")
+def map_viewer():
+    """The Kakao map of the 인원배정 firms, embedded by the frontend's 지도 page."""
+    config = load_config()
+    return render_template(
+        "firms_viewer.html",
+        static_endpoint="serve_static",
+        kakao_api_key=os.getenv("KAKAO_JS_API_KEY", ""),
+        enable_kakao_map=config.get("app", {}).get("enable_kakao_map", True),
+    )
 
-    provider = data.get("provider")
-    if provider is not None:
-        provider = str(provider)
-        if provider not in PROVIDER_IDS:
-            return jsonify({"success": False, "error": "Unknown provider"}), 400
-
-    try:
-        script_path = BASE_DIR / "scripts" / "run_summarize.py"
-        cmd = [sys.executable, str(script_path)]
-        if dry_run: cmd.append("--dry-run")
-        if limit: cmd.extend(["--limit", str(limit)])
-        if provider: cmd.extend(["--provider", provider])
-
-        timeout = DRY_RUN_TIMEOUT if dry_run else SUMMARIZE_SCRIPT_TIMEOUT
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-        return _script_response(result)
-    except subprocess.TimeoutExpired:
-        return jsonify({"success": False, "error": "Script timed out"}), 408
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route("/api/upload-pdf", methods=["POST"])
-def upload_pdf():
-    if 'file' not in request.files: return jsonify({"success": False, "error": "No file part"}), 400
-    file = request.files['file']
-    if file.filename == '': return jsonify({"success": False, "error": "No selected file"}), 400
-        
-    filename = safe_upload_name(file.filename)
-    if not filename:
-        return jsonify({"success": False, "error": "Invalid file type, must be PDF"}), 400
-
-    # Empty means "whatever config.yml selects"; anything else must be a known
-    # provider id, since it reaches a subprocess-free but still keyed code path.
-    provider = request.form.get('provider') or None
-    if provider is not None and provider not in PROVIDER_IDS:
-        return jsonify({"success": False, "error": "Unknown provider"}), 400
-
-    data_dir = (BASE_DIR / "data").resolve()
-    temp_path = (data_dir / filename).resolve()
-
-    # Belt-and-braces: confirm the resolved path really is inside data/.
-    if temp_path.parent != data_dir:
-        return jsonify({"success": False, "error": "Invalid filename"}), 400
-
-    data_dir.mkdir(parents=True, exist_ok=True)
-    file.save(str(temp_path))
-
-    try:
-        from firm_analyzer.core import pdf_parser_llm
-        output_csv = pdf_parser_llm.parse_pdf_to_csv(str(temp_path), provider=provider)
-        return jsonify({"success": True, "message": "Successfully parsed PDF to CSV.", "output_file": output_csv})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route("/api/download/<filename>", methods=["GET"])
-def download_file(filename):
-    try:
-        return send_from_directory(str(BASE_DIR / "data"), filename, as_attachment=True)
-    except Exception:
-        return jsonify({"success": False, "error": "File not found"}), 404
 
 @app.route("/static/<path:filename>")
 def serve_static(filename):
     return send_from_directory(str(STATIC_DIR), filename)
 
+
 @app.route("/favicon.ico")
 def favicon():
     return send_from_directory(str(STATIC_DIR), "favicon.png", mimetype="image/png")
 
-@app.route("/.well-known/appspecific/com.chrome.devtools.json")
-def chrome_devtools():
-    return jsonify({})
+
+FRONTEND_MISSING = """<!doctype html><html lang="ko"><meta charset="utf-8">
+<title>Firm Analyzer</title>
+<body style="font-family:system-ui,sans-serif;max-width:40rem;margin:4rem auto;padding:0 1rem;line-height:1.6">
+<h1>Firm Analyzer API</h1>
+<p>The API is running, but the web interface has not been built yet.</p>
+<p>Build it once with <code>cd frontend &amp;&amp; npm ci &amp;&amp; npm run build</code> and reload,
+or run <code>npm run dev</code> in <code>frontend/</code> and open
+<a href="http://localhost:5173">http://localhost:5173</a>.</p>
+<p>See README.md for details.</p>
+</body></html>"""
+
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def frontend(path):
+    """The React app: built assets as files, every other path as index.html.
+
+    Client-side routes (/pipeline, /rosters, ...) have no file of their own,
+    so they fall back to index.html and the router takes over. Unknown /api
+    paths stay 404 rather than returning HTML to a JSON client.
+    """
+    if path == "api" or path.startswith("api/"):
+        return jsonify({"success": False, "error": "Not found"}), 404
+    if not (FRONTEND_DIST / "index.html").is_file():
+        return Response(FRONTEND_MISSING, mimetype="text/html")
+    if path and (FRONTEND_DIST / path).is_file():
+        return send_from_directory(str(FRONTEND_DIST), path)
+    return send_from_directory(str(FRONTEND_DIST), "index.html")
+
 
 def main():
     debug_mode = os.getenv("FLASK_DEBUG", "false").lower() == "true"
@@ -654,6 +713,7 @@ def main():
         print("WARNING: Listening on all interfaces. This API has no authentication.")
 
     app.run(debug=debug_mode, host=host, port=port)
+
 
 if __name__ == "__main__":
     main()

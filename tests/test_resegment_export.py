@@ -23,7 +23,9 @@ from firm_analyzer.core.results import (  # noqa: E402
     insert_segmentation_block,
     parse_summary_header,
     set_header_field,
+    with_notice,
 )
+from firm_analyzer.notice import AI_NOTICE_MARKDOWN  # noqa: E402
 from firm_analyzer.llm import LLMError  # noqa: E402
 
 CATEGORIES = [
@@ -112,6 +114,21 @@ def test_parse_summary_header():
     assert header.fields["Address"] == "서울특별시 강남구"
     assert header.fields["Category"] == "General"
     assert header.end_line == 5
+
+
+def test_with_notice_adds_the_label_once_after_the_header():
+    text = with_notice(SUMMARY.format(name="알파"))
+    lines = text.splitlines()
+    assert lines[4].startswith("**Official Webpage:**")
+    assert lines[5:8] == ["", AI_NOTICE_MARKDOWN, ""]
+    assert with_notice(text) == text
+
+
+def test_insert_block_goes_after_the_notice():
+    text = insert_segmentation_block(with_notice(SUMMARY.format(name="알파")), "## 세분류 (Segmentation)")
+    lines = text.splitlines()
+    assert lines[5:10] == ["", AI_NOTICE_MARKDOWN, "", "## 세분류 (Segmentation)", ""]
+    assert lines[10] == "### 알파"
 
 
 def test_insert_block_sits_between_header_and_body():

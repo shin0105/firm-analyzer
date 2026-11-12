@@ -7,6 +7,9 @@ runs and fall out of step with the folders (firms summarized before a column
 existed, folders moved by `firm-segment --relocate`, runs that stopped early).
 This rebuilds a single table from the folders themselves, with the
 segmentation columns, so it always matches what the viewer shows.
+
+Every row carries a `notice` column marking it as AI-generated and
+unverified, so the label survives rows being copied into other documents.
 """
 
 import argparse
@@ -18,6 +21,7 @@ import pandas as pd
 
 from firm_analyzer.config import BASE_DIR, load_config, results_dir
 from firm_analyzer.core.results import collect_records
+from firm_analyzer.notice import EXPORT_NOTICE
 
 DEFAULT_EXPORT = "firms_export.csv"
 
@@ -25,7 +29,10 @@ DEFAULT_EXPORT = "firms_export.csv"
 def export_frame(config: dict, output_dir: Optional[Path] = None) -> pd.DataFrame:
     """All firm folders as a DataFrame, one row per firm."""
     records = collect_records(output_dir or results_dir(config), config.get("categories", []))
-    return pd.DataFrame(records)
+    frame = pd.DataFrame(records)
+    if not frame.empty:
+        frame.insert(0, "notice", EXPORT_NOTICE)
+    return frame
 
 
 def export_csv_bytes(config: dict) -> bytes:

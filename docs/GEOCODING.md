@@ -4,7 +4,7 @@ This document explains how the geocoding system works for converting Korean addr
 
 ## Overview
 
-The `generate_firms_data.py` script converts firm addresses from the CSV into latitude/longitude coordinates for map display. It supports two modes:
+The `firm-geocode` command (`src/firm_analyzer/core/geocoding.py`) converts firm addresses from the CSV into latitude/longitude coordinates for map display. It supports two modes:
 
 1. **API-based geocoding** using geopy with Nominatim (OpenStreetMap)
 2. **Fallback coordinates** using hardcoded regional coordinates
@@ -29,7 +29,7 @@ Run the script from the `firm_summary` directory:
 
 ```bash
 cd firm_summary
-python generate_firms_data.py
+uv run firm-geocode
 ```
 
 ### Interactive Mode (Default)
@@ -44,10 +44,10 @@ For automated/batch processing, use command-line arguments:
 
 ```bash
 # Use API geocoding
-python generate_firms_data.py --use-api
+uv run firm-geocode --use-api
 
 # Use fallback only
-python generate_firms_data.py --no-api
+uv run firm-geocode --no-api
 ```
 
 ### Environment Variable
@@ -56,10 +56,10 @@ Alternatively, set an environment variable:
 
 ```bash
 # Use API geocoding
-USE_GEOCODING_API=1 python generate_firms_data.py
+USE_GEOCODING_API=1 uv run firm-geocode
 
 # Use fallback only
-USE_GEOCODING_API=0 python generate_firms_data.py
+USE_GEOCODING_API=0 uv run firm-geocode
 ```
 
 ## Geocoding Methods
@@ -163,7 +163,7 @@ response = requests.get(
 
 ## Switching to a Different Geocoding Service
 
-To use a different geocoding service, modify the `geocode_with_nominatim()` function in `generate_firms_data.py`:
+To use a different geocoding service, modify the `geocode_with_nominatim()` function in `src/firm_analyzer/core/geocoding.py`:
 
 ```python
 def geocode_with_api(address, api_service, max_retries=3):

@@ -82,14 +82,14 @@ Run the geocoding script to process all addresses:
 
 ```bash
 cd firm_summary
-python generate_firms_data.py
+uv run firm-geocode
 ```
 
 The script will:
 1. Read addresses from the CSV file
 2. Use Kakao Maps API to get exact coordinates
 3. Cache results in `data/geocode_cache.json`
-4. Generate `webapp/static/js/firms_data.js` with accurate coordinates
+4. Generate `src/firm_analyzer/web/static/js/firms_data.js` with accurate coordinates
 
 This process takes time as it geocodes ~1,900 addresses. Results are cached, so subsequent runs will be much faster.
 
@@ -99,7 +99,7 @@ Start the web application:
 
 ```bash
 cd webapp
-python app.py
+uv run firm-app
 ```
 
 Open http://localhost:5000/firm-viewer to see the map with accurate locations.
@@ -160,7 +160,7 @@ Geocoding results are cached in `data/geocode_cache.json`:
 To force re-geocoding (e.g., to use a different API or update coordinates):
 ```bash
 rm data/geocode_cache.json
-python firm_summary/generate_firms_data.py
+uv run firm-geocode
 ```
 
 ## Troubleshooting
@@ -231,7 +231,7 @@ If you don't want to use Kakao API, the system will:
 
 To use fallback only:
 ```bash
-python generate_firms_data.py --no-api
+uv run firm-geocode --no-api
 ```
 
 ## Support

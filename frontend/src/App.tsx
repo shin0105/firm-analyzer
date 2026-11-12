@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   NavLink,
+  Navigate,
   useLocation,
   Link,
 } from 'react-router-dom';
@@ -12,7 +13,8 @@ import {
   Map,
   Settings,
   FileText,
-  FileUp,
+  Info,
+  ListChecks,
   Menu,
   X,
   Compass,
@@ -22,16 +24,18 @@ import Dashboard from './pages/Dashboard';
 import FirmResults from './pages/FirmResults';
 import ConfigPage from './pages/ConfigPage';
 import SummaryViewer from './pages/SummaryViewer';
-import OcrUpload from './pages/OcrUpload';
+import Rosters from './pages/Rosters';
 import Pipeline from './pages/Pipeline';
+import About from './pages/About';
 
 const NAV_ITEMS = [
   { to: '/', label: '대시보드', icon: LayoutDashboard, title: '대시보드' },
+  { to: '/rosters', label: '전문연 명단 관리', icon: ListChecks, title: '전문연 명단 관리' },
   { to: '/pipeline', label: '파이프라인 실행', icon: Play, title: '파이프라인 실행' },
   { to: '/firms', label: '기업 검색 결과', icon: Map, title: '기업 검색 결과' },
   { to: '/summary', label: '요약 결과 보기', icon: FileText, title: '요약 결과 보기' },
-  { to: '/ocr', label: 'PDF OCR 변환', icon: FileUp, title: 'PDF OCR 변환' },
   { to: '/config', label: '설정 변경', icon: Settings, title: '설정 변경' },
+  { to: '/about', label: '이용 안내', icon: Info, title: '이용 안내 및 면책 조항' },
 ] as const;
 
 function NotFound() {
@@ -129,7 +133,14 @@ function Shell() {
             </NavLink>
           ))}
         </nav>
-        <div className="sidebar-footer">기업 분석 및 요약 도구</div>
+        <div className="sidebar-footer">
+          기업 분석 및 요약 도구
+          <br />
+          요약은 AI가 생성한 참고 자료입니다.{' '}
+          <Link to="/about" onClick={() => setNavOpen(false)}>
+            이용 안내
+          </Link>
+        </div>
       </aside>
 
       <main className="main-content" id="main-content" tabIndex={-1}>
@@ -139,7 +150,10 @@ function Shell() {
           <Route path="/firms" element={<FirmResults />} />
           <Route path="/config" element={<ConfigPage />} />
           <Route path="/summary" element={<SummaryViewer />} />
-          <Route path="/ocr" element={<OcrUpload />} />
+          <Route path="/rosters" element={<Rosters />} />
+          <Route path="/about" element={<About />} />
+          {/* The PDF OCR page became the AI option of 명단 가져오기. */}
+          <Route path="/ocr" element={<Navigate to="/rosters" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

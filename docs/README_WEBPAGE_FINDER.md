@@ -59,9 +59,9 @@ if result:
     print(f"Reasoning: {result['reasoning']}")
 ```
 
-### In search_summarize.py
+### In firm-summarize
 
-The webpage finder is automatically integrated into the main `search_summarize.py` and legacy `firm_summary/2_search_summarize.py` scripts.
+The webpage finder runs inside `firm-summarize` for every firm (turn it off with `search.find_webpage: false` in `config.yml`).
 
 Enable/disable in `config.json`:
 

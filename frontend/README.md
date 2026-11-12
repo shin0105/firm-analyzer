@@ -1,73 +1,29 @@
-# React + TypeScript + Vite
+# Firm Analyzer frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript (Vite) interface for the Flask API in `src/firm_analyzer/web`.
 
-Currently, two official plugins are available:
+| Page | Route | What it does |
+|------|-------|--------------|
+| 대시보드 | `/` | Firm counts per category, CSV export |
+| 전문연 명단 관리 | `/rosters` | Import a new 인원배정 list, compare lists, pick the active one |
+| 파이프라인 실행 | `/pipeline` | Run filter, summarize and segment as background jobs |
+| 기업 검색 결과 | `/firms` | The map of listed firms (embeds Flask's `/map`) |
+| 요약 결과 보기 | `/summary` | Search and read firm summaries |
+| 설정 변경 | `/config` | Edit `config.yml` |
+| 이용 안내 | `/about` | What the AI-generated content is, and the disclaimer |
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Every view that shows AI-written content renders `components/AiNotice.tsx`.
+Its wording mirrors `src/firm_analyzer/notice.py`; change both together.
 
-## React Compiler
+## Running
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm ci
+npm run dev      # http://localhost:5173, with /api proxied to Flask on :8001
+npm run build    # dist/, which `uv run firm-app` serves at http://localhost:8001
+npm run lint
+npx tsc -b       # typecheck
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Start the API first (`uv run firm-app` from the repository root). See
+`.env.example` here for the two optional build variables.

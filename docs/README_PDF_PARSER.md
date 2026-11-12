@@ -2,7 +2,7 @@
 
 ## Overview
 
-The extended PDF parser (`parse_pdf_to_csv_extended.py`) provides a flexible way to extract table data from various PDF formats and convert them to CSV files. It's particularly useful for parsing Korean company lists with different column structures.
+The rule-based PDF parser (`firm-parse-pdf`, `src/firm_analyzer/core/pdf_parser_rule.py`) provides a flexible way to extract table data from various PDF formats and convert them to CSV files. It's particularly useful for parsing Korean company lists with different column structures.
 
 ## Key Features
 
@@ -14,20 +14,25 @@ The extended PDF parser (`parse_pdf_to_csv_extended.py`) provides a flexible way
 
 ## Usage Examples
 
-### Example 1: Default Usage (Original Format)
+### Example 1: A 인원배정 PDF
 
-Parse the standard research personnel allocation PDF:
+> To import a new yearly list for the pipeline, use `firm-roster import` (or the
+> **전문연 명단 관리** page) instead: it calls this parser, then normalises the
+> columns, checks the row count, compares with the previous list and makes the
+> new list active. See the README's "Updating the 전문연 list" section.
+
+Parse a research personnel allocation PDF with the default columns:
 
 ```bash
-python3 firm_summary/parse_pdf_to_csv_extended.py
+uv run firm-parse-pdf --pdf data/2026_전문연구요원_인원배정.pdf
 ```
 
-This will parse `data/2025_전문연구요원_인원배정.pdf` with default columns:
+This writes `data/2026_전문연구요원_인원배정_parsed.csv` with the columns:
 - 연번 (Number)
 - 업종구분 (Industry Type)
 - 업체명 (Company Name)
 - 소재지 (Location)
-- 25년 배정인원 (2025 Allocation)
+- 배정인원 (Allocation; matches the "25년 배정인원", "26년 배정인원", … header of any year)
 - 관할청 (Jurisdiction)
 
 ### Example 2: Extract City from Location
@@ -35,7 +40,7 @@ This will parse `data/2025_전문연구요원_인원배정.pdf` with default col
 Automatically add a city column extracted from the location field:
 
 ```bash
-python3 firm_summary/parse_pdf_to_csv_extended.py --extract-city-from-location
+uv run firm-parse-pdf --pdf data/2026_전문연구요원_인원배정.pdf --extract-city-from-location
 ```
 
 Output CSV will include an additional "도시" (City) column with extracted city names:
@@ -48,7 +53,7 @@ Output CSV will include an additional "도시" (City) column with extracted city
 Parse a Korean company list PDF with custom columns:
 
 ```bash
-python3 firm_summary/parse_pdf_to_csv_extended.py \
+uv run firm-parse-pdf \
     --pdf data/korean_companies.pdf \
     --output data/korean_companies.csv \
     --columns "번호" "회사명" "상세주소" "도시"
@@ -59,7 +64,7 @@ python3 firm_summary/parse_pdf_to_csv_extended.py \
 Map source columns to different output column names:
 
 ```bash
-python3 firm_summary/parse_pdf_to_csv_extended.py \
+uv run firm-parse-pdf \
     --pdf data/firms.pdf \
     --output data/firms.csv \
     --columns "번호:Number" "회사명:Company Name" "소재지:Detail Location" "도시:City"
@@ -75,7 +80,7 @@ This will:
 Extract city from location and use custom settings:
 
 ```bash
-python3 firm_summary/parse_pdf_to_csv_extended.py \
+uv run firm-parse-pdf \
     --pdf data/company_directory.pdf \
     --output data/parsed_directory.csv \
     --columns "기업명" "주소" "전화번호" \
@@ -87,8 +92,8 @@ python3 firm_summary/parse_pdf_to_csv_extended.py \
 
 | Argument | Short | Description | Default |
 |----------|-------|-------------|---------|
-| `--pdf` | `-p` | Path to input PDF file | `data/2025_전문연구요원_인원배정.pdf` |
-| `--output` | `-o` | Path to output CSV file | `data/2025_전문연구요원_인원배정_parsed_extended.csv` |
+| `--pdf` | `-p` | Path to input PDF file (required) | — |
+| `--output` | `-o` | Path to output CSV file | `<pdf name>_parsed.csv` next to the PDF |
 | `--columns` | `-c` | Column names (space-separated) | Default columns |
 | `--extract-city-from-location` | | Extract city from location field | False |
 | `--min-columns` | | Minimum non-empty columns for valid row | 3 |
@@ -154,7 +159,7 @@ Output: "제주시"
 
 For testing, you can:
 1. Find publicly available Korean company list PDFs
-2. Use the existing `2025_전문연구요원_인원배정.pdf`
+2. Use the 인원배정 PDFs in `data/`
 3. Create your own using spreadsheet software (Export to PDF)
 
 ## Technical Details
@@ -217,5 +222,5 @@ pip install pdfplumber
 ## See Also
 
 - `parse_pdf_to_csv.py`: Original simpler version
-- `filter_firms.py`: Filter extracted data
-- `search_summarize.py`: Enrich data with web search
+- `firm-filter`: Filter extracted data
+- `firm-summarize`: Enrich data with web search

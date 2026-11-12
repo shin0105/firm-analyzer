@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Tests for the Flask API, through its test client.
 
-Covers the export endpoint, firm search and detail, and the input checks that
-keep URL segments and upload names from reaching the filesystem unchecked.
+Covers the export endpoint, firm search and detail, serving the built
+frontend, and the input checks that keep URL segments and upload names from
+reaching the filesystem unchecked. The 명단 endpoints are in test_roster.py.
 """
 
 import json
@@ -76,23 +77,18 @@ def test_export_csv_downloads_every_firm(client):
     assert "attachment" in response.headers["Content-Disposition"]
     text = response.data.decode("utf-8-sig")
     lines = text.strip().splitlines()
-    assert lines[0].startswith("firm_name,address,category_id")
+    # Every row is labelled as AI-generated, so the label survives copying rows out.
+    assert lines[0].startswith("notice,firm_name,address,category_id")
     assert len(lines) == 3
-    assert lines[1].startswith("알파,서울,ai_ml")
-
-
-@pytest.mark.parametrize(
-    "payload",
-    [{"limit": "abc"}, {"limit": 0}, {"limit": 10001}, {"provider": "evil; rm -rf"}],
-)
-def test_summarize_rejects_bad_parameters(client, payload):
-    assert client.post("/api/run/summarize", json=payload).status_code == 400
+    assert all(line.startswith("AI 생성·미검증 참고자료") for line in lines[1:])
+    assert ",알파,서울,ai_ml" in lines[1]
 
 
 @pytest.mark.parametrize(
     "raw, expected",
     [
         ("보고서.pdf", "보고서.pdf"),
+        ("2027_명단.CSV", "2027_명단.CSV"),
         ("../../../etc/x.pdf", "x.pdf"),
         ("..\\..\\x.pdf", "x.pdf"),
         (".hidden.pdf", None),

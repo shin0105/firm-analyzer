@@ -239,13 +239,13 @@ filters:
 # For example: my_companies.csv
 
 # 2. Filter the firms
-python filter_firms.py --input my_companies.csv --output filtered.csv
+uv run firm-filter --input my_companies.csv --output filtered.csv
 
 # 3. Search and summarize
-python search_summarize.py --input filtered.csv
+uv run firm-summarize --input filtered.csv
 
 # Or use the web interface
-python app.py
+uv run firm-app
 # Open http://localhost:8001
 ```
 
@@ -283,7 +283,7 @@ data/
 Then run the filter script with different inputs:
 
 ```bash
-python filter_firms.py --input data/startups.csv --output filtered_startups.csv
+uv run firm-filter --input data/startups.csv --output filtered_startups.csv
 ```
 
 ## Common Patterns
@@ -329,7 +329,7 @@ When you just need to track and research companies:
    df.to_csv('converted.csv', index=False)
    ```
 
-2. Or modify `filter_firms.py` and `search_summarize.py` to use your column names.
+2. Or rename the columns on import: `uv run firm-roster import your.csv --year 2027` accepts 회사명/기업명 for 업체명 and 주소 for 소재지.
 
 ### Q: What if some firms don't have addresses?
 
@@ -378,8 +378,8 @@ Sample CSV files are provided in the `data/samples/` directory:
 
 - [Main README](../README.md) - General application usage
 - [config.yml](../config.yml) - Configuration examples
-- [filter_firms.py](../filter_firms.py) - Filtering script
-- [search_summarize.py](../search_summarize.py) - Search and summarize script
+- [filter.py](../src/firm_analyzer/core/filter.py) - Filtering (`firm-filter`)
+- [summarize.py](../src/firm_analyzer/core/summarize.py) - Search and summarize (`firm-summarize`)
 - [PDF Parser Guide](README_PDF_PARSER.md) - Converting PDF to CSV
 
 ## Support

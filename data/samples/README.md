@@ -8,7 +8,7 @@ Try any of these samples with the application:
 
 ```bash
 # Filter a sample file
-python filter_firms.py --input data/samples/startups.csv --output filtered_startups.csv
+uv run firm-filter --input data/samples/startups.csv --output filtered_startups.csv
 
 # Use with the web interface
 # 1. Copy a sample file to the main directory
@@ -16,7 +16,7 @@ cp data/samples/minimal_example.csv my_firms.csv
 
 # 2. Update config.json to point to your file
 # 3. Run the web app
-python app.py
+uv run firm-app
 ```
 
 ## Available Samples
@@ -166,7 +166,7 @@ Microsoft Korea,서울특별시 종로구 종로,Redmond WA USA,300+,소프트�
 
 ```bash
 # Try filtering by location
-python filter_firms.py \
+uv run firm-filter \
   --input data/samples/standard_example.csv \
   --locations 서울 \
   --output test_seoul.csv
@@ -254,10 +254,10 @@ Before processing a large file:
 head -6 your_file.csv > test.csv  # Include header + 5 rows
 
 # Test filtering
-python filter_firms.py --input test.csv --output test_filtered.csv
+uv run firm-filter --input test.csv --output test_filtered.csv
 
 # Test search (dry run - no API calls)
-python search_summarize.py --input test_filtered.csv --dry-run --limit 2
+uv run firm-summarize --input test_filtered.csv --dry-run --limit 2
 ```
 
 ## Validation Checklist

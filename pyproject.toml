@@ -38,6 +38,7 @@ dev = [
 [project.scripts]
 firm-app = "firm_analyzer.web.app:main"
 firm-filter = "firm_analyzer.core.filter:main"
+firm-roster = "firm_analyzer.core.roster:main"
 firm-summarize = "firm_analyzer.core.summarize:main"
 firm-segment = "firm_analyzer.core.resegment:main"
 firm-export = "firm_analyzer.core.export:main"

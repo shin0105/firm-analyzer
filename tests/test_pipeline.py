@@ -105,11 +105,13 @@ class StubProvider:
     def __init__(self, answers):
         self.answers = answers
         self.calls = []
+        self.systems = []
 
     def api_key(self):
         return "stub-key"
 
     def complete_json(self, prompt, system=None, max_output_tokens=None):
+        self.systems.append(system)
         for name, answer in self.answers.items():
             if f"'{name}'" in prompt:
                 self.calls.append(name)
@@ -213,6 +215,36 @@ def test_segmented_firm_is_filed_by_its_sector(run_summarize, tmp_path):
     firm_dir = tmp_path / "results" / "healthcare" / "알파랩"
     assert json.loads((firm_dir / "segmentation.json").read_text())["sector"] == "bio_health"
     assert "## 세분류 (Segmentation)" in (firm_dir / "summary.md").read_text()
+
+
+def test_summary_is_labelled_as_ai_generated_and_lists_its_sources(run_summarize, tmp_path):
+    from firm_analyzer.core.results import summary_body
+    from firm_analyzer.notice import NOTICE_MARKER, SOURCES_HEADING, SUMMARY_GUARDRAILS
+
+    provider = run_summarize({"알파랩": ok()}, None, "--limit", "1")
+    text = (tmp_path / "results" / "ai_ml" / "알파랩" / "summary.md").read_text()
+
+    assert NOTICE_MARKER in text
+    assert text.index(NOTICE_MARKER) < text.index("요약 본문") < text.index(SOURCES_HEADING)
+    assert "- [알파랩 " in text and "](https://example.com)" in text
+    # Search snippets show the prose, not the notice or the source list.
+    assert summary_body(text) == "요약 본문"
+    # The content rules reach the model even though config has its own system prompt.
+    assert SUMMARY_GUARDRAILS in provider.systems[0]
+
+
+def test_format_sources_skips_non_http_and_duplicate_urls():
+    sources = summarize.format_sources([
+        {"title": "A [x]", "url": "https://a.example/(1)"},
+        {"title": "dup", "url": "https://a.example/(1)"},
+        {"title": "js", "url": "javascript:alert(1)"},
+        {"url": "http://b.example"},
+    ])
+    assert sources.splitlines()[2:] == [
+        "- [A (x)](https://a.example/%281%29)",
+        "- [http://b.example](http://b.example)",
+    ]
+    assert summarize.format_sources([]) == ""
 
 
 # --- helpers -----------------------------------------------------------------

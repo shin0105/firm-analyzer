@@ -35,8 +35,8 @@ The firm data is consolidated into a single PostgreSQL table named `firms`.
 - `allocation_2025`: Number of allocated personnel for 2025
 - `jurisdiction`: Regional jurisdiction
 - `category`: AI-generated categorization (e.g., `ai_ml`, `finance`)
-- `summary_md`: AI-generated summary in Markdown format
-- `raw_search`: Raw JSON data from web search
+- `summary_md`: AI-generated summary in Markdown format. `firm-supabase-sync` adds the AI-generated notice to any summary that lacks it, so the label travels with the text.
+- `raw_search`: Raw JSON data from web search. Empty unless you run `firm-supabase-sync --include-raw-search`: it holds the text of scraped pages, which can include personal data and third-party copyrighted material.
 - `webpage`: Raw JSON data from webpage scraping
 
 ## 3. Using Supabase in Python
@@ -100,6 +100,12 @@ You can manage your data without code using the Supabase Dashboard:
 
 ## 5. Security (Row Level Security - RLS)
 
-By default, the `firms` table has been configured with Row Level Security enabled, and a permissive policy has been applied to allow anonymous (`anon`) role access for all operations (Select, Insert, Update, Delete) to facilitate easy development. 
+The `SUPABASE_KEY` this project uses is the anon (publishable) key, which is public by design: anyone who has it can do whatever the table's policies allow. Row Level Security policies are therefore the only thing protecting the data.
 
-If you move this application to a public production environment where users shouldn't be able to edit the database, you should restrict these policies in the Supabase Dashboard under **Authentication -> Policies**.
+A permissive development policy (anon may select, insert, update and delete) lets anyone with the key rewrite or wipe the table. Before exposing the table or the app publicly:
+
+- Allow the `anon` role `SELECT` only, and run `firm-supabase-sync` with a key that has write access, from a trusted machine.
+- Do not upload `raw_search` to a publicly readable table.
+- Keep the AI-generated notice on summaries you show to others (see [DISCLAIMER.md](../DISCLAIMER.md)).
+
+Policies live in the Supabase Dashboard under **Authentication -> Policies**.

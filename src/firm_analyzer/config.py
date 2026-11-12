@@ -1,7 +1,8 @@
-import os
 import json
-import yaml
+import os
 from pathlib import Path
+
+import yaml
 
 def _find_base_dir() -> Path:
     """Locate the project root that holds config.yml, data/ and firm_results/.
@@ -28,7 +29,6 @@ def _find_base_dir() -> Path:
 
 BASE_DIR = _find_base_dir()
 CONFIG_PATH = BASE_DIR / "config.yml"
-DEFAULT_INPUT_CSV = BASE_DIR / "data" / "2025_전문연구요원_인원배정.csv"
 # The hand-off between the two pipeline stages: the filter writes it and
 # summarize reads it, so both default to this one path.
 FILTERED_CSV = BASE_DIR / "data" / "filtered_firms.csv"
@@ -55,6 +55,12 @@ def get_default_config():
                 "github": "",
             },
             "summary_config_path": ""
+        },
+        "data": {
+            # The 인원배정 list (a CSV in data/) the filter starts from. Empty
+            # means the newest <year>_전문연구요원_인원배정.csv. Set it from the
+            # 명단 관리 page or with `firm-roster activate`.
+            "roster": "",
         },
         "segmentation": {
             # Multi-axis classification against taxonomy.yml, produced in the
