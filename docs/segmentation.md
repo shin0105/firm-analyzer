@@ -46,7 +46,7 @@ industries → 163 sub-industries.
 | `value_chain` | one label | Where it sits between raw research and end user |
 | `profile` | three enums | Size tier, R&D intensity, likely research role |
 
-10 sectors, 45 subsectors and 20 verticals — deliberately smaller than KSIC.
+10 sectors, 48 subsectors and 20 verticals — deliberately smaller than KSIC.
 The list covers what actually appears in the 전문연구요원 배정 list, and every
 label has to be decidable from a handful of search results. A taxonomy that is
 too fine for the available evidence just moves the arbitrariness from the label
@@ -151,7 +151,7 @@ loosely (소부장, 팹리스, 출연연).
   top-level `rules` (global). Both are injected into the prompt verbatim.
 
 Turn the whole thing off with `segmentation.enabled: false` in `config.yml`, or
-`--no-segmentation` on `scripts/run_summarize.py`.
+`--no-segmentation` on `firm-summarize` (`scripts/run_summarize.py`).
 
 ## Segmenting firms that were already summarized
 

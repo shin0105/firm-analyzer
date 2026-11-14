@@ -8,7 +8,8 @@ hit live services.
 Run everything from the project root:
 
 ```bash
-pytest
+uv sync --extra dev   # once, installs pytest
+uv run pytest
 ```
 
 ### test_llm_providers.py
@@ -38,18 +39,28 @@ Background pipeline jobs: option validation (only fixed flags and checked ids
 reach the command line), progress and summary parsing, log windowing, and the
 runner against real `python -c` subprocesses — stdout streamed but stderr kept
 out of the API, failure, cancel, timeout, and one job at a time. Also the
-`/api/jobs` endpoints (including 409 on the legacy `/api/run/*` while a job
+`/api/jobs` endpoints (create and poll, 400 on bad requests, 404 on unknown
+jobs, and 409 for a second job or for switching the active list while a job
 runs) and one real filter → summarize dry run in a throwaway project home.
+
+### test_roster.py
+The yearly 인원배정 list (`firm-roster`): column normalisation and aliases,
+matching firm names across years, year detection, import (CP949 CSV, refusing
+to overwrite, row-count warnings), compare, the active-list choice, a full
+parse of the 2026 PDF in `data/`, and the `/api/rosters` endpoints. Also the
+fallback of client-side routes to the built frontend.
 
 ### test_web_api.py
 The Flask API through its test client: results and export endpoints, firm
 search (`q`, each filter, 400 on unknown ids) and firm detail, including the
 guard that only serves a firm folder directly inside its category (no "..",
-separators or outward symlinks), plus the input checks on category ids,
-summarize parameters and upload filenames.
+separators or outward symlinks), the input checks on category ids and upload
+filenames, the firm endpoints reading local folders even when
+`app.data_source` is `supabase`, and the `firm-export-site` static snapshot.
 
 ### test_pdf_parser.py
-Rule-based PDF parsing for firm data extraction.
+The rule-based PDF parser's helpers: city extraction from addresses, column
+mapping (`source:target`), header detection and column matching.
 
 ### test_webpage_finder.py
 Structure and response handling for the webpage finder.
@@ -61,15 +72,17 @@ One small JSON round trip per configured provider. Providers without a key are
 skipped, not failed.
 
 ```bash
-python tests/live_provider_check.py           # every configured provider
-python tests/live_provider_check.py gemini    # just one
+uv run python tests/live_provider_check.py           # every configured provider
+uv run python tests/live_provider_check.py gemini    # just one
 ```
 
 ### test_kakao_geocoding.py
-Kakao Maps geocoding against sample Korean addresses.
+Kakao Maps geocoding against sample Korean addresses. It has no test
+functions, so `pytest` runs nothing from it; run it by hand. It loads `.env`
+itself.
 
 ```bash
-python tests/test_kakao_geocoding.py
+uv run python tests/test_kakao_geocoding.py
 ```
 
 ## Environment variables
@@ -83,5 +96,6 @@ LLM_PROVIDER=openai         # openai | claude | gemini | github
 OPENAI_API_KEY=...          # if LLM_PROVIDER=openai
 ANTHROPIC_API_KEY=...       # if LLM_PROVIDER=claude
 GEMINI_API_KEY=...          # if LLM_PROVIDER=gemini
+GITHUB_TOKEN=...            # if LLM_PROVIDER=github
 KAKAO_REST_API_KEY=...      # geocoding only
 ```

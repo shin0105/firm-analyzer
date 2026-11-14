@@ -132,8 +132,11 @@ Input: "경기도 수원시 영통구 삼성로 129"
 Output: "수원시"
 
 Input: "제주특별자치도 제주시 첨단로 242"
-Output: "제주시"
+Output: "제주특별자치도"
 ```
+
+특별자치도 is checked before 도 + 시, so a 특별자치도 address returns the
+province (`제주특별자치도`, `강원특별자치도`), not the city after it.
 
 ## Testing with Korean Company Lists
 
@@ -185,7 +188,7 @@ For testing, you can:
 ### Problem: No data extracted
 - Check if PDF has actual tables (not just text or images)
 - Try reducing `--min-columns` value
-- Verify PDF is not scanned image (requires OCR preprocessing)
+- Verify PDF is not scanned image. This parser needs a text layer; for a scanned PDF use `uv run firm-parse-pdf-llm <file.pdf> --provider claude` (or `gemini`), which reads the page images
 
 ### Problem: Wrong columns extracted
 - Check column names in PDF with `pdfplumber` manually
@@ -194,7 +197,7 @@ For testing, you can:
 
 ### Problem: City extraction not working
 - Ensure location column contains Korean address format
-- Check that location column is properly identified
+- Check that location column is properly identified: its name in `--columns` must contain `소재지`, `주소` or `location`
 - Korean addresses should start with administrative division
 
 ## Future Enhancements
@@ -211,16 +214,16 @@ Potential improvements:
 ## Dependencies
 
 - `pdfplumber`: PDF table extraction
-- `pandas`: Data manipulation (optional, for advanced features)
-- Python 3.7+
+- Python 3.12+
 
-Install dependencies:
+Both come with the project's dependencies:
 ```bash
-pip install pdfplumber
+uv sync
 ```
 
 ## See Also
 
-- `parse_pdf_to_csv.py`: Original simpler version
+- `firm-parse-pdf-llm` (`src/firm_analyzer/core/pdf_parser_llm.py`): AI-based PDF to CSV, using the selected LLM provider (see [ENGINES_GUIDE.md](ENGINES_GUIDE.md#b-llm-based-parser-llm-기반-파서))
+- `firm-roster import`: Import a yearly 인원배정 list for the pipeline, using either parser
 - `firm-filter`: Filter extracted data
 - `firm-summarize`: Enrich data with web search
