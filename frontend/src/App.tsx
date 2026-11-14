@@ -27,16 +27,20 @@ import SummaryViewer from './pages/SummaryViewer';
 import Rosters from './pages/Rosters';
 import Pipeline from './pages/Pipeline';
 import About from './pages/About';
+import { STATIC_SITE } from './lib/api';
 
+/** `needsServer` pages change files or start jobs, so the static build leaves them out. */
 const NAV_ITEMS = [
-  { to: '/', label: '대시보드', icon: LayoutDashboard, title: '대시보드' },
-  { to: '/rosters', label: '전문연 명단 관리', icon: ListChecks, title: '전문연 명단 관리' },
-  { to: '/pipeline', label: '파이프라인 실행', icon: Play, title: '파이프라인 실행' },
-  { to: '/firms', label: '기업 검색 결과', icon: Map, title: '기업 검색 결과' },
-  { to: '/summary', label: '요약 결과 보기', icon: FileText, title: '요약 결과 보기' },
-  { to: '/config', label: '설정 변경', icon: Settings, title: '설정 변경' },
-  { to: '/about', label: '이용 안내', icon: Info, title: '이용 안내 및 면책 조항' },
+  { to: '/', label: '대시보드', icon: LayoutDashboard, title: '대시보드', needsServer: false },
+  { to: '/rosters', label: '전문연 명단 관리', icon: ListChecks, title: '전문연 명단 관리', needsServer: true },
+  { to: '/pipeline', label: '파이프라인 실행', icon: Play, title: '파이프라인 실행', needsServer: true },
+  { to: '/firms', label: '기업 검색 결과', icon: Map, title: '기업 검색 결과', needsServer: false },
+  { to: '/summary', label: '요약 결과 보기', icon: FileText, title: '요약 결과 보기', needsServer: false },
+  { to: '/config', label: '설정 변경', icon: Settings, title: '설정 변경', needsServer: true },
+  { to: '/about', label: '이용 안내', icon: Info, title: '이용 안내 및 면책 조항', needsServer: false },
 ] as const;
+
+const VISIBLE_NAV = NAV_ITEMS.filter((item) => !(STATIC_SITE && item.needsServer));
 
 function NotFound() {
   return (
@@ -59,7 +63,7 @@ function Shell() {
 
   // Keep the tab title in sync so history and bookmarks are meaningful.
   useEffect(() => {
-    const current = NAV_ITEMS.find((item) => item.to === location.pathname);
+    const current = VISIBLE_NAV.find((item) => item.to === location.pathname);
     document.title = current
       ? `${current.title} · Firm Analyzer`
       : 'Firm Analyzer';
@@ -115,7 +119,7 @@ function Shell() {
           <X size={20} aria-hidden="true" />
         </button>
         <nav className="nav-links" aria-label="주요 메뉴">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          {VISIBLE_NAV.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -146,14 +150,18 @@ function Shell() {
       <main className="main-content" id="main-content" tabIndex={-1}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/pipeline" element={<Pipeline />} />
           <Route path="/firms" element={<FirmResults />} />
-          <Route path="/config" element={<ConfigPage />} />
           <Route path="/summary" element={<SummaryViewer />} />
-          <Route path="/rosters" element={<Rosters />} />
           <Route path="/about" element={<About />} />
-          {/* The PDF OCR page became the AI option of 명단 가져오기. */}
-          <Route path="/ocr" element={<Navigate to="/rosters" replace />} />
+          {!STATIC_SITE && (
+            <>
+              <Route path="/pipeline" element={<Pipeline />} />
+              <Route path="/config" element={<ConfigPage />} />
+              <Route path="/rosters" element={<Rosters />} />
+              {/* The PDF OCR page became the AI option of 명단 가져오기. */}
+              <Route path="/ocr" element={<Navigate to="/rosters" replace />} />
+            </>
+          )}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

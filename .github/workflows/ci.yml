@@ -93,8 +93,8 @@ jobs:
       - name: Fail if generated results are tracked
         run: |
           # AI-written text about real companies and scraped pages stay local.
-          if [ -n "$(git ls-files firm_results config.yml)" ]; then
-            echo "::error::firm_results/ or config.yml is tracked. Remove it with git rm --cached."
+          if [ -n "$(git ls-files firm_results config.yml frontend/static-site)" ]; then
+            echo "::error::firm_results/, frontend/static-site/ or config.yml is tracked. Remove it with git rm --cached."
             exit 1
           fi
           echo "No generated results tracked."
