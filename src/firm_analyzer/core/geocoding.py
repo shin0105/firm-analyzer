@@ -330,12 +330,16 @@ def get_coordinates_from_fallback(address, jurisdiction=None):
     Returns:
         Tuple of (lat, lng) or (None, None) if no match found
     """
+    # Seeded by the address so a rebuild leaves every marker where it was,
+    # and firms at the same address share one spot (the map lists them together).
+    rng = random.Random(address or jurisdiction or '')
+
     if not address:
         # If address is empty but we have jurisdiction, use that
         if jurisdiction and jurisdiction in JURISDICTION_COORDS:
             coords = JURISDICTION_COORDS[jurisdiction]
-            lat_offset = (random.random() - 0.5) * 0.02
-            lng_offset = (random.random() - 0.5) * 0.02
+            lat_offset = (rng.random() - 0.5) * 0.02
+            lng_offset = (rng.random() - 0.5) * 0.02
             return coords[0] + lat_offset, coords[1] + lng_offset
         return None, None
 
@@ -343,15 +347,15 @@ def get_coordinates_from_fallback(address, jurisdiction=None):
     for region, coords in REGION_COORDS.items():
         if address.startswith(region):
             # Add small random offset to prevent overlapping markers
-            lat_offset = (random.random() - 0.5) * 0.008
-            lng_offset = (random.random() - 0.5) * 0.008
+            lat_offset = (rng.random() - 0.5) * 0.008
+            lng_offset = (rng.random() - 0.5) * 0.008
             return coords[0] + lat_offset, coords[1] + lng_offset
 
     # Try partial match
     for region, coords in REGION_COORDS.items():
         if region in address or any(part in address for part in region.split()):
-            lat_offset = (random.random() - 0.5) * 0.01
-            lng_offset = (random.random() - 0.5) * 0.01
+            lat_offset = (rng.random() - 0.5) * 0.01
+            lng_offset = (rng.random() - 0.5) * 0.01
             return coords[0] + lat_offset, coords[1] + lng_offset
 
     # Extract city/province from address and try to match
@@ -359,15 +363,15 @@ def get_coordinates_from_fallback(address, jurisdiction=None):
     if parts:
         for region, coords in REGION_COORDS.items():
             if parts[0] in region:
-                lat_offset = (random.random() - 0.5) * 0.02
-                lng_offset = (random.random() - 0.5) * 0.02
+                lat_offset = (rng.random() - 0.5) * 0.02
+                lng_offset = (rng.random() - 0.5) * 0.02
                 return coords[0] + lat_offset, coords[1] + lng_offset
 
     # Final fallback: use jurisdiction if available
     if jurisdiction and jurisdiction in JURISDICTION_COORDS:
         coords = JURISDICTION_COORDS[jurisdiction]
-        lat_offset = (random.random() - 0.5) * 0.02
-        lng_offset = (random.random() - 0.5) * 0.02
+        lat_offset = (rng.random() - 0.5) * 0.02
+        lng_offset = (rng.random() - 0.5) * 0.02
         return coords[0] + lat_offset, coords[1] + lng_offset
 
     return None, None
@@ -536,6 +540,7 @@ def main():
     with open(output_file, "w", encoding="utf-8") as f:
         f.write("// Auto-generated firms data from CSV\n")
         f.write(f"// Generated from {input_path.name} (병무청 전문연구요원 인원배정 현황)\n")
+        f.write(f"const firmsDataSource = {json.dumps(input_path.name, ensure_ascii=False)};\n")
         if use_api and use_kakao:
             f.write("// Geocoded using Kakao Maps API (accurate Korean addresses)\n")
         elif use_api:

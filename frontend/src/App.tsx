@@ -34,7 +34,7 @@ const NAV_ITEMS = [
   { to: '/', label: '대시보드', icon: LayoutDashboard, title: '대시보드', needsServer: false },
   { to: '/rosters', label: '전문연 명단 관리', icon: ListChecks, title: '전문연 명단 관리', needsServer: true },
   { to: '/pipeline', label: '파이프라인 실행', icon: Play, title: '파이프라인 실행', needsServer: true },
-  { to: '/firms', label: '기업 검색 결과', icon: Map, title: '기업 검색 결과', needsServer: false },
+  { to: '/firms', label: '인원배정 지도', icon: Map, title: '인원배정 업체 지도', needsServer: false },
   { to: '/summary', label: '요약 결과 보기', icon: FileText, title: '요약 결과 보기', needsServer: false },
   { to: '/config', label: '설정 변경', icon: Settings, title: '설정 변경', needsServer: true },
   { to: '/about', label: '이용 안내', icon: Info, title: '이용 안내 및 면책 조항', needsServer: false },

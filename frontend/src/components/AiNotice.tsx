@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 
 /**
@@ -15,14 +15,21 @@ const COMPACT_TEXT =
   'AI가 웹 검색 결과로 자동 작성한 요약입니다. 틀리거나 오래된 내용이 있을 수 있으니 공식 출처에서 확인하세요.';
 
 export default function AiNotice({ compact = false }: { compact?: boolean }) {
+  // On the 이용 안내 page itself the link would only point back at the page.
+  const onAbout = useLocation().pathname === '/about';
   return (
     <aside className="ai-notice" data-compact={compact} aria-label="AI 생성 콘텐츠 안내">
       <ShieldAlert size={compact ? 16 : 20} aria-hidden="true" />
       <div>
         <strong className="ai-notice-title">AI 생성 콘텐츠 · 참고용</strong>
         <p>
-          {compact ? COMPACT_TEXT : AI_NOTICE_TEXT}{' '}
-          <Link to="/about">이용 안내</Link>
+          {compact ? COMPACT_TEXT : AI_NOTICE_TEXT}
+          {!onAbout && (
+            <>
+              {' '}
+              <Link to="/about">이용 안내</Link>
+            </>
+          )}
         </p>
       </div>
     </aside>

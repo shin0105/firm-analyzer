@@ -29,3 +29,4 @@ static-site/
 
 # Vercel CLI project link and pulled settings
 .vercel
+.env*
