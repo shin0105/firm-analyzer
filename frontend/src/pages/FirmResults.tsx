@@ -3,14 +3,19 @@ import { ExternalLink } from 'lucide-react';
 import { mapUrl } from '../lib/data';
 import { LoadingState } from '../components/States';
 
+/** `?embed=1` drops the map page's own header and frame inside the app. */
+const embeddedMapUrl = `${mapUrl}${mapUrl.includes('?') ? '&' : '?'}embed=1`;
+
 export default function FirmResults() {
   const [loaded, setLoaded] = useState(false);
   return (
     <div className="glass-card page-fill">
       <div className="header-row">
         <div className="page-header">
-          <h2 className="page-title">기업 검색 결과</h2>
-          <p className="page-subtitle">지도 기반 기업 뷰어</p>
+          <h2 className="page-title">인원배정 업체 지도</h2>
+          <p className="page-subtitle">
+            병무청 전문연구요원 인원배정 현황 · 위치는 주소로 추정한 근사값입니다
+          </p>
         </div>
         {/* The embedded map is cramped on small screens — offer a full window. */}
         <a
@@ -30,7 +35,7 @@ export default function FirmResults() {
             <LoadingState message="지도를 불러오는 중..." />
           </div>
         )}
-        <iframe src={mapUrl} title="기업 지도 뷰어" onLoad={() => setLoaded(true)} />
+        <iframe src={embeddedMapUrl} title="인원배정 업체 지도" onLoad={() => setLoaded(true)} />
       </div>
     </div>
   );

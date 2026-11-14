@@ -13,6 +13,7 @@ import {
 import { EmptyState, ErrorState, LoadingState, Spinner } from '../components/States';
 import Markdown from '../components/Markdown';
 import AiNotice from '../components/AiNotice';
+import { splitSummary } from '../lib/summary';
 
 /** How long typing must pause before the search reaches the URL and the API. */
 const SEARCH_DEBOUNCE_MS = 250;
@@ -170,15 +171,22 @@ export default function SummaryViewer() {
   }, [selected?.categoryId, selected?.name]);
 
   const summaryPaneRef = useRef<HTMLElement>(null);
+  const scrollToSummary = useRef(false);
 
   const selectFirm = (firm: FirmListItem) => {
     setSelected({ categoryId: firm.category_id, name: firm.name });
     // Stacked on narrow screens the summary sits below the fold, so bring it
     // into view rather than leaving the tap looking like it did nothing.
-    if (window.matchMedia('(max-width: 1024px)').matches) {
-      summaryPaneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    scrollToSummary.current = window.matchMedia('(max-width: 1024px)').matches;
   };
+
+  // Scroll once the summary is in: before that the pane is short and the
+  // page cannot scroll far enough to bring its top up.
+  useEffect(() => {
+    if (!scrollToSummary.current || detail.status === 'loading') return;
+    scrollToSummary.current = false;
+    summaryPaneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [detail.status, detail.data]);
 
   const resetFilters = () => {
     setDraft('');
@@ -186,6 +194,11 @@ export default function SummaryViewer() {
   };
 
   const detailSector = detail.data?.segmentation?.sector ?? null;
+  // The header fields become a fact list; the name and notice are shown once.
+  const summaryParts = useMemo(
+    () => (detail.data ? splitSummary(detail.data.summary, detail.data.name) : null),
+    [detail.data],
+  );
 
   return (
     <div className="page-fill">
@@ -365,10 +378,14 @@ export default function SummaryViewer() {
           )}
         </section>
 
-        <section className="glass-card split-pane" aria-label="기업 요약" ref={summaryPaneRef}>
+        <section
+          className="glass-card split-pane split-pane--detail"
+          aria-label="기업 요약"
+          ref={summaryPaneRef}
+        >
           {selected ? (
             <>
-              <div className="header-row" style={{ marginBottom: '1rem' }}>
+              <div className="detail-header">
                 <div className="firm-detail-heading">
                   <h3 className="section-title">{selected.name}</h3>
                   {detail.data && (
@@ -382,9 +399,14 @@ export default function SummaryViewer() {
                     </span>
                   )}
                 </div>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSelected(null)}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm detail-close"
+                  onClick={() => setSelected(null)}
+                  aria-label="요약 닫기"
+                >
                   <X size={16} aria-hidden="true" />
-                  닫기
+                  <span>닫기</span>
                 </button>
               </div>
               <div className="scroll-area">
@@ -394,10 +416,29 @@ export default function SummaryViewer() {
                 )}
                 {detail.status === 'success' &&
                   detail.data &&
-                  (detail.data.summary.trim() ? (
+                  (detail.data.summary.trim() && summaryParts ? (
                     <>
                       <AiNotice compact />
-                      <Markdown content={detail.data.summary} />
+                      {summaryParts.facts.length > 0 && (
+                        <dl className="firm-facts">
+                          {summaryParts.facts.map((fact) => (
+                            <div className="firm-fact" key={fact.label}>
+                              <dt>{fact.label}</dt>
+                              <dd>
+                                {fact.href ? (
+                                  <a href={fact.href} target="_blank" rel="noopener noreferrer">
+                                    {fact.value}
+                                  </a>
+                                ) : (
+                                  fact.value
+                                )}
+                                {fact.note && <span className="firm-fact-note">{fact.note}</span>}
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
+                      )}
+                      <Markdown content={summaryParts.body} />
                     </>
                   ) : (
                     <EmptyState

@@ -40,15 +40,18 @@ export default function Dashboard() {
             <Download size={16} aria-hidden="true" />
             CSV 내보내기
           </a>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={reload}
-            disabled={status === 'loading'}
-          >
-            <RotateCw size={16} aria-hidden="true" />
-            새로고침
-          </button>
+          {/* The static site's data only changes with a new deploy. */}
+          {!STATIC_SITE && (
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={reload}
+              disabled={status === 'loading'}
+            >
+              <RotateCw size={16} aria-hidden="true" />
+              새로고침
+            </button>
+          )}
         </div>
       </div>
 

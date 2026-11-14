@@ -4,110 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>전문연구요원 인원배정 업체 지도</title>
-    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="icon" type="image/png" href="{{ url_for(static_endpoint|default('static'), filename='favicon.png') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
     <link rel="stylesheet" href="{{ url_for(static_endpoint|default('static'), filename='css/firms_viewer.css') }}">
-    <style>
-        /* Fallback Leaflet styles if CDN fails */
-        .leaflet-container {
-            height: 100%;
-            width: 100%;
-            background: #f0f0f0;
+    <script>
+        // Inside the app (?embed=1) the page header is the app's own, so this
+        // page drops its header and frame. Set before first paint: no flash.
+        if (new URLSearchParams(location.search).get('embed') === '1') {
+            document.documentElement.classList.add('embed');
         }
-        .no-map-message {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            color: #666;
-            font-size: 1.2rem;
-            text-align: center;
-            padding: 20px;
-        }
-    </style>
+    </script>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>전문연구요원 인원배정 업체 현황</h1>
-            <p class="subtitle">지역별 연구기관 및 업체 정보 · 출처: 병무청 전문연구요원 인원배정 현황 (위치는 주소로 추정한 근사값)</p>
+<body{% if not enable_kakao_map %} class="no-map"{% endif %}>
+    <div class="viewer">
+        <header class="viewer-header">
+            <h1>전문연구요원 인원배정 업체 지도</h1>
+            <p>출처: 병무청 전문연구요원 인원배정 현황 · 위치는 주소로 추정한 근사값입니다</p>
         </header>
 
-        <div class="tabs-container">
-            <div class="tabs">
-                <button class="tab-btn active" data-region="all">전체</button>
-                <button class="tab-btn" data-region="서울">서울</button>
-                <button class="tab-btn" data-region="경인">경인</button>
-                <button class="tab-btn" data-region="인천">인천</button>
-                <button class="tab-btn" data-region="대전.충남">대전/충남</button>
-                <button class="tab-btn" data-region="부산.울산">부산/울산</button>
-                <button class="tab-btn" data-region="대구.경북">대구/경북</button>
-                <button class="tab-btn" data-region="광주.전남">광주/전남</button>
-                <button class="tab-btn" data-region="충북">충북</button>
-                <button class="tab-btn" data-region="경남">경남</button>
-                <button class="tab-btn" data-region="강원">강원</button>
-                <button class="tab-btn" data-region="전북">전북</button>
-                <button class="tab-btn" data-region="제주">제주</button>
+        <div class="toolbar">
+            <div id="region-chips" class="region-chips" role="group" aria-label="지역 선택"></div>
+            <div id="gu-filter" class="gu-filter" hidden>
+                <label for="gu-select">서울 구</label>
+                <select id="gu-select">
+                    <option value="all">전체</option>
+                </select>
             </div>
         </div>
 
-        <!-- Seoul Gu Filter (shown only when Seoul is selected) -->
-        <div id="seoul-filter" class="seoul-filter hidden">
-            <label for="gu-select">서울시 구 선택:</label>
-            <select id="gu-select">
-                <option value="all">전체</option>
-                <option value="강남구">강남구</option>
-                <option value="강동구">강동구</option>
-                <option value="강서구">강서구</option>
-                <option value="관악구">관악구</option>
-                <option value="광진구">광진구</option>
-                <option value="구로구">구로구</option>
-                <option value="금천구">금천구</option>
-                <option value="노원구">노원구</option>
-                <option value="도봉구">도봉구</option>
-                <option value="동대문구">동대문구</option>
-                <option value="동작구">동작구</option>
-                <option value="마포구">마포구</option>
-                <option value="서대문구">서대문구</option>
-                <option value="서초구">서초구</option>
-                <option value="성동구">성동구</option>
-                <option value="성북구">성북구</option>
-                <option value="송파구">송파구</option>
-                <option value="양천구">양천구</option>
-                <option value="영등포구">영등포구</option>
-                <option value="용산구">용산구</option>
-                <option value="은평구">은평구</option>
-                <option value="종로구">종로구</option>
-                <option value="중구">중구</option>
-            </select>
-        </div>
-
-        <div class="content-wrapper">
-            {% if enable_kakao_map %}
-            <div id="map"></div>
-            {% else %}
-            <div id="map" style="display: none;"></div>
-            {% endif %}
-            <div class="info-panel" {% if not enable_kakao_map %}style="width: 100%; max-width: none;"{% endif %}>
-                <div class="stats">
-                    <div class="stat-item">
-                        <span class="stat-label">총 업체 수</span>
-                        <span id="total-count" class="stat-value">0</span>
+        <div class="viewer-body">
+            <div id="map" class="map" aria-label="업체 위치 지도"></div>
+            <aside class="panel" aria-label="업체 목록">
+                <div class="panel-head">
+                    <div class="panel-stats" aria-live="polite">
+                        <span><strong id="filtered-count">0</strong> / <span id="total-count">0</span>개 기관</span>
+                        <span id="source-note" class="source-note"></span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-label">현재 표시</span>
-                        <span id="filtered-count" class="stat-value">0</span>
-                    </div>
+                    <input type="search" id="search-input" placeholder="기관명 또는 주소 검색" aria-label="기관명 또는 주소 검색">
                 </div>
-                <div class="search-box">
-                    <input type="text" id="search-input" placeholder="업체명 검색...">
-                </div>
-                <div id="firms-list" class="firms-list"></div>
-            </div>
+                <ul id="firms-list" class="firms-list"></ul>
+            </aside>
         </div>
     </div>
 
     {% if enable_kakao_map %}
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_api_key }}&libraries=services,clusterer&autoload=false"></script>
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_api_key }}&libraries=clusterer&autoload=false"></script>
     {% endif %}
     <script>
         window.ENABLE_KAKAO_MAP = {{ 'true' if enable_kakao_map else 'false' }};
