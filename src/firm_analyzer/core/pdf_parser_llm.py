@@ -47,14 +47,24 @@ def parse_pdf_to_csv(
     config: Optional[dict] = None,
     pages_per_chunk: int = PDF_PAGES_PER_CHUNK,
 ) -> str:
-    """Parse a PDF into a CSV structure.
+    """Parse a PDF into a CSV next to it. Returns the new CSV's filename."""
+    rows = extract_pdf_rows(pdf_path, provider, model, config, pages_per_chunk)
+    return _write_rows_to_csv(rows, pdf_path)
+
+
+def extract_pdf_rows(
+    pdf_path: str,
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
+    config: Optional[dict] = None,
+    pages_per_chunk: int = PDF_PAGES_PER_CHUNK,
+) -> list[dict]:
+    """The PDF's firm rows as dicts, extracted by the selected LLM.
 
     Documents longer than `pages_per_chunk` pages are split and extracted in
     several requests, then concatenated. A 28-page 인원배정 table holds far more
     rows than any model will emit in one response, and a single-shot request
     comes back as truncated JSON.
-
-    Returns the filename of the newly generated CSV file.
     """
     llm = get_provider(provider, config=config or load_config(), parser_model=model)
     page_count = pdf_page_count(pdf_path)
@@ -84,7 +94,7 @@ def parse_pdf_to_csv(
                 if not schema:
                     schema = list(chunk_rows[0].keys())
 
-    return _write_rows_to_csv(rows, pdf_path)
+    return rows
 
 
 def _chunk_prompt(schema: list[str]) -> str:

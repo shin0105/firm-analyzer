@@ -1,49 +1,47 @@
-# IDE and editor files
+# Secrets: copy .env.example to .env and fill it in. Never commit .env.
+.env
+.env.*
+!.env.example
+
+# Runtime-mutable config (the web UI writes it). Ship config.example.yml instead.
+config.yml
+config.json
+
+# Pipeline output. Generated per user, and contains scraped web pages and
+# AI-written text about real companies, so it is never published.
+firm_results/
+data/filtered_firms.csv
+data/geocode_cache.json
+data/archive/
+data/uploads/
+data/test_*.csv
+data/*_parsed.csv
+data/*_parsed_extended*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+.python-version
+.pytest_cache/
+.ruff_cache/
+
+# Flask
+instance/
+*.sqlite3
+*.log
+
+# Editors, OS and local agent tooling
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.egg-info/
-dist/
-build/
-venv/
-.venv/
-env/
-.env
-
-# UV
-.python-version
-
-# Database
-*.sqlite3
-
-# Logs
-*.log
-
-# OS files
 .DS_Store
-.idea/
-.env
-
-# Temporary filter outputs
-# *_firms.csv
-# !seoul_firms.csv
-
-# Test files
-data/test_*.csv
-data/*_parsed_extended.csv
-
-# Flask
-instance/
-
-.env
-/.agents
-
-# Runtime-mutable config (the web UI writes to this). Ship config.example.yml instead.
-config.yml
+.claude/
+.agents/
+skills-lock.json

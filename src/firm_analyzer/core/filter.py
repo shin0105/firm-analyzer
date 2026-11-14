@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """
-Configurable Firm Filter Script
+Configurable firm filter: the first pipeline stage.
 
-This script filters firms from a CSV based on user-defined configuration.
-Filters can be customized via config.json or command-line arguments.
+Reads the active 인원배정 list (see firm_analyzer.core.roster), keeps the rows
+that pass the location filter in config.yml, and writes data/filtered_firms.csv,
+which summarize reads.
 """
 
 import argparse
-import os
 import re
 import sys
 from pathlib import Path
 
 import pandas as pd
 
-from firm_analyzer.config import load_config, DEFAULT_INPUT_CSV, BASE_DIR, FILTERED_CSV
+from firm_analyzer.config import BASE_DIR, FILTERED_CSV, load_config
+from firm_analyzer.core.roster import active_roster_path
+
 
 def filter_by_location(
     df: pd.DataFrame,
@@ -48,8 +50,8 @@ def main():
     )
     parser.add_argument(
         "-i", "--input",
-        default=str(DEFAULT_INPUT_CSV),
-        help="Input CSV file path"
+        default=None,
+        help="Input CSV (default: the active 인원배정 list, see `firm-roster list`)"
     )
     parser.add_argument(
         "-o", "--output",
@@ -90,18 +92,22 @@ def main():
     # One fixed default, not a name derived from the filter values: summarize
     # reads FILTERED_CSV, and the web UI runs the two stages back to back.
     if args.output:
-        output_file = Path(args.output) if os.path.isabs(args.output) else BASE_DIR / "data" / args.output
+        output_file = Path(args.output).expanduser()
+        if not output_file.is_absolute():
+            output_file = BASE_DIR / "data" / output_file
     else:
         output_file = FILTERED_CSV
 
-    # Check input file
-    input_path = os.path.abspath(args.input) if os.path.isabs(args.input) else str(BASE_DIR / args.input)
-    # fall back to check if it's already a full path or in root/data
-    if not os.path.exists(input_path):
-        input_path = args.input
-        if not os.path.exists(input_path):
-            print(f"Error: {input_path} not found.")
+    if args.input:
+        input_path = _resolve(args.input, BASE_DIR)
+    else:
+        input_path = active_roster_path(config)
+        if input_path is None:
+            print("Error: no 인원배정 list in data/. Import one with `firm-roster import <file>`.")
             sys.exit(1)
+    if not input_path.exists():
+        print(f"Error: {input_path} not found.")
+        sys.exit(1)
 
     # Read CSV
     try:
@@ -126,12 +132,20 @@ def main():
         print("No filter applied, using all rows")
 
     # Save result
-    os.makedirs(Path(output_file).parent, exist_ok=True)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
     filtered_df.to_csv(str(output_file), index=False, encoding="utf-8")
     print(f"Filtered {len(filtered_df)} firms.")
     print(f"Saved to {output_file}")
 
     return filtered_df
+
+
+def _resolve(path: str, base: Path) -> Path:
+    """An absolute path as-is; a relative one under `base`, else from the cwd."""
+    candidate = Path(path).expanduser()
+    if candidate.is_absolute() or not (base / candidate).exists():
+        return candidate
+    return base / candidate
 
 
 if __name__ == "__main__":

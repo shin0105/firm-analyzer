@@ -1,12 +1,11 @@
 import axios from 'axios';
 
 /**
- * Base URL of the Flask backend. Override with `VITE_API_BASE` at build time
- * (see `.env.example`) so the app is not pinned to a developer's localhost.
+ * Base URL of the Flask backend. Empty means same origin: Flask serves the
+ * production build, and the Vite dev server proxies `/api` to Flask. Set
+ * `VITE_API_BASE` only when the API lives on another origin.
  */
-export const API_BASE = (
-  import.meta.env.VITE_API_BASE ?? 'http://localhost:8001'
-).replace(/\/$/, '');
+export const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -32,7 +31,7 @@ export function errorMessage(err: unknown): string {
       return '서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.';
     }
     if (!err.response) {
-      return `서버에 연결할 수 없습니다 (${API_BASE}). 백엔드가 실행 중인지 확인해 주세요.`;
+      return `서버에 연결할 수 없습니다 (${API_BASE || window.location.origin}). 백엔드가 실행 중인지 확인해 주세요.`;
     }
     return `서버 오류가 발생했습니다 (HTTP ${err.response.status}).`;
   }

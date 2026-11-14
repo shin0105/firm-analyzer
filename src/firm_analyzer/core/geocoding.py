@@ -15,7 +15,6 @@ Get a free API key at: https://developers.kakao.com/
 Results are cached to avoid repeated API calls.
 """
 
-import csv
 import json
 import os
 import random
@@ -43,10 +42,11 @@ except ImportError:
 KAKAO_API_KEY = os.environ.get('KAKAO_REST_API_KEY', '')
 KAKAO_API_AVAILABLE = REQUESTS_AVAILABLE and bool(KAKAO_API_KEY)
 
-# Get the parent directory (project root)
 from firm_analyzer.config import BASE_DIR
 DATA_DIR = os.path.join(BASE_DIR, "data")
-WEB_DIR = os.path.join(BASE_DIR, "src", "firm_analyzer", "web")
+# The package's own web/ folder, which serves firms_data.js; correct whether
+# running from a checkout or an installed wheel.
+WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
 
 # Approximate coordinates for major cities/regions in Korea
 # These are representative coordinates for each area
@@ -498,31 +498,34 @@ def main():
     
     firms = []
 
-    # Read CSV file
-    input_file = os.path.join(DATA_DIR, "2025_전문연구요원_인원배정.csv")
-    with open(input_file, "r", encoding="utf-8") as f:
-        reader = csv.reader(f)
-        header = next(reader)  # Skip header
+    # Read the active 인원배정 list (see `firm-roster list`)
+    from firm_analyzer.core.roster import active_roster_path, normalize_roster, read_roster
 
-        for i, row in enumerate(reader, 1):
-            if len(row) >= 6:
-                firm = {
-                    "id": row[0].strip() if row[0] else "",
-                    "type": row[1].strip() if row[1] else "",
-                    "name": row[2].strip() if row[2] else "",
-                    "address": row[3].strip() if row[3] else "",
-                    "allocation": row[4].strip() if row[4] else "",
-                    "jurisdiction": row[5].strip() if row[5] else "",
-                }
+    input_path = active_roster_path()
+    if input_path is None:
+        print("No 인원배정 list in data/. Import one with `firm-roster import <file>`.")
+        sys.exit(1)
+    print(f"Reading {input_path.name}")
+    roster_frame = normalize_roster(read_roster(input_path))
 
-                # Get coordinates (pass jurisdiction as fallback)
-                if i % 100 == 0:
-                    print(f"Processing firm {i}...")
-                lat, lng = get_coordinates(firm["address"], firm["jurisdiction"], use_api=use_api, use_kakao=use_kakao)
-                firm["lat"] = lat
-                firm["lng"] = lng
+    for i, row in enumerate(roster_frame.to_dict(orient="records"), 1):
+        firm = {
+            "id": row.get("연번", ""),
+            "type": row.get("업종구분", ""),
+            "name": row.get("업체명", ""),
+            "address": row.get("소재지", ""),
+            "allocation": row.get("배정인원", ""),
+            "jurisdiction": row.get("관할청", ""),
+        }
 
-                firms.append(firm)
+        # Get coordinates (pass jurisdiction as fallback)
+        if i % 100 == 0:
+            print(f"Processing firm {i}...")
+        lat, lng = get_coordinates(firm["address"], firm["jurisdiction"], use_api=use_api, use_kakao=use_kakao)
+        firm["lat"] = lat
+        firm["lng"] = lng
+
+        firms.append(firm)
 
     # Save updated cache
     if use_api:
@@ -532,7 +535,7 @@ def main():
     output_file = os.path.join(WEB_DIR, "static", "js", "firms_data.js")
     with open(output_file, "w", encoding="utf-8") as f:
         f.write("// Auto-generated firms data from CSV\n")
-        f.write("// Generated for 2025 전문연구요원 인원배정 업체 현황\n")
+        f.write(f"// Generated from {input_path.name} (병무청 전문연구요원 인원배정 현황)\n")
         if use_api and use_kakao:
             f.write("// Geocoded using Kakao Maps API (accurate Korean addresses)\n")
         elif use_api:

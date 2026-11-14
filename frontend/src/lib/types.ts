@@ -149,12 +149,46 @@ export interface AppConfig {
   [key: string]: unknown;
 }
 
-/** `POST /api/upload-pdf` */
-export interface OcrResult {
+/** One 인원배정 list in `data/`, from `GET /api/rosters` (see `core/roster.py`). */
+export interface RosterInfo {
+  name: string;
+  year: number | null;
+  rows: number;
+  columns: string[];
+  /** Epoch seconds. */
+  modified: number;
+  /** True for the list the filter step reads. */
+  active: boolean;
+}
+
+/** `GET /api/rosters` */
+export interface RostersResponse {
+  rosters: RosterInfo[];
+  active: string | null;
+}
+
+/** A firm row of a list, as shown in a comparison. */
+export type RosterRow = Partial<Record<'업종구분' | '업체명' | '소재지' | '배정인원' | '관할청', string>>;
+
+/** `GET /api/rosters/compare` — firms new in `target`, gone from `base`. */
+export interface RosterDiff {
+  base: string;
+  target: string;
+  counts: { added: number; removed: number; kept: number };
+  added: RosterRow[];
+  removed: RosterRow[];
+}
+
+/** `POST /api/rosters/import` */
+export interface RosterImportResult {
   success: boolean;
-  message?: string;
-  output_file?: string;
-  error?: string;
+  roster: RosterInfo;
+  /** The list that was active before the import, compared against in `diff`. */
+  previous: string | null;
+  activated: boolean;
+  diff: RosterDiff | null;
+  /** Signs the extraction lost rows, e.g. 연번 not matching the row count. */
+  warnings: string[];
 }
 
 /** What a background job runs: one script, or filter then summarize. */

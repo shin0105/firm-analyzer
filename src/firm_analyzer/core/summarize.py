@@ -24,6 +24,7 @@ from tavily import TavilyClient
 from firm_analyzer.config import load_config, BASE_DIR, FILTERED_CSV
 from firm_analyzer.core import segmentation as seg
 from firm_analyzer.llm import LLMError, LLMProvider, PROVIDER_IDS, get_provider
+from firm_analyzer.notice import AI_NOTICE_MARKDOWN, SOURCES_HEADING, SUMMARY_GUARDRAILS
 
 # Import firm webpage finder module with proper error handling
 WEBPAGE_FINDER_AVAILABLE = False
@@ -42,6 +43,30 @@ load_dotenv()
 DEFAULT_SYSTEM_PROMPT = (
     "You are a helpful assistant that summarizes company information in JSON format."
 )
+
+
+def format_sources(results: list, limit: int = 10) -> str:
+    """A Markdown list of the search results a summary was built from.
+
+    Written under every summary so a reader can check each claim against its
+    source instead of trusting the model's wording.
+    """
+    lines = []
+    seen = set()
+    for result in results or []:
+        url = str((result or {}).get("url") or "").strip()
+        if not url.startswith(("http://", "https://")) or url in seen:
+            continue
+        seen.add(url)
+        title = " ".join(str(result.get("title") or url).split())
+        title = title.replace("[", "(").replace("]", ")")
+        href = url.replace("(", "%28").replace(")", "%29").replace(" ", "%20")
+        lines.append(f"- [{title}]({href})")
+        if len(lines) >= limit:
+            break
+    if not lines:
+        return ""
+    return f"{SOURCES_HEADING}\n\n" + "\n".join(lines)
 
 
 def sanitize_filename(name: str) -> str:
@@ -245,6 +270,9 @@ def summarize_firm(
     """Summarize and segment one firm with the selected LLM provider."""
     summary_config = config.get("summary", {})
     system_prompt = summary_config.get("system_prompt") or DEFAULT_SYSTEM_PROMPT
+    # Appended to the system prompt rather than the user prompt so a custom
+    # prompt from config.yml cannot drop them.
+    system_prompt = f"{system_prompt}\n\n{SUMMARY_GUARDRAILS}"
     if taxonomy is not None:
         system_prompt = f"{system_prompt}\n\n{seg.SEGMENTATION_SYSTEM_PROMPT}"
 
@@ -539,10 +567,15 @@ def main():
                 f.write(f"**Webpage Confidence:** {webpage_result.get('confidence', 'unknown')}\n")
 
             f.write("\n")
+            f.write(f"{AI_NOTICE_MARKDOWN}\n\n")
             if segmentation:
                 f.write(seg.segmentation_markdown(segmentation, taxonomy))
                 f.write("\n\n")
-            f.write(summary)
+            f.write(summary.rstrip())
+            sources = format_sources(search_response.get("results", []))
+            if sources:
+                f.write(f"\n\n{sources}")
+            f.write("\n")
 
         # Track for CSV summary
         firm_data = {

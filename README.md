@@ -1,703 +1,264 @@
-# Firm Analyzer - 기업 분석 도구
+# Firm Analyzer · 전문연구요원 지정업체 분석 도구
 
-A configurable web-based tool for filtering, searching, and summarizing firm/company information. Originally designed for Korean professional researcher personnel allocation (전문연구요원 인원배정) data, now extended to be flexible for any user-defined use case.
+A tool for exploring the firms on the Military Manpower Administration's yearly
+전문연구요원 인원배정 list: import the list, filter it by location, search the
+web for each firm, and have an AI summarize and classify what it finds.
 
-📖 **New!** See [FIRM_DATA_FORMAT.md](docs/FIRM_DATA_FORMAT.md) for a comprehensive guide on CSV data format requirements and sample files in `data/samples/` directory.
+> [!WARNING]
+> **AI 생성 콘텐츠 · 참고용** — 기업 요약과 분류는 공개 웹 검색 결과를 바탕으로 AI가
+> 자동 생성한 참고 자료입니다. 사실과 다르거나 오래된 정보, 동명의 다른 기업 정보가 섞여
+> 있을 수 있으며 해당 기업의 공식 입장이나 평가가 아닙니다. 중요한 결정 전에는 반드시 기업의
+> 공식 채널과 병무청에서 직접 확인하세요.
+>
+> **AI-generated, for reference only** — firm summaries and classifications are
+> written automatically by an AI model from public web search results. They can
+> be wrong, outdated or mix up firms with similar names, and they are not
+> statements by the companies. Verify anything important with official sources.
+>
+> See **[DISCLAIMER.md](DISCLAIMER.md)** for the full terms.
 
-## Features
+## How it works
 
-### 🤖 Choose your AI
-- **Four back ends**: OpenAI, Claude (Anthropic), Google Gemini, or GitHub Models
-- **Pick it anywhere**: in the web UI, with `LLM_PROVIDER` in `.env`, via
-  `app.llm_provider` in `config.yml`, or `--provider` on any script
-- **Per-provider models**: sensible defaults with per-provider overrides, and a
-  separate cheaper model for PDF parsing
-- **Only one key needed**: the UI shows which providers actually have a key, so
-  a missing one is visible before you run anything
+```
+ 병무청 인원배정 PDF ──► 명단 (data/<year>_전문연구요원_인원배정.csv)
+                              │  firm-roster import / 전문연 명단 관리 page
+                              ▼
+                        filter by location ──► data/filtered_firms.csv
+                              │  firm-filter
+                              ▼
+               web search (Tavily) + AI summary & segmentation
+                              │  firm-summarize
+                              ▼
+                firm_results/<category>/<firm>/summary.md …
+                              │
+                              ▼
+          web UI: dashboard · search · map · CSV export
+```
 
-### 🧭 Multi-axis firm segmentation
-- **Five axes instead of one label**: industry sector → subsector, technology
-  verticals (multi-label), business model, value-chain position, and
-  organisation profile
-- **Explicit tie-break rules**: product vendor vs SI, fabless vs foundry,
-  drug developer vs CRO, materials vs components, marketplace vs distributor
-- **Auditable**: per-axis confidence, an evidence sentence with a source URL,
-  and the keywords that drove the decision
-- **Editable as data**: everything lives in [`taxonomy.yml`](taxonomy.yml)
+- **Yearly list updates.** Upload the new 인원배정 PDF (or a CSV) and the app
+  extracts every row, checks the row count against the last 연번, shows which
+  firms are new and which dropped off, and switches the pipeline to the new list.
+- **Choose your AI.** OpenAI, Claude, Gemini or GitHub Models; you only need a
+  key for the one you use.
+- **Multi-axis segmentation.** Sector, technology verticals, business model,
+  value-chain position and organisation profile, each with a confidence level
+  and an evidence sentence. The taxonomy is data: [`taxonomy.yml`](taxonomy.yml),
+  explained in [docs/segmentation.md](docs/segmentation.md).
+- **Traceable output.** Every summary carries the AI-generated notice and lists
+  the search results it was built from.
+- **Background jobs.** Filter, summarize and segment run as subprocesses with a
+  live log, progress bar and cancel button.
 
-📖 See [docs/segmentation.md](docs/segmentation.md) for the method and sources.
+## Quick start
 
-### 🎯 Dual-Page Workflow Interface
-- **Configuration Editor**: Dedicated page for editing all settings (filters, search, summaries, categories)
-- **Results Viewer**: Separate page for browsing and searching processed firm summaries
-- **Clean Navigation**: Easy switching between config, results, and map views
-
-### 🔧 Configurable Filters
-- **Location-based filtering**: Filter firms by any location/region, not just Seoul
-- **Multiple filter types**: Contains, exact match, or starts-with patterns
-- **Custom column selection**: Choose which CSV column to filter on
-
-### 📁 Custom Categories
-- **Define your own categories**: Not limited to Finance/Quant
-- **Keyword-based classification**: AI automatically classifies firms based on your keywords
-- **Color-coded**: Visual distinction between categories
-
-### 🔎 Search Controls
-- **Persistent context**: Append reusable Tavily search context to every query for better recall
-- **Depth & limits**: Choose search depth and max result count
-
-### 📝 Customizable Summaries
-- **Language selection**: Korean, English, Japanese, or Chinese
-- **Focus areas**: Choose what information to include (business, research, jobs, culture, etc.)
-- **Custom prompts**: Write your own LLM prompts for specific needs
-- **System prompt control**: Tune the assistant role/persona used for summary generation
-
-### 🌐 Web Interface
-- **Visual configuration**: No need to edit JSON files
-- **Real-time results**: View processed firms by category
-- **Pipeline page**: Run filter, summarize (or both in sequence) and the segmentation
-  backfill as background jobs, with a live progress bar, log and cancel button
-
-### 📄 PDF to CSV Parser (New!)
-- **Flexible column mapping**: Parse any PDF table format with custom column names
-- **Automatic city extraction**: Extract city names from Korean addresses
-- **Smart header detection**: Automatically identifies table headers in PDFs
-- **Column renaming**: Map source columns to target column names
-- **Multiple format support**: Works with various Korean company list PDFs
-### 🗺️ Accurate Korean Map Display
-- **Kakao Maps API integration**: Precise geocoding for Korean addresses
-- **Dual address format support**: Works with both 도로명주소 (road name) and 지번주소 (lot number) addresses
-- **Interactive map viewer**: View firms on an accurate map with exact locations
-
-📖 **See [Korean Maps Setup Guide](docs/KOREAN_MAPS_SETUP.md) for detailed instructions on getting accurate map locations.**
-
-## Quick Start
-
-### Option A: Using UV (Recommended)
-
-[UV](https://docs.astral.sh/uv/) is a fast Python package manager that replaces pip, conda, and other tools. It's much faster and provides better dependency resolution.
-
-#### 1. Install UV
+Requirements: Python 3.12+, [uv](https://docs.astral.sh/uv/), and Node.js 22+
+for the web interface.
 
 ```bash
-# On macOS and Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Or via pip
-pip install uv
-
-# Or via Homebrew
-brew install uv
+uv sync                          # Python dependencies
+cp .env.example .env             # then add your keys (see below)
+cd frontend && npm ci && npm run build && cd ..
+uv run firm-app                  # http://localhost:8001
 ```
 
-#### 2. Install Dependencies
+The minimum `.env` is a search key and the key for one AI provider:
+
+```
+TAVILY_API_KEY=...
+LLM_PROVIDER=openai              # openai | claude | gemini | github
+OPENAI_API_KEY=...               # or ANTHROPIC_API_KEY / GEMINI_API_KEY
+```
+
+`.env.example` documents every variable. `.env` and `config.yml` are
+git-ignored; never commit them.
+
+**Developing the frontend:** run `uv run firm-app` in one terminal and
+`npm run dev` in `frontend/` in another, then open http://localhost:5173. The
+dev server forwards `/api` to Flask, so both run on one origin.
+
+**Security:** the server binds to `127.0.0.1`. The API has no authentication and
+can start subprocesses that spend your API quota, so only expose it
+(`FLASK_HOST`) on a network you trust.
+
+## Updating the 전문연 list (명단 업데이트)
+
+Each year the 병무청 publishes a new 「전문연구요원 인원배정 현황」 PDF.
+
+**In the web UI:** open **전문연 명단 관리**, drop the PDF, check the year, and
+press **가져오기**. You get:
+
+- the new list saved as `data/<year>_전문연구요원_인원배정.csv` (the PDF is kept
+  next to it as the source record),
+- a warning if the number of rows does not match the last 연번, which means
+  the table extraction missed or duplicated rows,
+- a comparison with the previous list: firms added, firms removed, and how
+  many stayed, each downloadable as CSV,
+- the new list made the pipeline's input (untick the option to keep the old one).
+
+Then run **필터 후 요약** on the 파이프라인 실행 page. Firms that were already
+summarized are skipped, so only the new firms cost API calls.
+
+PDF extraction defaults to table recognition (pdfplumber: free, a few seconds).
+For a scanned PDF without a text layer, choose **AI로 추출**, which sends the
+pages to the selected AI provider.
+
+**From the command line:**
 
 ```bash
-# This will automatically create a virtual environment and install all dependencies
-uv sync
+uv run firm-roster import ~/Downloads/2027_전문연구요원_인원배정.pdf --year 2027
+uv run firm-roster list                    # * marks the active list
+uv run firm-roster compare 2026_전문연구요원_인원배정.csv 2027_전문연구요원_인원배정.csv --out-dir data/diff
+uv run firm-roster activate 2026_전문연구요원_인원배정.csv   # switch back
+uv run firm-roster import list.csv --year 2027 --overwrite  # a CSV (UTF-8 or CP949)
+uv run firm-roster import scan.pdf --year 2027 --method llm --provider gemini
 ```
 
-#### 3. Set Environment Variables
+The active list is `data.roster` in `config.yml`; when it is unset, the newest
+`<year>_전문연구요원_인원배정.csv` in `data/` is used. Firms are matched across
+years by name, ignoring legal-form markers such as (주)/㈜/주식회사 and spacing.
+A firm whose lab was renamed shows up as one removal and one addition.
 
-Copy the template and fill in your own values:
-```bash
-cp .env.example .env
-```
+To refresh the map for the new list, regenerate its data with
+`uv run firm-geocode` (see [docs/GEOCODING.md](docs/GEOCODING.md)).
 
-`.env.example` documents every supported variable. The minimum to get running —
-a search key, and the key for whichever AI you choose:
-```
-TAVILY_API_KEY=your_tavily_api_key
+## Running the pipeline
 
-LLM_PROVIDER=openai          # openai | claude | gemini | github
-OPENAI_API_KEY=...           # if LLM_PROVIDER=openai
-# ANTHROPIC_API_KEY=...      # if LLM_PROVIDER=claude
-# GEMINI_API_KEY=...         # if LLM_PROVIDER=gemini
-
-# Optional: For accurate Korean address geocoding (recommended)
-KAKAO_REST_API_KEY=your_kakao_rest_api_key
-```
-
-`.env` is git-ignored. Never commit it.
-
-**Note**: To get accurate map locations for Korean addresses, obtain a free Kakao REST API key at [https://developers.kakao.com/](https://developers.kakao.com/). Without this key, the system will use approximate regional coordinates.
-
-#### 4. Run the Web Interface
+The **파이프라인 실행** page runs each stage as a background job. From the command
+line:
 
 ```bash
-# Run any Python script using uv run
-uv run python scripts/run_app.py
-
-# Or, once installed, use the console script
-uv run firm-app
+uv run firm-filter                                  # active list -> data/filtered_firms.csv
+uv run firm-filter --locations 서울 경기            # override config.yml's location filter
+uv run firm-summarize --dry-run                     # show the search queries only
+uv run firm-summarize --limit 10                    # search, summarize and segment 10 firms
+uv run firm-summarize --provider claude --limit 10
+uv run firm-segment --dry-run                       # backfill segmentation for older summaries
+uv run firm-export                                  # every firm -> firm_results/firms_export.csv
 ```
 
-Open http://localhost:8001 in your browser.
-
-The server binds to `127.0.0.1` only. The API has no authentication and can
-start subprocesses, so expose it beyond loopback deliberately (`FLASK_HOST`)
-and only on a trusted network.
-
-#### 5. Run Command Line Scripts
-
-```bash
-# Filter firms
-uv run python scripts/run_filter.py
-
-# Search and summarize with options
-uv run python scripts/run_summarize.py --dry-run
-uv run python scripts/run_summarize.py --limit 10
-```
-
-Installing the package also provides console scripts: `firm-app`,
-`firm-filter`, `firm-summarize`, `firm-segment`, `firm-export`,
-`firm-geocode`, `firm-parse-pdf`, `firm-parse-pdf-llm`, `firm-supabase-sync`,
-`firm-find-webpage`.
-
-#### 6. Run the Tests
-
-```bash
-uv sync --extra dev && uv run pytest tests/ -v
-```
-
-### Option B: Using pip (Traditional)
-
-#### 1. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-#### 2. Set Environment Variables
-
-Create a `.env` file (same as UV option above):
-```
-TAVILY_API_KEY=your_tavily_api_key
-GITHUB_TOKEN=your_github_token
-
-# Optional: For accurate Korean address geocoding (recommended)
-KAKAO_REST_API_KEY=your_kakao_rest_api_key
-```
-
-**Note**: To get accurate map locations for Korean addresses, obtain a free Kakao REST API key at [https://developers.kakao.com/](https://developers.kakao.com/). Without this key, the system will use approximate regional coordinates.
-
-#### 3. Run the Web Interface
-
-```bash
-python scripts/run_app.py
-```
-
-Open http://localhost:8001 in your browser.
-
-Available pages:
-- 🔧 **Configuration Editor**: `http://localhost:8001/` or `http://localhost:8001/config/firm-summary` - Configure filters, search parameters, summary settings, and categories
-- 📊 **Results Viewer**: `http://localhost:8001/view/firm-summary` - View and browse processed firm summaries by category
-- 🗺️ **Map Viewer**: `http://localhost:8001/firms` - Interactive map showing firms with subway lines
-
-#### 4. Run Command Line Scripts
-
-```bash
-# Filter firms
-python scripts/run_filter.py
-
-# Search and summarize with options
-python scripts/run_summarize.py --dry-run
-python scripts/run_summarize.py --limit 10
-```
-
-### Optional Environment Variables
-
-```bash
-# Pick the AI without editing config.yml
-export LLM_PROVIDER="gemini"          # openai | claude | gemini | github
-
-# Override a provider's model (see .env.example for the defaults)
-export GEMINI_MODEL="gemini-3.5-flash"
-export OPENAI_PARSER_MODEL="gpt-5-mini"
-
-# Pages per PDF extraction request (lower it if output gets truncated)
-export PDF_PAGES_PER_CHUNK="6"
-
-# Endpoint for the `github` provider only
-export OPENAI_BASE_URL="https://models.github.ai/inference"
-
-# Enable Flask debug mode (default: false, for development only)
-export FLASK_DEBUG="true"
-
-# Timeouts for the synchronous /api/run/* endpoints (in seconds)
-export FILTER_SCRIPT_TIMEOUT="60"
-export SUMMARIZE_SCRIPT_TIMEOUT="300"
-export DRY_RUN_TIMEOUT="60"
-
-# Background jobs (the Pipeline page): kill a job after this many seconds
-# (0 = no limit, the default) and keep this many log lines per job
-export JOB_TIMEOUT_SECONDS="0"
-export JOB_LOG_LINES="5000"
-```
-
-## Command Line Usage
-
-All examples below work with both UV and pip installations. Simply prefix commands with `uv run` when using UV.
-
-### Filter Firms
-
-```bash
-# With UV
-uv run python scripts/run_filter.py
-
-# With pip (traditional)
-python scripts/run_filter.py
-
-# Override with command line
-python scripts/run_filter.py --locations 서울 경기 --filter-type contains
-
-# Different input file
-python scripts/run_filter.py -i my_firms.csv -o filtered.csv
-```
-
-The filter writes `data/filtered_firms.csv` by default, which is also what
-summarize reads by default, so the two stages chain with no arguments.
-
-### Search, Summarize and Segment
-
-```bash
-# Dry run (no API calls)
-python scripts/run_summarize.py --dry-run
-
-# Process limited number of firms
-python scripts/run_summarize.py --limit 10
-
-# Pick the AI for this run
-python scripts/run_summarize.py --provider claude --limit 10
-python scripts/run_summarize.py --provider gemini --model gemini-3.5-flash
-
-# Summaries only, without the multi-axis segmentation
-python scripts/run_summarize.py --no-segmentation
-```
-
-Each firm gets a `segmentation.json`, a `## 세분류` table in its `summary.md`,
-and flat columns in `<category>_firms.csv`.
-📖 See [docs/segmentation.md](docs/segmentation.md) for the taxonomy and the
-rules used to separate firms that look alike.
-
-A failed firm (bad model output, a search error) is reported and skipped
-rather than ending the run; only a rate-limit or quota error stops it. Failed
-firms leave no folder behind, so re-running the same command retries exactly
-those firms.
-
-### Segment Firms Summarized Earlier
-
-Firms summarized before segmentation existed have no `segmentation.json`, and
-summarize skips them because their folder already exists. `firm-segment`
-classifies them from the `raw_search.json` saved in each folder: one model
-call per firm and no new searches.
-
-```bash
-# See what would be segmented
-python scripts/run_segment.py --dry-run
-
-# Segment the first 20, then everything else
-python scripts/run_segment.py --limit 20
-python scripts/run_segment.py
-
-# Also move each firm into the category its sector maps to
-python scripts/run_segment.py --relocate
-
-# Re-classify firms that already have a segmentation (e.g. after editing taxonomy.yml)
-python scripts/run_segment.py --force --category general
-```
-
-### Export Every Firm to One CSV
-
-The `<category>_firms.csv` files are appended to per run and drift from the
-result folders. `firm-export` rebuilds one CSV from the folders, with the
-segmentation columns, as UTF-8 with a BOM so Excel shows Korean correctly. The
-dashboard's **CSV 내보내기** button downloads the same file.
-
-```bash
-python scripts/run_export.py                      # -> firm_results/firms_export.csv
-python scripts/run_export.py -o data/all_firms.csv
-```
-
-### Parse PDF to CSV (New!)
-
-```bash
-# Parse PDF with default settings
-python scripts/run_pdf_parser_rule.py
-
-# Extract city from location and add as a column
-python scripts/run_pdf_parser_rule.py --extract-city-from-location
-
-# Parse custom PDF with column mapping
-python scripts/run_pdf_parser_rule.py \
-  --pdf data/korean_companies.pdf \
-  --output data/korean_companies.csv \
-  --columns "번호" "회사명" "상세주소" "도시"
-
-# Rename columns while parsing
-python scripts/run_pdf_parser_rule.py \
-  --columns "번호:Number" "회사명:Company Name" "소재지:Location" \
-  --extract-city-from-location
-
-# For detailed documentation
-See [docs/README_PDF_PARSER.md](docs/README_PDF_PARSER.md)
-```
-
-For PDFs the rule-based parser cannot read (irregular tables, scans), use the
-LLM parser. Documents longer than `PDF_PAGES_PER_CHUNK` pages are split across
-several requests and merged, since one response cannot hold a 28-page table:
-
-```bash
-# Uses the provider from config.yml / LLM_PROVIDER
-python scripts/run_pdf_parser_llm.py data/2026_전문연구요원_인원배정.pdf
-
-# Pick the AI explicitly. Claude and Gemini read the PDF itself, so they also
-# handle scanned documents; OpenAI reads the extracted text layer.
-python scripts/run_pdf_parser_llm.py data/list.pdf --provider claude
-python scripts/run_pdf_parser_llm.py data/list.pdf --provider gemini --pages-per-chunk 4
-```
-
-## UV Package Management Guide
-
-UV is a modern Python package manager that provides significant advantages over traditional tools like pip and conda.
-
-### Why UV?
-
-- **⚡ Lightning Fast**: 10-100x faster than pip for installing packages
-- **🔒 Reliable**: Consistent dependency resolution with lockfiles
-- **🎯 All-in-One**: Replaces pip, pip-tools, virtualenv, and more
-- **💾 Efficient**: Global caching reduces disk space usage
-- **🐍 Python Version Management**: Can install and manage Python versions
-
-### Common UV Commands
-
-```bash
-# Install dependencies (creates virtual environment automatically)
-uv sync
-
-# Add a new dependency
-uv add flask pandas
-
-# Add a development dependency
-uv add --dev pytest black
-
-# Remove a dependency
-uv remove package-name
-
-# Update dependencies
-uv lock --upgrade
-
-# Run a Python script
-uv run python script.py
-
-# Run a command in the virtual environment
-uv run flask run
-
-# Install a specific Python version (if needed)
-uv python install 3.12
-
-# Create a new project
-uv init
-
-# Show installed packages
-uv pip list
-```
-
-### UV vs Conda
-
-If you previously used conda, here's the mapping:
-
-| Conda Command | UV Equivalent |
-|--------------|---------------|
-| `conda create -n env` | `uv venv` (automatic with `uv sync`) |
-| `conda activate env` | Automatic when using `uv run` |
-| `conda install package` | `uv add package` |
-| `conda remove package` | `uv remove package` |
-| `conda list` | `uv pip list` |
-| `conda env export` | `pyproject.toml` + `uv.lock` (together define environment) |
-
-### Benefits Over Conda
-
-1. **Speed**: UV is significantly faster for package installation
-2. **Standard Python**: Uses PyPI packages directly, no special conda packages needed
-3. **Smaller Footprint**: No need for large conda distribution
-4. **Better for CI/CD**: Faster builds and deploys
-5. **Lockfiles**: `uv.lock` ensures reproducible installations
-
-## Firm List Data Format
-
-The application works with CSV files containing firm information. **Only 2 columns are required**:
-
-- `업체명` (Company Name) - Required for identification and search
-- `소재지` (Location) - Required for filtering and geocoding
-
-All other columns are optional and can be customized for your use case.
-
-### Sample CSV Files
-
-Example CSV files for different scenarios are provided in `data/samples/`:
-
-- `minimal_example.csv` - Just the 2 required columns
-- `standard_example.csv` - Common business fields
-- `research_institutions.csv` - Universities and labs
-- `startups.csv` - Startup companies
-- `international.csv` - Global companies
-- `manufacturing.csv` - Manufacturing firms
-- `healthcare.csv` - Healthcare institutions
-
-### Creating Your Own Firm List
-
-1. Create a CSV file with at least `업체명` and `소재지` columns
-2. Add any additional columns relevant to your use case
-3. Save with UTF-8 encoding to support Korean characters
-4. Use with the filter and search scripts
-
-**See [FIRM_DATA_FORMAT.md](docs/FIRM_DATA_FORMAT.md) for detailed specifications and examples.**
+A firm that fails (bad model output, a search error) is skipped and reported;
+only a rate-limit or quota error stops the run. Re-running retries exactly the
+failed firms.
+
+Each firm gets a folder in `firm_results/<category>/<firm>/`:
+
+| File | Contents |
+|------|----------|
+| `summary.md` | Header, AI notice, segmentation table, summary, 출처 (sources) |
+| `segmentation.json` | The structured classification |
+| `raw_search.json` | The search response the summary was built from (scraped page text; keep it private) |
+| `webpage.json` | The firm's official site, when found |
 
 ## Configuration
 
-All settings are stored in `config.yml`. You can edit this file directly or use the web interface.
-
-`config.yml` is git-ignored, because the web UI rewrites it at runtime. The
-tracked template is `config.example.yml` — copy it to get started, or just run
-the app, which falls back to built-in defaults when no `config.yml` exists:
+Settings live in `config.yml`, editable in the **설정 변경** page or by hand.
+Start from the template, or let the app use its built-in defaults:
 
 ```bash
 cp config.example.yml config.yml
 ```
 
-### Using the Dual-Page Interface
+| Section | What it controls |
+|---------|------------------|
+| `app.llm_provider`, `app.llm_models` | Which AI runs, and model overrides |
+| `data.roster` | The active 인원배정 list (empty = newest year) |
+| `filters.location` | Column, match type and values for the location filter |
+| `categories` | Coarse buckets used for the output folders and dashboard |
+| `search` | Tavily query template, depth, result count, extra context |
+| `summary` | Language, focus areas, custom prompt, system prompt |
+| `segmentation.enabled` | Classify against `taxonomy.yml` in the same call as the summary |
 
-The application provides two dedicated pages for managing firm summaries:
+Custom prompts can change what a summary covers, but the content rules in
+[`src/firm_analyzer/notice.py`](src/firm_analyzer/notice.py) (stick to the
+sources, stay neutral, no unsupported negative claims, no personal data) are
+always added to the system prompt.
 
-#### 1. Configuration Editor (`/` or `/config/firm-summary`)
-- **Summary Settings**: Configure output language, format, focus areas, and custom prompts
-- **Search Settings**: Set query templates, search depth, and max results
-- **Categories**: Define and manage categories with keywords for automatic classification
-- **Actions**: Save, reload, or reset configuration to defaults
+## Commands
 
-#### 2. Results Viewer (`/view/firm-summary`)
-- **Statistics Dashboard**: View total firms processed and counts per category
-- **Category Selection**: Browse firms by category with color-coded cards
-- **Search & Filter**: Search firms by name within selected category
-- **Summary Display**: View full markdown-rendered summaries with proper formatting
+| Command | Purpose |
+|---------|---------|
+| `firm-app` | Web server (API, built frontend, map) |
+| `firm-roster` | Import, list, compare and activate 인원배정 lists |
+| `firm-filter` | Location filter over the active list |
+| `firm-summarize` | Search, summarize and segment |
+| `firm-segment` | Segment firms summarized before segmentation existed |
+| `firm-export` | Rebuild one CSV from the result folders |
+| `firm-geocode` | Regenerate the map data from the active list |
+| `firm-parse-pdf` | Generic rule-based PDF table → CSV |
+| `firm-parse-pdf-llm` | Generic AI PDF → CSV |
+| `firm-supabase-sync` | Upload results to Supabase |
+| `firm-find-webpage` | Find one firm's official website |
 
-**Navigation**: Both pages include a navigation bar for easy switching between:
-- ⚙️ Config Editor
-- 📊 View Results
-- 🗺️ Map Viewer
+Every command also runs as `uv run python scripts/run_<name>.py` from a
+checkout. More detail per engine: [docs/ENGINES_GUIDE.md](docs/ENGINES_GUIDE.md).
 
-### Example Configuration
-
-```json
-{
-  "filters": {
-    "location": {
-      "enabled": true,
-      "type": "contains",
-      "values": ["서울", "경기"],
-      "column": "소재지"
-    }
-  },
-  "categories": [
-    {
-      "id": "finance",
-      "name": "Finance/Quant",
-      "keywords": ["금융", "투자", "핀테크"],
-      "color": "#4CAF50"
-    },
-    {
-      "id": "ai_ml",
-      "name": "AI/ML",
-      "keywords": ["인공지능", "머신러닝", "딥러닝"],
-      "color": "#9C27B0"
-    },
-    {
-      "id": "general",
-      "name": "General",
-      "keywords": [],
-      "color": "#607D8B"
-    }
-  ],
-  "summary": {
-    "language": "Korean",
-    "focus_areas": ["business_areas", "research_technologies", "job_openings"],
-    "custom_prompt": "",
-    "system_prompt": "You are a helpful assistant that summarizes company information in JSON format."
-  },
-  "search": {
-    "query_template": "{firm_name} 채용 연구분야 사업내용",
-    "search_depth": "advanced",
-    "max_results": 5,
-    "context": "채용, 연구 분야, 주요 기술 스택을 중심으로 검색"
-  }
-}
-```
-
-## Korean Address Geocoding
-
-### Overview
-
-The map viewer supports accurate geocoding of Korean addresses, including both address formats used in South Korea:
-
-- **도로명주소 (Road Name Address)**: Modern address system based on road names (e.g., "서울특별시 강남구 테헤란로 123")
-- **지번주소 (Lot Number Address)**: Traditional address system based on land parcel numbers (e.g., "서울특별시 강남구 역삼동 123-45")
-
-### Accurate Location Display
-
-To display exact locations on the map instead of approximate regional coordinates:
-
-1. **Get a Kakao REST API Key** (Free):
-   - Visit [https://developers.kakao.com/](https://developers.kakao.com/)
-   - Create an account and register an application
-   - Get your REST API key from the application dashboard
-
-2. **Set the Environment Variable**:
-   ```bash
-   export KAKAO_REST_API_KEY=your_api_key_here
-   ```
-   Or add it to your `.env` file:
-   ```
-   KAKAO_REST_API_KEY=your_api_key_here
-   ```
-
-3. **Regenerate Geocoded Data**:
-   ```bash
-   uv run python scripts/run_geocoding.py
-   ```
-   The script will automatically use Kakao Maps API for accurate geocoding.
-
-### Geocoding Methods (in order of preference)
-
-1. **Kakao Maps API** (Most Accurate):
-   - Best for Korean addresses
-   - Handles both 도로명주소 and 지번주소
-   - Provides exact coordinates
-
-2. **Nominatim (OpenStreetMap)** (Fallback):
-   - Works for some Korean addresses
-   - Less accurate than Kakao for incomplete addresses
-
-3. **Regional Coordinates** (Final Fallback):
-   - Uses hardcoded coordinates for major cities and districts
-   - Adds random offset to prevent marker overlap
-   - Only shows approximate location
-
-### Caching
-
-Geocoding results are cached in `data/geocode_cache.json` to:
-- Avoid repeated API calls
-- Speed up subsequent runs
-- Preserve geocoding results
-
-To force re-geocoding, delete the cache file before running the script.
-
-## File Structure
-
-```
-firm_websearch/
-├── src/
-│   └── firm_analyzer/
-│       ├── core/           # Core engine scripts (filter, summarize, geocoding, etc.)
-│       ├── web/            # Flask webapp server (app.py, templates, static)
-│       ├── utils/          # Helper modules (webpage finder, etc.)
-│       └── config.py       # Primary configuration module
-├── scripts/                # CLI wrapper scripts (run_app.py, run_filter.py, etc.)
-├── tests/                  # Test suite (`uv run pytest tests/`)
-├── config.example.yml      # Configuration template (config.yml is git-ignored)
-├── .env.example            # Environment variable template (.env is git-ignored)
-├── docs/                   # Documentation and guides
-│   ├── ENGINES_GUIDE.md    # Multi-language guide for all 7 engines
-│   ├── FIRM_DATA_FORMAT.md # Guide on CSV data format specifications
-│   ├── KOREAN_MAPS_SETUP.md # Detailed Kakao Maps geocoding setup guide
-│   ├── SUPABASE_SETUP.md   # Supabase backend deployment guide
-│   ├── GEOCODING.md        # Technical explanation of geocoding strategies
-│   ├── README_PDF_PARSER.md # Extended PDF parser usage documentation
-│   └── README_WEBPAGE_FINDER.md # Webpage finder module documentation
-├── frontend/               # Modern Vite + React frontend codebase
-├── firm_results/           # Output directory for local JSON/MD summaries
-├── data/                   # Data directory (CSV resources and caches)
-│   ├── samples/            # Pre-validated sample CSV files
-│   └── geocode_cache.json  # Cached address geocoding results
-├── pyproject.toml          # Python package definitions
-└── README.md               # Main readme documentation
-```
-
-## API Endpoints (Web Interface)
+## API
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/` | GET | Main web interface |
-| `/api/config` | GET | Get current configuration |
-| `/api/config` | POST | Update configuration |
-| `/api/config/reset` | POST | Reset to default configuration |
-| `/api/results/summary` | GET | Get summary of processed results |
-| `/api/results/<category_id>` | GET | Get firms in a category, with each firm's full summary and segmentation |
-| `/api/firms` | GET | Search firms across all categories; light rows only (name, category, address, sector/subsector/verticals, sector confidence, summary snippet). See the query parameters below |
-| `/api/firms/<category_id>/<firm_name>` | GET | One firm's full `summary.md` and segmentation; 404 for an unknown category or anything but a firm folder directly inside it |
-| `/api/taxonomy` | GET | The segmentation taxonomy (`taxonomy.yml`), with Korean labels, for filters and badges |
-| `/api/export.csv` | GET | Download every processed firm as one CSV |
-| `/api/jobs` | POST | Start a background job: `{"kind": "filter" \| "summarize" \| "segment" \| "pipeline", "options": {...}}`. 202 with the job, 400 for invalid options, 409 while another job runs |
-| `/api/jobs` | GET | Recent jobs, newest first, and the id of the active one |
-| `/api/jobs/<job_id>?since=<n>` | GET | One job's status, progress and summary, plus log lines from index `n` (poll with the returned `log_next`) |
-| `/api/jobs/<job_id>/cancel` | POST | Stop a running job |
-| `/api/run/filter` | POST | Run the filter synchronously (legacy; 409 while a job runs) |
-| `/api/run/summarize` | POST | Run summarize synchronously with a timeout (legacy; 409 while a job runs) |
+| `/api/config` | GET, POST | Read or save `config.yml` |
+| `/api/config/reset` | POST | Restore the default configuration |
+| `/api/rosters` | GET | Lists in `data/` and the active one |
+| `/api/rosters/import` | POST | Multipart `file` (PDF/CSV), `year`, `method` (`rule`/`llm`), `provider`, `activate`, `overwrite` |
+| `/api/rosters/active` | POST | `{"name": "<csv>"}`: make a list the filter's input (409 while a job runs) |
+| `/api/rosters/compare` | GET | `?base=&target=`: firms added, removed and kept |
+| `/api/rosters/compare.csv` | GET | Same, one side (`part=added\|removed`) as CSV |
+| `/api/rosters/<name>/download` | GET | Download a list |
+| `/api/results/summary` | GET | Firm counts per category |
+| `/api/results/<category_id>` | GET | Firms in a category with full summaries |
+| `/api/firms` | GET | Search across categories: `q`, `category`, `sector`, `vertical`, `business_model`, `confidence`, `segmented` |
+| `/api/firms/<category_id>/<firm_name>` | GET | One firm's `summary.md` and segmentation |
+| `/api/taxonomy` | GET | The segmentation taxonomy |
+| `/api/export.csv` | GET | Every firm as one CSV, each row labelled AI-generated |
+| `/api/llm/providers` | GET | Providers, whether each has a key, and the active one |
+| `/api/jobs` | GET, POST | List jobs, or start one: `{"kind": "filter"\|"summarize"\|"segment"\|"pipeline", "options": {...}}` |
+| `/api/jobs/<id>?since=<n>` | GET | Status, progress and new log lines |
+| `/api/jobs/<id>/cancel` | POST | Stop a running job |
+| `/map` | GET | Map of the list's firms (Kakao Maps) |
 
-`GET /api/firms` query parameters (all optional, combined with AND; an empty value means "any"):
+One job runs at a time, because every stage writes the same files. Jobs live in
+server memory and stop when the server exits.
 
-| Parameter | Matches |
-|-----------|---------|
-| `q` | Firm name or summary text, case-insensitive. Name matches are listed first |
-| `category` | A category id from `config.yml` |
-| `sector` | A sector id from `taxonomy.yml` |
-| `vertical` | A vertical id from `taxonomy.yml`; the firm lists it among its verticals |
-| `business_model` | A business model id from `taxonomy.yml` |
-| `confidence` | The sector confidence: `high`, `medium` or `low` |
-| `segmented` | `true` for firms with a `segmentation.json`, `false` for those without |
+## Data and privacy
 
-An id that is not in `config.yml` or `taxonomy.yml` returns 400. The response is
-`{"firms": [...], "count": <matches>, "total": <firms scanned>}`. Both `/api/firms`
-endpoints read the local result folders even when `app.data_source` is `supabase`,
-because segmentation is stored only there.
+- **Committed:** the public 병무청 인원배정 PDFs and their CSV conversions in
+  `data/`, sample CSVs in `data/samples/`, and the map's coordinates
+  (`firms_data.js`). These are public lists of designated organisations.
+- **Never committed:** `firm_results/` (AI-written text about real companies and
+  scraped web pages), `.env`, `config.yml`, caches. They are in `.gitignore`.
+- **Supabase:** `firm-supabase-sync` uploads summaries with the AI notice and
+  leaves out `raw_search.json` unless you pass `--include-raw-search`. The anon
+  key is public by design, so enable Row Level Security before exposing the
+  table. See [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md).
+- **Kakao:** `KAKAO_JS_API_KEY` is sent to the browser; restrict it to your
+  domains in the Kakao console. `KAKAO_REST_API_KEY` stays on the server.
 
-### Background jobs
+## Project layout
 
-The **파이프라인 실행** page and `POST /api/jobs` run the CLI scripts as
-subprocesses, so a run over hundreds of firms does not hold an HTTP request
-open. `pipeline` is filter followed by summarize. Options map onto fixed
-flags and are validated (no other text reaches the command line):
+```
+src/firm_analyzer/
+  core/        filter, summarize, roster (명단), segmentation, export, parsers, geocoding
+  llm/         one interface over OpenAI, Claude, Gemini and GitHub Models
+  web/         Flask API, job runner, map template and static files
+  notice.py    the AI-generated notice and prompt content rules
+frontend/      React + TypeScript web interface (Vite)
+data/          인원배정 lists (PDF + CSV) and samples
+docs/          guides for each engine, the data format, geocoding, Supabase
+tests/         pytest suite
+taxonomy.yml   the segmentation taxonomy
+```
 
-| Kind | Options |
-|------|---------|
-| `filter` | none |
-| `summarize`, `pipeline` | `dry_run`, `limit`, `provider`, `no_segmentation` |
-| `segment` | `dry_run`, `limit`, `provider`, `relocate`, `force`, `categories` |
+## Development
 
-Only one job runs at a time, because every stage writes the same `data/` and
-results folders. Progress comes from the `[i/n]` the scripts print per firm. The
-log returns stdout only; stderr (tracebacks) goes to the server log. Jobs live
-in server memory: they are lost on restart, and running ones are stopped when
-the server exits.
+```bash
+uv sync --extra dev && uv run pytest tests/ -q
+cd frontend && npx tsc -b && npm run lint && npm run build
+```
 
-## Use Cases
+CI runs both, builds the wheel, and fails if a `.env` or a credential-shaped
+string is committed.
 
-### 1. Research Institution Analysis
-Filter by specific regions and categorize by research focus areas.
+## License
 
-### 2. Job Market Research
-Focus summaries on job openings and team information.
-
-### 3. Investment Research
-Create categories for different investment sectors and analyze company financials.
-
-### 4. Regional Business Analysis
-Filter by multiple regions and compare distributions.
-
----
-
-## Engines Guide / 엔진 사용 가이드
-
-For a detailed guide on how each processing and execution engine works, their parameters, and commands to run them via CLI, see **[Engines Guide (docs/ENGINES_GUIDE.md)](docs/ENGINES_GUIDE.md)**.
-
-각 처리 및 실행 엔진의 상세 작동 원리, 파라미터, 명령행 실행 방법 등은 **[엔진 사용 가이드 (docs/ENGINES_GUIDE.md)](docs/ENGINES_GUIDE.md)**를 참고하세요.
+MIT, see [LICENSE](LICENSE). The software and its output come with no warranty;
+see [DISCLAIMER.md](DISCLAIMER.md).

@@ -82,9 +82,19 @@ jobs:
 
       - name: Scan for credential-shaped literals
         run: |
-          if git grep -nE 'tvly-[A-Za-z0-9]{10}|gh[pous]_[A-Za-z0-9]{30}|eyJhbGciOi[A-Za-z0-9]|sk-[A-Za-z0-9]{20}' \
+          # Tavily, GitHub, JWTs (Supabase keys), OpenAI/Anthropic, Google, Supabase secret keys, AWS
+          if git grep -nE 'tvly-[A-Za-z0-9-]{10}|gh[pous]_[A-Za-z0-9]{30}|github_pat_[A-Za-z0-9_]{30}|eyJhbGciOi[A-Za-z0-9]|(^|[^A-Za-z0-9])sk-(ant-)?[A-Za-z0-9_-]{20}|AIza[0-9A-Za-z_-]{30}|sb_secret_[A-Za-z0-9_-]{10}|AKIA[0-9A-Z]{16}' \
                -- ':!uv.lock' ':!*package-lock.json' ':!frontend/dist' ':!.github'; then
             echo "::error::Possible credential committed to the repository."
             exit 1
           fi
           echo "No credential-shaped literals found."
+
+      - name: Fail if generated results are tracked
+        run: |
+          # AI-written text about real companies and scraped pages stay local.
+          if [ -n "$(git ls-files firm_results config.yml)" ]; then
+            echo "::error::firm_results/ or config.yml is tracked. Remove it with git rm --cached."
+            exit 1
+          fi
+          echo "No generated results tracked."

@@ -1,8 +1,21 @@
-import os
+"""Upload processed firms to the Supabase `firms` table.
+
+Joins the active 인원배정 list with the result folders and upserts one row per
+firm. Summaries are uploaded with the AI notice (added if an older summary.md
+lacks it). The raw search results are scraped web pages that can contain
+personal data and third-party text, so they are only uploaded with
+--include-raw-search, and only into a table that is not publicly readable.
+"""
+
+import argparse
 import json
+import os
+
 import pandas as pd
 from dotenv import load_dotenv
 from supabase import create_client, Client
+
+from firm_analyzer.core.results import with_notice
 
 load_dotenv()
 
@@ -14,7 +27,7 @@ def clean_str(val):
         return None
     return str(val).replace('\x00', '')
 
-def read_summaries():
+def read_summaries(include_raw_search: bool = False):
     from firm_analyzer.config import load_config, BASE_DIR
     config = load_config()
     out_dir_conf = config.get("output", {}).get("directory", "firm_results")
@@ -45,11 +58,11 @@ def read_summaries():
             summary_path = os.path.join(firm_path, 'summary.md')
             if os.path.exists(summary_path):
                 with open(summary_path, 'r', encoding='utf-8') as f:
-                    firm_data['summary_md'] = clean_str(f.read())
+                    firm_data['summary_md'] = clean_str(with_notice(f.read()))
                     
             # Read raw_search.json
             raw_search_path = os.path.join(firm_path, 'raw_search.json')
-            if os.path.exists(raw_search_path):
+            if include_raw_search and os.path.exists(raw_search_path):
                 with open(raw_search_path, 'r', encoding='utf-8') as f:
                     try:
                         content = f.read().replace('\x00', '')
@@ -72,21 +85,29 @@ def read_summaries():
     return summaries
 
 def main():
-    from firm_analyzer.config import BASE_DIR
+    from firm_analyzer.core.roster import active_roster_path, normalize_roster, read_roster
+
+    parser = argparse.ArgumentParser(description="Upload processed firms to Supabase")
+    parser.add_argument(
+        "--include-raw-search",
+        action="store_true",
+        help="Also upload raw_search.json (scraped pages; may contain personal data)",
+    )
+    args = parser.parse_args()
 
     if not SUPABASE_URL or not SUPABASE_KEY:
         print("Error: SUPABASE_URL and SUPABASE_KEY must be set in environment.")
         return
 
     print("Reading summaries...")
-    summaries = read_summaries()
-    
-    print("Reading CSV...")
-    csv_path = BASE_DIR / 'data/2025_전문연구요원_인원배정_parsed.csv'
-    if not csv_path.exists():
-        print(f"File not found: {csv_path}")
+    summaries = read_summaries(include_raw_search=args.include_raw_search)
+
+    csv_path = active_roster_path()
+    if csv_path is None or not csv_path.exists():
+        print("No 인원배정 list in data/. Import one with `firm-roster import <file>`.")
         return
-    df = pd.read_csv(str(csv_path))
+    print(f"Reading {csv_path.name}...")
+    df = normalize_roster(read_roster(csv_path))
     
     # Map CSV columns to DB columns
     records = []
@@ -100,7 +121,8 @@ def main():
             'name': clean_str(name),
             'industry': clean_str(row.get('업종구분', '')),
             'location': clean_str(row.get('소재지', '')),
-            'allocation_2025': clean_str(row.get('25년 배정인원', '')),
+            # Column name kept for existing tables; it holds the active list's allocation.
+            'allocation_2025': clean_str(row.get('배정인원', '')),
             'jurisdiction': clean_str(row.get('관할청', '')),
             'category': None,
             'summary_md': None,

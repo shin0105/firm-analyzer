@@ -15,6 +15,7 @@ import {
 } from '../lib/types';
 import { EmptyState, ErrorState, LoadingState, Spinner } from '../components/States';
 import Markdown from '../components/Markdown';
+import AiNotice from '../components/AiNotice';
 
 /** How long typing must pause before the search reaches the URL and the API. */
 const SEARCH_DEBOUNCE_MS = 250;
@@ -401,7 +402,10 @@ export default function SummaryViewer() {
                 {detail.status === 'success' &&
                   detail.data &&
                   (detail.data.summary.trim() ? (
-                    <Markdown content={detail.data.summary} />
+                    <>
+                      <AiNotice compact />
+                      <Markdown content={detail.data.summary} />
+                    </>
                   ) : (
                     <EmptyState
                       title="요약 내용이 없습니다"

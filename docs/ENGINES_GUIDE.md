@@ -61,8 +61,12 @@ uv run python scripts/run_pdf_parser_rule.py \
 ```
 
 **Arguments / 옵션:**
-- `-p`, `--pdf`: Input PDF path (Default: `data/2025_전문연구요원_인원배정.pdf`)
-- `-o`, `--output`: Output CSV path (Default: `data/2025_전문연구요원_인원배정_parsed_extended.csv`)
+- `-p`, `--pdf`: Input PDF path (required)
+- `-o`, `--output`: Output CSV path (Default: `<pdf name>_parsed.csv` next to the PDF)
+
+To import a yearly 인원배정 list for the pipeline, use `uv run firm-roster import <pdf> --year <year>`
+(or the **전문연 명단 관리** page), which wraps this parser. / 파이프라인용 연도별 명단은
+`firm-roster import`(또는 **전문연 명단 관리** 화면)로 가져오세요.
 - `-c`, `--columns`: Space-separated column list or mapping format `source:target`
 - `--extract-city-from-location`: Extracts city division (e.g. `서울특별시`, `수원시`) into a new `도시` column
 - `--min-columns`: Minimum non-empty fields to identify a row as valid (Default: `3`)
@@ -117,7 +121,7 @@ uv run python scripts/run_filter.py -i data/custom_companies.csv -o data/filtere
 ```
 
 **Arguments / 옵션:**
-- `-i`, `--input`: Input CSV file path (Default: `2025_전문연구요원_인원배정.csv`)
+- `-i`, `--input`: Input CSV file path (Default: the active 인원배정 list, see `uv run firm-roster list`)
 - `-o`, `--output`: Output CSV file path (Default: `data/filtered_firms.csv`, the file summarize reads by default)
 - `-l`, `--locations`: One or more location values to filter on (overrides config)
 - `--column`: CSV column name to apply filter on (Default: `소재지`)
@@ -127,16 +131,15 @@ uv run python scripts/run_filter.py -i data/custom_companies.csv -o data/filtere
 
 ## 3. Web Search & Summarization Engine / 웹 검색 및 요약 엔진
 
-This engine runs web searches for each company using Tavily, crawls relevant text, and feeds it into an LLM (via GitHub Models or OpenAI) to generate structured markdown summaries. Results are stored in individual subdirectories grouped by industry categories.
+This engine runs web searches for each company using Tavily and feeds the results to the selected LLM (OpenAI, Claude, Gemini or GitHub Models) to generate structured markdown summaries. Results are stored in individual subdirectories grouped by industry categories. Every `summary.md` starts with an AI-generated notice and ends with the list of sources it was built from (see [DISCLAIMER.md](../DISCLAIMER.md)).
 
-Tavily를 통해 각 기업에 관한 웹 검색을 수행하고, 관련 텍스트를 크롤링하여 LLM(GitHub Models 또는 OpenAI)에 입력하여 구조화된 마크다운 요약문을 만듭니다. 결과물은 업종 카테고리별로 정렬되어 각각의 하위 디렉토리에 저장됩니다.
+Tavily를 통해 각 기업에 관한 웹 검색을 수행하고, 선택한 LLM(OpenAI, Claude, Gemini, GitHub Models)으로 구조화된 마크다운 요약문을 만듭니다. 결과물은 업종 카테고리별 하위 디렉토리에 저장되며, 모든 `summary.md`에는 AI 생성 안내와 근거가 된 출처 목록이 함께 기록됩니다.
 
 *Requires API Key in `.env` / `.env` 파일에 API 키 설정 필요:*
 ```env
 TAVILY_API_KEY=your_tavily_key
-GITHUB_TOKEN=your_github_token
-# Optional for custom endpoint / 선택사항:
-# OPENAI_BASE_URL=https://api.openai.com/v1
+LLM_PROVIDER=openai          # openai | claude | gemini | github
+OPENAI_API_KEY=your_openai_key
 ```
 
 ### Run Instructions / 실행 방법
@@ -175,7 +178,7 @@ Performs a focused search using Tavily to find a company's official website URL,
 
 Tavily 검색을 활용해 기업의 공식 웹사이트 URL을 찾고, 웹페이지 메타데이터를 추출한 뒤 LLM을 통해 신뢰도 점수를 부여하여 해당 웹사이트가 입력된 기업의 것이 맞는지 검증합니다.
 
-*Requires / 필수 API 키:* `TAVILY_API_KEY` & `GITHUB_TOKEN` (or OpenAI equivalent)
+*Requires / 필수 API 키:* `TAVILY_API_KEY` and the key of the selected LLM provider
 
 ### Run Instructions / 실행 방법
 
@@ -206,9 +209,9 @@ Reasoning: The search results point to navercorp.com as the official company por
 
 ## 5. Geocoding & Map Data Generator / 지오코딩 및 지도 데이터 생성기
 
-Converts address strings in a CSV list into exact latitude and longitude coordinates. It generates the `webapp/static/js/firms_data.js` file used to render markers on the interactive map page.
+Converts address strings in a CSV list into exact latitude and longitude coordinates. It generates the `src/firm_analyzer/web/static/js/firms_data.js` file used to render markers on the interactive map page.
 
-CSV 목록에 포함된 한글 주소 문자열을 위경도 좌표로 변환합니다. 웹페이지 대화형 지도상에 마커를 시각화하기 위한 `webapp/static/js/firms_data.js` 파일을 작성합니다.
+CSV 목록에 포함된 한글 주소 문자열을 위경도 좌표로 변환합니다. 웹페이지 대화형 지도상에 마커를 시각화하기 위한 `src/firm_analyzer/web/static/js/firms_data.js` 파일을 작성합니다.
 
 ### Geocoding Strategy / 지오코딩 계층 구조:
 1. **Kakao Maps API (Best/가장 정확)**: Requires `KAKAO_REST_API_KEY`. Perfect for both Road Name (도로명) and Lot Number (지번) addresses.
@@ -271,9 +274,9 @@ python scripts/run_supabase_sync.py
 
 ## 7. Web Application Engine / 웹 애플리케이션 서비스
 
-Runs the local Flask web server. The web UI provides an editor for `config.yml`, an execution board to run the filter and summarize scripts visually, and an interactive maps viewer with subway routes to search and browse firms.
+Runs the local Flask web server, which serves the React interface (build it once with `cd frontend && npm ci && npm run build`), the JSON API, and the map. The interface manages the yearly 인원배정 list, edits `config.yml`, runs the pipeline as background jobs, and searches the summaries.
 
-로컬 Flask 웹 서버를 실행합니다. 웹 인터페이스를 통해 `config.yml` 설정을 손쉽게 편집하고, 필터 및 요약 생성 스크립트를 시각적으로 실행할 수 있으며, 지하철 노선이 포함된 대화형 지도 상에서 회사를 조회하고 검색할 수 있습니다.
+로컬 Flask 웹 서버를 실행합니다. React 화면(`cd frontend && npm ci && npm run build`로 한 번 빌드), JSON API, 지도를 제공합니다. 화면에서 연도별 인원배정 명단 관리, `config.yml` 편집, 파이프라인 백그라운드 실행, 요약 검색을 할 수 있습니다.
 
 ### Run Instructions / 실행 방법
 
@@ -287,6 +290,9 @@ python scripts/run_app.py
 
 - **Default URL**: http://localhost:8001
 - **Available Views**:
-  - `http://localhost:8001/` - Configuration board / 스크립트 설정 및 실행 제어판
-  - `http://localhost:8001/view/firm-summary` - Summary Results Viewer / 회사별 요약 카드 뷰어
-  - `http://localhost:8001/firms` - Interactive Map Display / 대화형 지하철 연계 지도
+  - `http://localhost:8001/` - Dashboard / 대시보드
+  - `http://localhost:8001/rosters` - 전문연 명단 관리 (import, compare, activate)
+  - `http://localhost:8001/pipeline` - Pipeline jobs / 파이프라인 실행
+  - `http://localhost:8001/summary` - Summary search and viewer / 요약 결과 보기
+  - `http://localhost:8001/config` - Settings / 설정 변경
+  - `http://localhost:8001/map` - Interactive map / 대화형 지도

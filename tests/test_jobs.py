@@ -287,7 +287,7 @@ def test_bad_job_requests_return_400(client, body):
     assert manager.list() == []
 
 
-def test_second_job_and_sync_runs_get_409_while_busy(client, monkeypatch):
+def test_second_job_and_roster_activation_get_409_while_busy(client, monkeypatch):
     http, manager = client
     fake_steps(monkeypatch, SLEEP_SCRIPT)
     job_id = http.post("/api/jobs", json={"kind": "summarize"}).get_json()["id"]
@@ -295,8 +295,8 @@ def test_second_job_and_sync_runs_get_409_while_busy(client, monkeypatch):
     second = http.post("/api/jobs", json={"kind": "filter"})
     assert second.status_code == 409
     assert second.get_json()["active"] == job_id
-    assert http.post("/api/run/filter").status_code == 409
-    assert http.post("/api/run/summarize", json={"dry_run": True}).status_code == 409
+    # Switching the filter's input list mid-run would race the running job.
+    assert http.post("/api/rosters/active", json={"name": "x.csv"}).status_code == 409
     assert http.get("/api/jobs").get_json()["active"] == job_id
 
     assert http.post(f"/api/jobs/{job_id}/cancel").status_code == 200

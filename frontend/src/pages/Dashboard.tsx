@@ -4,6 +4,7 @@ import { api, apiUrl } from '../lib/api';
 import { useAsync } from '../lib/useAsync';
 import { parseResultsSummary, type ResultsSummaryResponse } from '../lib/types';
 import { EmptyState, ErrorState } from '../components/States';
+import AiNotice from '../components/AiNotice';
 
 function StatSkeleton() {
   return (
@@ -50,6 +51,8 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      <AiNotice compact />
 
       {status === 'error' && (
         <div className="glass-card">
