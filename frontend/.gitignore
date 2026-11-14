@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Written by `uv run firm-export-site`: AI-written summaries about real
+# companies. Deployed to Vercel from this machine, never committed.
+static-site/
+
+# Vercel CLI project link and pulled settings
+.vercel

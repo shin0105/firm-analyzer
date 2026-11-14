@@ -323,3 +323,90 @@ def test_summary_body_drops_a_hand_edited_segmentation_block():
         "- sector: 근거\n\n### 회사\n\n본문입니다.\n"
     )
     assert summary_body(text) == "### 회사\n\n본문입니다."
+
+
+# ---------------------------------------------------------------------------
+# firm-export-site: the static snapshot the Vercel build serves
+# ---------------------------------------------------------------------------
+
+def every_output_text(root):
+    return "\n".join(p.read_text(encoding="utf-8", errors="ignore") for p in root.rglob("*") if p.is_file())
+
+
+def test_static_site_snapshot_mirrors_the_api(monkeypatch, catalog, tmp_path):
+    from firm_analyzer.notice import NOTICE_MARKER
+    from firm_analyzer.web import static_site
+
+    client = make_client(monkeypatch, catalog)
+    monkeypatch.setenv("KAKAO_JS_API_KEY", "kakao-test-key")
+    out = tmp_path / "site"
+    result = static_site.export_site(out)
+    data = out / "data"
+
+    rows = json.loads((data / "firms.json").read_text(encoding="utf-8"))["firms"]
+    assert [row["name"] for row in rows] == names(client.get("/api/firms"))
+    assert result["firms"] == 4 and not result["kakao_key_missing"]
+    alpha = next(row for row in rows if row["name"] == "알파")
+    assert "snippet" not in alpha
+    assert alpha["sector"] == "ict_software"
+    # The prose search runs on: no header, no segmentation table.
+    assert "LLM 기반 문서 검색" in alpha["text"] and "**Address:**" not in alpha["text"]
+
+    detail = json.loads((data / "firms" / f"{alpha['id']}.json").read_text(encoding="utf-8"))
+    assert detail["segmentation"]["sector"] == "ict_software"
+    assert NOTICE_MARKER in detail["summary"]
+    assert len(list((data / "firms").iterdir())) == 4
+
+    summary = json.loads((data / "results-summary.json").read_text(encoding="utf-8"))
+    assert (summary["ai_ml"]["count"], summary["general"]["count"], summary["total"]) == (2, 2, 4)
+    assert json.loads((data / "taxonomy.json").read_text(encoding="utf-8"))["sectors"]
+    assert "알파" in (data / "firms_export.csv").read_bytes().decode("utf-8-sig")
+
+    map_html = (out / "map" / "index.html").read_text(encoding="utf-8")
+    assert "kakao-test-key" in map_html and "/static/js/firms_viewer.js" in map_html
+    assert (out / "static" / "js" / "firms_viewer.js").is_file()
+
+
+def test_static_site_publishes_nothing_the_api_hides(monkeypatch, catalog, tmp_path):
+    from firm_analyzer.web import static_site
+
+    make_client(monkeypatch, catalog)
+    (catalog / "ai_ml" / "알파" / "raw_search.json").write_text(
+        json.dumps({"results": [{"content": "SCRAPED-PAGE-TEXT"}]}), encoding="utf-8"
+    )
+    out = tmp_path / "site"
+    static_site.export_site(out)
+
+    published = every_output_text(out)
+    assert "SCRAPED-PAGE-TEXT" not in published   # raw_search.json
+    assert "유출되면 안 됨" not in published        # a symlink out of the results folder
+    assert "숨김" not in published                 # a category the config does not declare
+
+
+def test_static_site_rerun_drops_removed_firms(monkeypatch, catalog, tmp_path):
+    import shutil
+
+    from firm_analyzer.web import static_site
+
+    make_client(monkeypatch, catalog)
+    out = tmp_path / "site"
+    static_site.export_site(out)
+    shutil.rmtree(catalog / "general" / "델타")
+    static_site.export_site(out)
+
+    assert len(list((out / "data" / "firms").iterdir())) == 3
+    assert "델타" not in every_output_text(out / "data")
+
+
+def test_static_site_refuses_an_empty_snapshot(monkeypatch, tmp_path):
+    from firm_analyzer.web import static_site
+
+    make_client(monkeypatch, tmp_path / "no-results")
+    out = tmp_path / "site"
+    (out / "data").mkdir(parents=True)
+    (out / "data" / "firms.json").write_text("{}", encoding="utf-8")
+
+    with pytest.raises(static_site.ExportError):
+        static_site.export_site(out)
+    # A failed run leaves the previous snapshot in place.
+    assert (out / "data" / "firms.json").is_file()

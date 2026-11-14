@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { ExternalLink } from 'lucide-react';
-import { apiUrl } from '../lib/api';
+import { mapUrl } from '../lib/data';
 import { LoadingState } from '../components/States';
 
 export default function FirmResults() {
   const [loaded, setLoaded] = useState(false);
-  const mapUrl = apiUrl('/map');
-
   return (
     <div className="glass-card page-fill">
       <div className="header-row">

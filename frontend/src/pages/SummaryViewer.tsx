@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronRight, FileText, Search, X } from 'lucide-react';
-import { api } from '../lib/api';
+import { getFirmDetail, getResultsSummary, getTaxonomy, searchFirms } from '../lib/data';
 import { useAsync } from '../lib/useAsync';
 import {
   parseResultsSummary,
-  type FirmDetail,
   type FirmListItem,
   type FirmListResponse,
   type FirmQuery,
-  type ResultsSummaryResponse,
-  type Taxonomy,
   type TaxonomySector,
 } from '../lib/types';
 import { EmptyState, ErrorState, LoadingState, Spinner } from '../components/States';
@@ -107,13 +104,10 @@ export default function SummaryViewer() {
     return () => window.clearTimeout(timer);
   }, [draft, qParam, updateParams]);
 
-  const summary = useAsync(async () => {
-    const res = await api.get<ResultsSummaryResponse>('/api/results/summary');
-    return parseResultsSummary(res.data);
-  });
+  const summary = useAsync(async () => parseResultsSummary(await getResultsSummary()));
   const categories = useMemo(() => summary.data?.categories ?? [], [summary.data]);
 
-  const taxonomy = useAsync(async () => (await api.get<Taxonomy>('/api/taxonomy')).data);
+  const taxonomy = useAsync(getTaxonomy);
   const sectors = useMemo(() => taxonomy.data?.sectors ?? [], [taxonomy.data]);
   const sectorById = useMemo(() => new Map(sectors.map((s) => [s.id, s])), [sectors]);
   // "none" is never stored on a firm, so filtering by it could only come up empty.
@@ -153,7 +147,7 @@ export default function SummaryViewer() {
   const firms = useAsync(
     async () => {
       if (idsPending) return null;
-      return (await api.get<FirmListResponse>('/api/firms', { params: firmQuery })).data;
+      return searchFirms(firmQuery);
     },
     [idsPending, firmQuery.q, firmQuery.category, firmQuery.sector, firmQuery.vertical, firmQuery.segmented],
   );
@@ -172,8 +166,7 @@ export default function SummaryViewer() {
   // Full summaries are fetched one at a time, only for the firm being read.
   const detail = useAsync(async () => {
     if (!selected) return null;
-    const path = `/api/firms/${encodeURIComponent(selected.categoryId)}/${encodeURIComponent(selected.name)}`;
-    return (await api.get<FirmDetail>(path)).data;
+    return getFirmDetail(selected.categoryId, selected.name);
   }, [selected?.categoryId, selected?.name]);
 
   const summaryPaneRef = useRef<HTMLElement>(null);

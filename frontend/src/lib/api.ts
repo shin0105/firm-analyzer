@@ -7,6 +7,14 @@ import axios from 'axios';
  */
 export const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
 
+/**
+ * True in the static build (`npm run build:static`, deployed to Vercel): no
+ * Flask behind it, so the read-only pages load the files written by
+ * `firm-export-site` (see `lib/data.ts`) and the pages that change files or
+ * start jobs are left out.
+ */
+export const STATIC_SITE = import.meta.env.MODE === 'static';
+
 export const api = axios.create({
   baseURL: API_BASE,
   timeout: 30_000,
@@ -31,6 +39,7 @@ export function errorMessage(err: unknown): string {
       return '서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.';
     }
     if (!err.response) {
+      if (STATIC_SITE) return '데이터를 불러오지 못했습니다. 네트워크 연결을 확인해 주세요.';
       return `서버에 연결할 수 없습니다 (${API_BASE || window.location.origin}). 백엔드가 실행 중인지 확인해 주세요.`;
     }
     return `서버 오류가 발생했습니다 (HTTP ${err.response.status}).`;

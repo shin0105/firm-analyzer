@@ -149,6 +149,21 @@ Each firm gets a folder in `firm_results/<category>/<firm>/`:
 | `raw_search.json` | The search response the summary was built from (scraped page text; keep it private) |
 | `webpage.json` | The firm's official site, when found |
 
+## Publishing the viewer (Vercel)
+
+The dashboard, firm search, summaries, map and CSV can be published as a static,
+read-only site; the pipeline keeps running on your machine.
+
+```bash
+uv run firm-export-site                      # snapshot -> frontend/static-site/ (git-ignored)
+cd frontend
+npx vercel build --prod && npx vercel deploy --prebuilt --prod
+```
+
+Everything in the snapshot becomes public, but it never includes
+`raw_search.json` or any server-side key. First-time setup, Kakao domains and
+removing a firm: [docs/VERCEL_DEPLOY.md](docs/VERCEL_DEPLOY.md).
+
 ## Configuration
 
 Settings live in `config.yml`, editable in the **설정 변경** page or by hand.
@@ -183,6 +198,7 @@ always added to the system prompt.
 | `firm-summarize` | Search, summarize and segment |
 | `firm-segment` | Segment firms summarized before segmentation existed |
 | `firm-export` | Rebuild one CSV from the result folders |
+| `firm-export-site` | Snapshot the read-only viewer as static files for Vercel |
 | `firm-geocode` | Regenerate the map data from the active list |
 | `firm-parse-pdf` | Generic rule-based PDF table → CSV |
 | `firm-parse-pdf-llm` | Generic AI PDF → CSV |
@@ -232,6 +248,10 @@ server memory and stop when the server exits.
   table. See [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md).
 - **Kakao:** `KAKAO_JS_API_KEY` is sent to the browser; restrict it to your
   domains in the Kakao console. `KAKAO_REST_API_KEY` stays on the server.
+- **Static site:** `firm-export-site` writes summaries, segmentation, the CSV
+  and the map to `frontend/static-site/` (git-ignored) for the Vercel deploy.
+  Deploying it publishes them; scraped pages and keys other than the Kakao
+  JavaScript key are never written.
 
 ## Project layout
 

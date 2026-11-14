@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:static": "tsc -b && vite build --mode static && node scripts/copy-static-site.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:static": "vite preview --mode static"
   },
   "dependencies": {
     "axios": "^1.16.1",

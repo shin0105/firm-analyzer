@@ -1,8 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Building2, Download, Play, RotateCw } from 'lucide-react';
-import { api, apiUrl } from '../lib/api';
+import { STATIC_SITE } from '../lib/api';
+import { exportCsvUrl, getResultsSummary } from '../lib/data';
 import { useAsync } from '../lib/useAsync';
-import { parseResultsSummary, type ResultsSummaryResponse } from '../lib/types';
+import { parseResultsSummary } from '../lib/types';
 import { EmptyState, ErrorState } from '../components/States';
 import AiNotice from '../components/AiNotice';
 
@@ -18,10 +19,9 @@ function StatSkeleton() {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { status, data, error, reload } = useAsync(async () => {
-    const res = await api.get<ResultsSummaryResponse>('/api/results/summary');
-    return parseResultsSummary(res.data);
-  });
+  const { status, data, error, reload } = useAsync(async () =>
+    parseResultsSummary(await getResultsSummary()),
+  );
 
   const categories = data?.categories ?? [];
   const total = data?.total ?? 0;
@@ -35,8 +35,8 @@ export default function Dashboard() {
           <p className="page-subtitle">기업 분석 시스템 개요</p>
         </div>
         <div className="button-row">
-          {/* Rebuilt server-side from every result folder, with segmentation columns. */}
-          <a className="btn btn-secondary btn-sm" href={apiUrl('/api/export.csv')} download>
+          {/* Every result folder with segmentation columns: rebuilt by Flask, or the snapshot's copy. */}
+          <a className="btn btn-secondary btn-sm" href={exportCsvUrl} download>
             <Download size={16} aria-hidden="true" />
             CSV 내보내기
           </a>
@@ -96,12 +96,14 @@ export default function Dashboard() {
                 title="분석된 기업이 없습니다"
                 hint="필터와 검색·요약을 먼저 실행해 주세요."
               />
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <Link className="btn btn-primary btn-sm" to="/pipeline">
-                  <Play size={16} aria-hidden="true" />
-                  파이프라인 실행으로 이동
-                </Link>
-              </div>
+              {!STATIC_SITE && (
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <Link className="btn btn-primary btn-sm" to="/pipeline">
+                    <Play size={16} aria-hidden="true" />
+                    파이프라인 실행으로 이동
+                  </Link>
+                </div>
+              )}
             </div>
           ) : (
             <div className="dashboard-grid">
