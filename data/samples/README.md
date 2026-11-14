@@ -7,17 +7,19 @@ This directory contains sample CSV files demonstrating different use cases and c
 Try any of these samples with the application:
 
 ```bash
-# Filter a sample file
+# 1. Filter a sample file (a relative --output is written under data/)
 uv run firm-filter --input data/samples/startups.csv --output filtered_startups.csv
 
-# Use with the web interface
-# 1. Copy a sample file to the main directory
-cp data/samples/minimal_example.csv my_firms.csv
+# 2. Search and summarize the filtered firms
+uv run firm-summarize --input filtered_startups.csv --limit 5
 
-# 2. Update config.json to point to your file
-# 3. Run the web app
+# 3. Browse the results in the web app (http://localhost:8001)
 uv run firm-app
 ```
+
+The location filter's column and values come from `filters.location` in
+`config.yml` (start from `config.example.yml`); `--locations` overrides the
+values for one run.
 
 ## Available Samples
 

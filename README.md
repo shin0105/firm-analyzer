@@ -1,102 +1,223 @@
-# Firm Analyzer · 전문연구요원 지정업체 분석 도구
+<div align="center">
 
-A tool for exploring the firms on the Military Manpower Administration's yearly
-전문연구요원 인원배정 list: import the list, filter it by location, search the
-web for each firm, and have an AI summarize and classify what it finds.
+# Firm Analyzer
+
+**전문연구요원 지정업체 분석 도구**
+
+Explore the firms on the Military Manpower Administration's yearly
+전문연구요원 인원배정 list: search the web for each one, and let an AI summarize
+and classify what it finds.
+
+**English** · [한국어](README.ko.md)
+
+[![Live demo](https://img.shields.io/website?url=https%3A%2F%2Ffirm-analyzer.vercel.app&label=live%20demo&up_message=online&down_message=offline)](https://firm-analyzer.vercel.app)
+![Deployed on Vercel](https://img.shields.io/badge/deployed%20on-Vercel-000000?logo=vercel)
+![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776AB?logo=python&logoColor=white)
+![Node.js 22+](https://img.shields.io/badge/node.js-22%2B-339933?logo=node.js&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+**[Open the live demo →](https://firm-analyzer.vercel.app)**
+
+</div>
 
 > [!WARNING]
-> **AI 생성 콘텐츠 · 참고용** — 기업 요약과 분류는 공개 웹 검색 결과를 바탕으로 AI가
-> 자동 생성한 참고 자료입니다. 사실과 다르거나 오래된 정보, 동명의 다른 기업 정보가 섞여
-> 있을 수 있으며 해당 기업의 공식 입장이나 평가가 아닙니다. 중요한 결정 전에는 반드시 기업의
-> 공식 채널과 병무청에서 직접 확인하세요.
->
-> **AI-generated, for reference only** — firm summaries and classifications are
+> **AI-generated, for reference only.** Firm summaries and classifications are
 > written automatically by an AI model from public web search results. They can
 > be wrong, outdated or mix up firms with similar names, and they are not
-> statements by the companies. Verify anything important with official sources.
->
-> See **[DISCLAIMER.md](DISCLAIMER.md)** for the full terms.
+> statements by the companies. Check anything important with the company and
+> the 병무청 (Military Manpower Administration). Full terms:
+> [DISCLAIMER.md](DISCLAIMER.md).
+
+<p align="center">
+  <img src="docs/images/viewer-dashboard.jpg" alt="Dashboard of the live demo: 1,085 analyzed firms split into Finance/Quant, Healthcare/Bio, AI/Machine Learning and General" width="49%">
+  <img src="docs/images/viewer-map.jpg" alt="Map page: firms on the 인원배정 list clustered by region across South Korea" width="49%">
+</p>
+
+## Contents
+
+- [Live demo](#live-demo)
+- [How it works](#how-it-works)
+- [Quick start](#quick-start)
+- [Deploy your own copy](#deploy-your-own-copy)
+- [Updating the 전문연 list](#updating-the-전문연-list)
+- [Running the pipeline](#running-the-pipeline)
+- [Configuration](#configuration)
+- [Reference: commands and API](#reference-commands-and-api)
+- [Data and privacy](#data-and-privacy)
+- [Documentation](#documentation)
+- [Development](#development) · [License](#license)
+
+## Live demo
+
+**<https://firm-analyzer.vercel.app>** is a read-only copy of the viewer, built
+from this repository and hosted on Vercel. Nothing to install, no sign-in.
+
+| | |
+|---|---|
+| **Status** | [![Live demo](https://img.shields.io/website?url=https%3A%2F%2Ffirm-analyzer.vercel.app&label=firm-analyzer.vercel.app&up_message=online&down_message=offline)](https://firm-analyzer.vercel.app) |
+| **Published data** | AI summaries of 1,085 firms (mostly in Seoul), and a map of every firm on the 인원배정 list |
+| **Last deployed** | 2026-11-14 |
+| **How it updates** | By hand: the pipeline runs on the maintainer's machine, then a snapshot is uploaded (see [Deploy your own copy](#deploy-your-own-copy)). Pushing to GitHub does not redeploy it. |
+
+### Using the site
+
+| Page | What you can do |
+|------|-----------------|
+| **대시보드** (`/`) | See how many firms fall into each category. **CSV 내보내기** downloads every summarized firm as one CSV. |
+| **인원배정 지도** (`/firms`) | Browse the whole 인원배정 list on a map, filter by region, or search by name or address. Positions are estimated from addresses, so they are approximate. |
+| **요약 결과 보기** (`/summary`) | Search firm names and summary text, narrow by category, industry sector or technology vertical, then open a firm to read its summary and the sources it was built from. |
+| **이용 안내** (`/about`) | What the AI-written content is, its limits, and how to ask for a correction. |
+
+Searches are kept in the URL, so you can bookmark or share them, e.g.
+[`/summary?q=반도체`](https://firm-analyzer.vercel.app/summary?q=%EB%B0%98%EB%8F%84%EC%B2%B4)
+or [`/summary?category=ai_ml`](https://firm-analyzer.vercel.app/summary?category=ai_ml).
+
+The hosted copy leaves out the pages that change files or spend API quota
+(**전문연 명단 관리**, **파이프라인 실행**, **설정 변경**). Those run only in
+the [local app](#quick-start).
+
+> [!NOTE]
+> If you represent a listed firm and want its summary corrected or removed,
+> open an issue in this repository. The firm is taken out of the next deploy.
 
 ## How it works
 
-```
- 병무청 인원배정 PDF ──► 명단 (data/<year>_전문연구요원_인원배정.csv)
-                              │  firm-roster import / 전문연 명단 관리 page
-                              ▼
-                        filter by location ──► data/filtered_firms.csv
-                              │  firm-filter
-                              ▼
-               web search (Tavily) + AI summary & segmentation
-                              │  firm-summarize
-                              ▼
-                firm_results/<category>/<firm>/summary.md …
-                              │
-                              ▼
-          web UI: dashboard · search · map · CSV export
+```mermaid
+flowchart TD
+    A["병무청 인원배정 PDF"] -->|"firm-roster import<br/>or the 전문연 명단 관리 page"| B["data/{year}_전문연구요원_인원배정.csv"]
+    B -->|"firm-filter (by location)"| C["data/filtered_firms.csv"]
+    C -->|"firm-summarize<br/>Tavily web search + AI summary and segmentation"| D["firm_results/{category}/{firm}/summary.md"]
+    D --> E["Local web app<br/>dashboard · search · map · CSV · pipeline"]
+    D -->|"firm-export-site + vercel deploy"| F["Static read-only site on Vercel"]
 ```
 
-- **Yearly list updates.** Upload the new 인원배정 PDF (or a CSV) and the app
-  extracts every row, checks the row count against the last 연번, shows which
-  firms are new and which dropped off, and switches the pipeline to the new list.
-- **Choose your AI.** OpenAI, Claude, Gemini or GitHub Models; you only need a
+- **Yearly list updates.** Upload the new 인원배정 PDF (or a CSV). The app
+  extracts every row, checks the count against the last 연번, shows which firms
+  are new and which dropped off, and switches the pipeline to the new list.
+- **Choose your AI.** OpenAI, Claude, Gemini or GitHub Models. You only need a
   key for the one you use.
 - **Multi-axis segmentation.** Sector, technology verticals, business model,
   value-chain position and organisation profile, each with a confidence level
-  and an evidence sentence. The taxonomy is data: [`taxonomy.yml`](taxonomy.yml),
-  explained in [docs/segmentation.md](docs/segmentation.md).
+  and an evidence sentence. The taxonomy is plain data in
+  [`taxonomy.yml`](taxonomy.yml), explained in
+  [docs/segmentation.md](docs/segmentation.md).
 - **Traceable output.** Every summary carries the AI-generated notice and lists
   the search results it was built from.
 - **Background jobs.** Filter, summarize and segment run as subprocesses with a
   live log, progress bar and cancel button.
+- **Static publishing.** One command snapshots the read-only viewer so it can
+  be hosted without a server.
 
 ## Quick start
 
-Requirements: Python 3.12+, [uv](https://docs.astral.sh/uv/), and Node.js 22+
-for the web interface.
+You need Python 3.12+, [uv](https://docs.astral.sh/uv/), and Node.js 22+.
 
 ```bash
-uv sync                          # Python dependencies
-cp .env.example .env             # then add your keys (see below)
+git clone https://github.com/<your-username>/firm_websearch.git   # your fork, or this repository
+cd firm_websearch
+uv sync                                     # Python dependencies
+cp .env.example .env                        # then add your keys (below)
 cd frontend && npm ci && npm run build && cd ..
-uv run firm-app                  # http://localhost:8001
+uv run firm-app                             # http://localhost:8001
 ```
 
 The minimum `.env` is a search key and the key for one AI provider:
 
-```
+```dotenv
 TAVILY_API_KEY=...
 LLM_PROVIDER=openai              # openai | claude | gemini | github
 OPENAI_API_KEY=...               # or ANTHROPIC_API_KEY / GEMINI_API_KEY
 ```
 
-`.env.example` documents every variable. `.env` and `config.yml` are
-git-ignored; never commit them.
+Add `KAKAO_JS_API_KEY` to show the map. [`.env.example`](.env.example)
+documents every variable. `.env` and `config.yml` are git-ignored; never commit
+them.
 
-**Developing the frontend:** run `uv run firm-app` in one terminal and
-`npm run dev` in `frontend/` in another, then open http://localhost:5173. The
-dev server forwards `/api` to Flask, so both run on one origin.
+> [!TIP]
+> **Working on the frontend?** Run `uv run firm-app` in one terminal and
+> `npm run dev` in `frontend/` in another, then open <http://localhost:5173>.
+> The dev server forwards `/api` to Flask, so both share one origin.
 
-**Security:** the server binds to `127.0.0.1`. The API has no authentication and
-can start subprocesses that spend your API quota, so only expose it
-(`FLASK_HOST`) on a network you trust.
+> [!CAUTION]
+> The server binds to `127.0.0.1`. The API has no authentication and can start
+> jobs that spend your API quota, so only expose it (`FLASK_HOST`) on a network
+> you trust. To share results publicly, publish the static copy instead.
 
-## Updating the 전문연 list (명단 업데이트)
+## Deploy your own copy
+
+The [live demo](#live-demo) is this codebase deployed as a static site. You can
+publish your own copy, with your own data, the same way. Vercel only serves
+files: every summary is generated on your machine, and no API key except the
+Kakao JavaScript key ever leaves it.
+
+**Before you start:** a [Vercel](https://vercel.com/) account (the free Hobby
+plan is enough), the [Quick start](#quick-start) done, and summaries in
+`firm_results/` from [the pipeline](#running-the-pipeline).
+
+```bash
+# 1. Generate data, if you haven't yet (needs TAVILY_API_KEY + one AI key)
+uv run firm-filter
+uv run firm-summarize --limit 10            # drop --limit for the whole list
+
+# 2. Snapshot the read-only viewer into frontend/static-site/ (git-ignored)
+uv run firm-export-site
+
+# 3. Once: sign in and link the frontend folder to a new Vercel project
+cd frontend
+npx vercel login
+npx vercel link
+npx vercel pull --yes --environment=production
+
+# 4. Each deploy: build on your machine, upload the result
+npx vercel build --prod
+npx vercel deploy --prebuilt --prod
+```
+
+Vercel prints the URL (`https://<project>.vercel.app`). For the map to load
+there, `KAKAO_JS_API_KEY` must be in `.env` when you run `firm-export-site`, and
+that URL must be in your Kakao app's allowed domains. The full guide, including
+previewing locally and removing a firm, is
+**[docs/VERCEL_DEPLOY.md](docs/VERCEL_DEPLOY.md)**
+([한국어](docs/VERCEL_DEPLOY.ko.md)).
+
+> [!IMPORTANT]
+> Deploying makes every summary in your snapshot public. Keep the AI-generated
+> notices, give companies a way to ask for corrections, and remove a firm when
+> asked. See the operator duties in [DISCLAIMER.md](DISCLAIMER.md).
+
+<details>
+<summary><b>Why not "Import Git Repository" or a Deploy button?</b></summary>
+
+`firm_results/` is never committed (it holds AI-written text about real
+companies and scraped web pages), so a build on Vercel's servers would start
+with no data. [`frontend/vercel.json`](frontend/vercel.json) therefore turns off
+deploys from git pushes, and you build locally with `vercel build` and upload
+with `--prebuilt`.
+
+Any other static host works too: `npm run build:static` in `frontend/` writes a
+plain static site to `frontend/dist/`. Serve `index.html` for paths that are not
+files (the same rewrite as `vercel.json`) so that links like `/summary` load.
+
+</details>
+
+## Updating the 전문연 list
 
 Each year the 병무청 publishes a new 「전문연구요원 인원배정 현황」 PDF.
 
 **In the web UI:** open **전문연 명단 관리**, drop the PDF, check the year, and
 press **가져오기**. You get:
 
-- the new list saved as `data/<year>_전문연구요원_인원배정.csv` (the PDF is kept
-  next to it as the source record),
-- a warning if the number of rows does not match the last 연번, which means
-  the table extraction missed or duplicated rows,
-- a comparison with the previous list: firms added, firms removed, and how
-  many stayed, each downloadable as CSV,
-- the new list made the pipeline's input (untick the option to keep the old one).
+- the new list saved as `data/<year>_전문연구요원_인원배정.csv`, with the PDF kept
+  next to it as the source record;
+- a warning if the number of rows does not match the last 연번, which means the
+  table extraction missed or duplicated rows;
+- a comparison with the previous list (firms added, removed, and how many
+  stayed), each downloadable as CSV;
+- the new list set as the pipeline's input (untick the option to keep the old
+  one).
 
-Then run **필터 후 요약** on the 파이프라인 실행 page. Firms that were already
-summarized are skipped, so only the new firms cost API calls.
+Then run **필터 후 요약** on the **파이프라인 실행** page. Firms that were
+already summarized are skipped, so only the new firms cost API calls.
 
 PDF extraction defaults to table recognition (pdfplumber: free, a few seconds).
 For a scanned PDF without a text layer, choose **AI로 추출**, which sends the
@@ -113,18 +234,20 @@ uv run firm-roster import list.csv --year 2027 --overwrite  # a CSV (UTF-8 or CP
 uv run firm-roster import scan.pdf --year 2027 --method llm --provider gemini
 ```
 
-The active list is `data.roster` in `config.yml`; when it is unset, the newest
+The active list is `data.roster` in `config.yml`. When it is unset, the newest
 `<year>_전문연구요원_인원배정.csv` in `data/` is used. Firms are matched across
-years by name, ignoring legal-form markers such as (주)/㈜/주식회사 and spacing.
-A firm whose lab was renamed shows up as one removal and one addition.
+years by name, ignoring legal-form markers such as (주)/㈜/주식회사 and spacing,
+so a firm whose lab was renamed shows up as one removal and one addition.
 
 To refresh the map for the new list, regenerate its data with
-`uv run firm-geocode` (see [docs/GEOCODING.md](docs/GEOCODING.md)).
+`uv run --env-file .env firm-geocode`. The `--env-file` matters: the command
+reads `KAKAO_REST_API_KEY` only from the environment, and without it every firm
+gets approximate regional coordinates. See [docs/GEOCODING.md](docs/GEOCODING.md).
 
 ## Running the pipeline
 
-The **파이프라인 실행** page runs each stage as a background job. From the command
-line:
+The **파이프라인 실행** page runs each stage as a background job. From the
+command line:
 
 ```bash
 uv run firm-filter                                  # active list -> data/filtered_firms.csv
@@ -149,24 +272,9 @@ Each firm gets a folder in `firm_results/<category>/<firm>/`:
 | `raw_search.json` | The search response the summary was built from (scraped page text; keep it private) |
 | `webpage.json` | The firm's official site, when found |
 
-## Publishing the viewer (Vercel)
-
-The dashboard, firm search, summaries, map and CSV can be published as a static,
-read-only site; the pipeline keeps running on your machine.
-
-```bash
-uv run firm-export-site                      # snapshot -> frontend/static-site/ (git-ignored)
-cd frontend
-npx vercel build --prod && npx vercel deploy --prebuilt --prod
-```
-
-Everything in the snapshot becomes public, but it never includes
-`raw_search.json` or any server-side key. First-time setup, Kakao domains and
-removing a firm: [docs/VERCEL_DEPLOY.md](docs/VERCEL_DEPLOY.md).
-
 ## Configuration
 
-Settings live in `config.yml`, editable in the **설정 변경** page or by hand.
+Settings live in `config.yml`, editable on the **설정 변경** page or by hand.
 Start from the template, or let the app use its built-in defaults:
 
 ```bash
@@ -188,7 +296,10 @@ Custom prompts can change what a summary covers, but the content rules in
 sources, stay neutral, no unsupported negative claims, no personal data) are
 always added to the system prompt.
 
-## Commands
+## Reference: commands and API
+
+<details>
+<summary><b>Commands</b> (<code>uv run &lt;command&gt;</code>)</summary>
 
 | Command | Purpose |
 |---------|---------|
@@ -208,7 +319,10 @@ always added to the system prompt.
 Every command also runs as `uv run python scripts/run_<name>.py` from a
 checkout. More detail per engine: [docs/ENGINES_GUIDE.md](docs/ENGINES_GUIDE.md).
 
-## API
+</details>
+
+<details>
+<summary><b>HTTP API</b> (local server only)</summary>
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -235,6 +349,8 @@ checkout. More detail per engine: [docs/ENGINES_GUIDE.md](docs/ENGINES_GUIDE.md)
 One job runs at a time, because every stage writes the same files. Jobs live in
 server memory and stop when the server exits.
 
+</details>
+
 ## Data and privacy
 
 - **Committed:** the public 병무청 인원배정 PDFs and their CSV conversions in
@@ -242,16 +358,29 @@ server memory and stop when the server exits.
   (`firms_data.js`). These are public lists of designated organisations.
 - **Never committed:** `firm_results/` (AI-written text about real companies and
   scraped web pages), `.env`, `config.yml`, caches. They are in `.gitignore`.
+- **Static site:** `firm-export-site` writes summaries, segmentation, the CSV
+  and the map to `frontend/static-site/` (git-ignored). Deploying it publishes
+  them. Scraped pages and every key except the Kakao JavaScript key are never
+  written.
+- **Kakao:** `KAKAO_JS_API_KEY` is sent to the browser, so restrict it to your
+  domains in the Kakao console. `KAKAO_REST_API_KEY` stays on the server.
 - **Supabase:** `firm-supabase-sync` uploads summaries with the AI notice and
   leaves out `raw_search.json` unless you pass `--include-raw-search`. The anon
   key is public by design, so enable Row Level Security before exposing the
   table. See [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md).
-- **Kakao:** `KAKAO_JS_API_KEY` is sent to the browser; restrict it to your
-  domains in the Kakao console. `KAKAO_REST_API_KEY` stays on the server.
-- **Static site:** `firm-export-site` writes summaries, segmentation, the CSV
-  and the map to `frontend/static-site/` (git-ignored) for the Vercel deploy.
-  Deploying it publishes them; scraped pages and keys other than the Kakao
-  JavaScript key are never written.
+
+## Documentation
+
+| Guide | Covers |
+|-------|--------|
+| [Deploying to Vercel](docs/VERCEL_DEPLOY.md) · [한국어](docs/VERCEL_DEPLOY.ko.md) | Publishing the read-only viewer |
+| [Engines guide](docs/ENGINES_GUIDE.md) | Every CLI engine, in English and Korean |
+| [Segmentation method](docs/segmentation.md) | The five classification axes and how firms are told apart |
+| [Firm data format](docs/FIRM_DATA_FORMAT.md) | Using your own CSV of firms |
+| [Geocoding](docs/GEOCODING.md) · [Kakao Maps setup](docs/KOREAN_MAPS_SETUP.md) | Map coordinates and the Kakao keys |
+| [Supabase](docs/SUPABASE_SETUP.md) | Syncing results to a database |
+| [PDF parser](docs/README_PDF_PARSER.md) · [Webpage finder](docs/README_WEBPAGE_FINDER.md) | Standalone tools |
+| [Frontend](frontend/README.md) · [Tests](tests/README.md) | Working on the code |
 
 ## Project layout
 
@@ -259,11 +388,11 @@ server memory and stop when the server exits.
 src/firm_analyzer/
   core/        filter, summarize, roster (명단), segmentation, export, parsers, geocoding
   llm/         one interface over OpenAI, Claude, Gemini and GitHub Models
-  web/         Flask API, job runner, map template and static files
+  web/         Flask API, job runner, static-site export, map template
   notice.py    the AI-generated notice and prompt content rules
-frontend/      React + TypeScript web interface (Vite)
+frontend/      React + TypeScript web interface (Vite), and the Vercel config
 data/          인원배정 lists (PDF + CSV) and samples
-docs/          guides for each engine, the data format, geocoding, Supabase
+docs/          guides for each engine, the data format, geocoding, deployment
 tests/         pytest suite
 taxonomy.yml   the segmentation taxonomy
 ```

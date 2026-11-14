@@ -24,7 +24,7 @@ These columns MUST exist in your CSV file for the application to work properly:
 | Column Name | Description | Example | Notes |
 |------------|-------------|---------|-------|
 | `업체명` | Firm/Company name | `"삼성전자(주)"`, `"Google Korea"` | **Required** - Used for search queries and identification |
-| `소재지` | Location/Address | `"서울특별시 강남구 테헤란로"` | **Required** - Used for filtering and map display |
+| `소재지` | Location/Address | `"서울특별시 강남구 테헤란로"` | **Required** - Used for filtering (and for the map, if the CSV is the active list) |
 
 ### Why These Columns?
 
@@ -36,7 +36,7 @@ These columns MUST exist in your CSV file for the application to work properly:
 
 2. **소재지 (Location)**:
    - Used by location-based filters (e.g., filter firms in Seoul)
-   - Used for geocoding and map display
+   - Used for geocoding and map display, but only for the active list (see the note below)
    - Can contain full or partial addresses
    - Supports both Korean address formats (도로명주소, 지번주소)
 
@@ -99,13 +99,22 @@ San Francisco, CA
 - Nominatim: Works for international addresses
 - Fallback: Uses regional coordinates if geocoding fails
 
+> [!NOTE]
+> The map only shows the **active list**: `firm-geocode` reads the list that
+> `firm-roster list` marks with `*`, never a CSV you pass to `firm-filter --input`.
+> To put your own CSV on the map, save it in `data/`, make it the active list
+> with `uv run firm-roster activate my_companies.csv`, then run `firm-geocode`
+> (see [GEOCODING.md](GEOCODING.md)). The active list is also the filter's
+> default input.
+
 ### Optional Columns
 
 You can add ANY additional columns that are relevant to your use case. The application will:
 - Read all columns from the CSV
 - Preserve them during filtering
 - Make them available in the filtered output
-- Not use them for search/summary unless you customize the configuration
+- Not use them for search or summary: the search query only uses `업체명`
+  (through `search.query_template` in `config.yml`)
 
 ## Sample Use Cases
 
@@ -230,7 +239,7 @@ filters:
 **Filter Column Options**:
 - Use `"소재지"` for location-based filtering
 - Use any other column name for custom filtering
-- Example: `"column": "업종"` to filter by industry type
+- Example: `column: 업종` to filter by industry type
 
 ### Step 4: Run the Application
 
@@ -238,13 +247,15 @@ filters:
 # 1. Place your CSV file in the project directory
 # For example: my_companies.csv
 
-# 2. Filter the firms
+# 2. Filter the firms (a relative --output goes under data/: this writes data/filtered.csv)
 uv run firm-filter --input my_companies.csv --output filtered.csv
 
-# 3. Search and summarize
+# 3. Search and summarize (reads data/filtered.csv)
 uv run firm-summarize --input filtered.csv
 
-# Or use the web interface
+# Or use the web interface. Its pipeline always starts from the active list,
+# so save the CSV in data/ and activate it first:
+uv run firm-roster activate my_companies.csv
 uv run firm-app
 # Open http://localhost:8001
 ```
@@ -253,37 +264,36 @@ uv run firm-app
 
 ### Custom Column Filtering
 
-You can filter on ANY column in your CSV:
+You can filter on ANY column in your CSV (in `config.yml`):
 
-```json
-{
-  "filters": {
-    "location": {
-      "enabled": true,
-      "column": "업종",
-      "type": "contains",
-      "values": ["IT", "소프트웨어"]
-    }
-  }
-}
+```yaml
+filters:
+  location:
+    enabled: true
+    column: 업종
+    type: contains
+    values:
+    - IT
+    - 소프트웨어
 ```
 
 ### Multiple Use Cases
 
-Create different CSV files for different scenarios:
+Create different CSV files for different scenarios. The samples in `data/samples/` are laid out this way:
 
 ```
-data/
+data/samples/
   ├── research_institutions.csv      # Universities and labs
   ├── startups.csv                    # Startup companies
   ├── manufacturing.csv               # Manufacturing firms
-  └── global_tech.csv                 # International tech companies
+  ├── healthcare.csv                  # Hospitals
+  └── international.csv               # International tech companies
 ```
 
-Then run the filter script with different inputs:
+Then run the filter script with different inputs (this writes `data/filtered_startups.csv`):
 
 ```bash
-uv run firm-filter --input data/startups.csv --output filtered_startups.csv
+uv run firm-filter --input data/samples/startups.csv --output filtered_startups.csv
 ```
 
 ## Common Patterns
@@ -346,14 +356,14 @@ The application will still process these firms, but geocoding may be less accura
 - **Filtering**: Unlimited (CSV processing is fast)
 - **Search/Summary**: Limited by API quotas
   - Tavily API: Check your plan limits
-  - GitHub Models: Rate limits apply
+  - Your LLM provider (OpenAI, Claude, Gemini or GitHub Models): rate limits and quotas apply. A spent quota stops the run; already processed firms are skipped on the next run.
   - Recommendation: Process in batches using `--limit` parameter
 
 ### Q: Can I have duplicate firm names?
 
 **A**: Yes, but be aware:
 - Results are organized by sanitized firm name
-- Duplicates will overwrite each other's results
+- Only the first firm with a given name is processed. Once its folder exists in any category, later rows with the same name are skipped as "already processed", in this run and in later runs.
 - Consider adding unique identifiers in the firm name if needed
 
 ### Q: What about non-Korean companies?
@@ -372,12 +382,14 @@ Sample CSV files are provided in the `data/samples/` directory:
 - `standard_example.csv` - Standard format with common optional columns
 - `research_institutions.csv` - Example for research institutions
 - `startups.csv` - Example for startup companies
+- `manufacturing.csv` - Example for manufacturing companies
+- `healthcare.csv` - Example for hospitals
 - `international.csv` - Example with international companies
 
 ## Additional Resources
 
 - [Main README](../README.md) - General application usage
-- [config.yml](../config.yml) - Configuration examples
+- [config.example.yml](../config.example.yml) - Configuration example (copy it to `config.yml` to edit)
 - [filter.py](../src/firm_analyzer/core/filter.py) - Filtering (`firm-filter`)
 - [summarize.py](../src/firm_analyzer/core/summarize.py) - Search and summarize (`firm-summarize`)
 - [PDF Parser Guide](README_PDF_PARSER.md) - Converting PDF to CSV
