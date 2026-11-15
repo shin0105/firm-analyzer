@@ -346,9 +346,9 @@ uv run python scripts/run_app.py
 
 - **Default URL**: http://localhost:8001
 - **Available Views**:
-  - `http://localhost:8001/` - Dashboard / 대시보드
+  - `http://localhost:8001/` - Overview / 개요
   - `http://localhost:8001/rosters` - 전문연 명단 관리 (import, compare, activate)
   - `http://localhost:8001/pipeline` - Pipeline jobs / 파이프라인 실행
-  - `http://localhost:8001/summary` - Summary search and viewer / 요약 결과 보기
+  - `http://localhost:8001/summary` - Summary search and viewer / 업체 요약
   - `http://localhost:8001/config` - Settings / 설정 변경
   - `http://localhost:8001/map` - Interactive map / 대화형 지도

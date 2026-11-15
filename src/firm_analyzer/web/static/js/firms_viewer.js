@@ -4,6 +4,9 @@
 //
 // Every value shown comes from that list, so it is set with textContent,
 // never innerHTML.
+//
+// ?region=<관할청> and ?q=<text> open the page already filtered: the app links
+// here from its 개요 region chart and from each firm's 지도에서 보기.
 
 (function () {
     'use strict';
@@ -25,9 +28,15 @@
         selectedId: null,
     };
 
+    /** Marker dots: ink for every firm, pen blue and larger for the selected one. */
+    const DOT = { fill: '#191f28', size: 14 };
+    const SELECTED_DOT = { fill: '#2340c8', size: 22 };
+
     let map = null;
     let clusterer = null;
     let popup = null;
+    let dotImage = null;
+    let selectedDotImage = null;
     /** firm id -> Kakao marker, for the firms currently shown. */
     let markersById = new Map();
 
@@ -193,31 +202,53 @@
         });
         map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
 
+        dotImage = markerImage(DOT);
+        selectedDotImage = markerImage(SELECTED_DOT);
+
+        // Clusters are ink circles sized by count, the same in both themes:
+        // they sit on Kakao's light tiles either way.
         const base = {
             borderRadius: '50%',
             color: '#fff',
+            background: '#191f28',
             textAlign: 'center',
             fontWeight: '700',
-            border: '2px solid rgba(255, 255, 255, 0.9)',
-            boxShadow: '0 2px 6px rgba(15, 23, 42, 0.35)',
+            fontVariantNumeric: 'tabular-nums',
+            boxShadow: '0 0 0 3px rgba(255, 255, 255, 0.92), 0 2px 6px rgba(25, 31, 40, 0.25)',
         };
+        const size = (px, font) => ({ ...base, width: `${px}px`, height: `${px}px`, lineHeight: `${px}px`, fontSize: `${font}px` });
         clusterer = new kakao.maps.MarkerClusterer({
             map,
             averageCenter: true,
             minLevel: 7,
             calculator: [10, 50, 150],
-            styles: [
-                { ...base, width: '34px', height: '34px', lineHeight: '30px', fontSize: '12px', background: 'rgba(59, 130, 246, 0.92)' },
-                { ...base, width: '42px', height: '42px', lineHeight: '38px', fontSize: '13px', background: 'rgba(79, 70, 229, 0.92)' },
-                { ...base, width: '50px', height: '50px', lineHeight: '46px', fontSize: '14px', background: 'rgba(124, 58, 237, 0.92)' },
-                { ...base, width: '58px', height: '58px', lineHeight: '54px', fontSize: '15px', background: 'rgba(147, 51, 234, 0.95)' },
-            ],
+            styles: [size(32, 12), size(40, 13), size(48, 14), size(56, 15)],
         });
         popup = new kakao.maps.CustomOverlay({ yAnchor: 1, zIndex: 5, clickable: true });
         kakao.maps.event.addListener(map, 'click', closePopup);
 
         // The container may have been laid out while hidden or resized since.
         window.addEventListener('resize', () => map && map.relayout());
+    }
+
+    /** A round dot with a white ring, as an SVG marker image centred on the firm. */
+    function markerImage({ fill, size }) {
+        const r = size / 2;
+        const svg =
+            `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+            `<circle cx="${r}" cy="${r}" r="${r - 1.5}" fill="${fill}" stroke="#fff" stroke-width="3"/></svg>`;
+        return new kakao.maps.MarkerImage(
+            `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+            new kakao.maps.Size(size, size),
+            { offset: new kakao.maps.Point(r, r) },
+        );
+    }
+
+    function setMarkerSelected(id, selected) {
+        const marker = markersById.get(id);
+        if (!marker) return;
+        marker.setImage(selected ? selectedDotImage : dotImage);
+        marker.setZIndex(selected ? 3 : 1);
     }
 
     function renderMarkers(firms, fit) {
@@ -231,7 +262,13 @@
         firms.forEach((firm) => {
             if (!hasCoords(firm)) return;
             const position = new kakao.maps.LatLng(firm.lat, firm.lng);
-            const marker = new kakao.maps.Marker({ position, title: firm.name });
+            const selected = firm.id === state.selectedId;
+            const marker = new kakao.maps.Marker({
+                position,
+                title: firm.name,
+                image: selected ? selectedDotImage : dotImage,
+                zIndex: selected ? 3 : 1,
+            });
             kakao.maps.event.addListener(marker, 'click', () => {
                 selectFirm(firm.id);
                 openPopup(firm);
@@ -301,7 +338,7 @@
         const projection = map.getProjection();
         const point = projection.containerPointFromCoords(position);
         // Measured once Kakao has drawn the card; the fallbacks cover a card not laid out yet.
-        const cardHeight = (card.offsetHeight || 260) + 56; // card + marker + margin
+        const cardHeight = (card.offsetHeight || 260) + 32; // card + dot + margin
         const halfWidth = (card.offsetWidth || 280) / 2 + 16;
 
         let dx = 0;
@@ -316,7 +353,9 @@
     }
 
     function selectFirm(id) {
+        if (state.selectedId && state.selectedId !== id) setMarkerSelected(state.selectedId, false);
         state.selectedId = id;
+        setMarkerSelected(id, true);
         markCurrent();
     }
 
@@ -366,7 +405,17 @@
             clearTimeout(timer);
             initMap();
             renderMarkers(filteredFirms(), true);
+            focusSingleMatch();
         });
+    }
+
+    /** Opened for one firm (?q= from the app): select it and open its card. */
+    function focusSingleMatch() {
+        if (!state.query) return;
+        const firms = filteredFirms();
+        if (firms.length !== 1) return;
+        if (map) focusFirm(firms[0]);
+        else selectFirm(firms[0].id);
     }
 
     // --------------------------------------------------------------- start
@@ -384,6 +433,15 @@
         buildRegionChips();
         buildGuOptions();
 
+        const params = new URLSearchParams(location.search);
+        const region = params.get('region');
+        if (region && state.firms.some((firm) => firm.jurisdiction === region)) selectRegion(region);
+        const query = (params.get('q') || '').trim();
+        if (query) {
+            document.getElementById('search-input').value = query;
+            state.query = query.toLowerCase();
+        }
+
         document.getElementById('gu-select').addEventListener('change', (event) => {
             state.gu = event.target.value;
             update({ fit: true });
@@ -399,6 +457,7 @@
         });
 
         update();
+        if (!window.ENABLE_KAKAO_MAP) focusSingleMatch();
         startMap();
     });
 })();

@@ -63,9 +63,9 @@ from this repository and hosted on Vercel. Nothing to install, no sign-in.
 
 | Page | What you can do |
 |------|-----------------|
-| **대시보드** (`/`) | See how many firms fall into each category. **CSV 내보내기** downloads every summarized firm as one CSV. |
-| **인원배정 지도** (`/firms`) | Browse the whole 인원배정 list on a map, filter by region, or search by name or address. Positions are estimated from addresses, so they are approximate. |
-| **요약 결과 보기** (`/summary`) | Search firm names and summary text, narrow by category, industry sector or technology vertical, then open a firm to read its summary and the sources it was built from. |
+| **개요** (`/`) | See how the summarized firms split across categories and how the 인원배정 list spreads across the regional 병무청 offices. Each row opens that category or region. **CSV 내려받기** downloads every summarized firm as one CSV. |
+| **배정 지도** (`/firms`) | Browse the whole 인원배정 list on a map, filter by region, or search by name or address. Positions are estimated from addresses, so they are approximate. |
+| **업체 요약** (`/summary`) | Search firm names and summary text (press `/` on any page), narrow by category, industry sector or technology vertical, then open a firm to read its summary and the sources it was built from. Search terms are highlighted in the list and the summary. **지도에서 보기** opens the firm on the map. |
 | **이용 안내** (`/about`) | What the AI-written content is, its limits, and how to ask for a correction. |
 
 Searches are kept in the URL, so you can bookmark or share them, e.g.
@@ -74,7 +74,10 @@ or [`/summary?category=ai_ml`](https://firm-analyzer.vercel.app/summary?category
 
 The hosted copy leaves out the pages that change files or spend API quota
 (**전문연 명단 관리**, **파이프라인 실행**, **설정 변경**). Those run only in
-the [local app](#quick-start).
+the [local app](#quick-start), under its **관리** menu.
+
+The site is light by default and follows a dark system setting; the moon/sun
+button in the top bar switches between the two.
 
 > [!NOTE]
 > If you represent a listed firm and want its summary corrected or removed,

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 // The Flask API (`uv run firm-app`). During `npm run dev` these paths are
 // forwarded to it, so the browser only ever talks to one origin. A production
@@ -9,7 +10,7 @@ const backend = process.env.VITE_BACKEND_URL ?? 'http://127.0.0.1:8001';
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   server: {
     proxy: {
       '/api': backend,

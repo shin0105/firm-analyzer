@@ -161,9 +161,9 @@ export default function ConfigPage() {
               style={{ marginTop: '0.75rem' }}
             >
               {selectedProvider.configured ? (
-                <Check size={20} aria-hidden="true" color="var(--success-color)" />
+                <Check size={20} aria-hidden="true" color="var(--color-ok)" />
               ) : (
-                <AlertTriangle size={20} aria-hidden="true" color="var(--danger-color)" />
+                <AlertTriangle size={20} aria-hidden="true" color="var(--color-redpen)" />
               )}
               <div className="alert-body">
                 {selectedProvider.configured ? (
@@ -328,7 +328,7 @@ export default function ConfigPage() {
       <div aria-live="polite" style={{ marginTop: saveState.kind === 'idle' ? 0 : '1.5rem' }}>
         {saveState.kind === 'saved' && (
           <div className="alert alert-success">
-            <Check size={20} aria-hidden="true" color="var(--success-color)" />
+            <Check size={20} aria-hidden="true" color="var(--color-ok)" />
             <div>
               <div className="alert-title">저장되었습니다</div>
               <div className="alert-body">변경한 설정이 적용되었습니다.</div>
@@ -337,7 +337,7 @@ export default function ConfigPage() {
         )}
         {saveState.kind === 'failed' && (
           <div className="alert alert-error">
-            <AlertTriangle size={20} aria-hidden="true" color="var(--danger-color)" />
+            <AlertTriangle size={20} aria-hidden="true" color="var(--color-redpen)" />
             <div>
               <div className="alert-title">저장에 실패했습니다</div>
               <div className="alert-body">{saveState.message}</div>

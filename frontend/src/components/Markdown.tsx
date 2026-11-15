@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
+import Highlight from './Highlight';
 
 /**
  * Minimal Markdown renderer for the summaries the backend writes as
@@ -6,7 +7,8 @@ import { Fragment, type ReactNode } from 'react';
  * model-generated summary text cannot inject markup.
  *
  * Supported: ATX headings, `-`/`*`/`1.` lists, `---` rules, blockquotes,
- * pipe tables, fenced and inline code, bold, italic and links.
+ * pipe tables, fenced and inline code, bold, italic and links. `highlight`
+ * marks a search term wherever it appears in the text.
  */
 
 type Inline = { text: string; key: number };
@@ -20,7 +22,12 @@ function safeHref(href: string): string | null {
   return /^(https?:\/\/|mailto:)/i.test(trimmed) ? trimmed : null;
 }
 
-function renderInline(text: string, keyPrefix: string): ReactNode[] {
+/** Plain text, with the search term `term` (if any) in highlighter. */
+function plain(text: string, key: string, term: string): ReactNode {
+  return term ? <Highlight key={key} text={text} term={term} /> : text;
+}
+
+function renderInline(text: string, keyPrefix: string, term: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   let lastIndex = 0;
   let key = 0;
@@ -30,13 +37,13 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
     const start = match.index ?? 0;
 
     if (start > lastIndex) {
-      nodes.push(text.slice(lastIndex, start));
+      nodes.push(plain(text.slice(lastIndex, start), `${keyPrefix}-t${key}`, term));
     }
     lastIndex = start + token.length;
     const k = `${keyPrefix}-${key++}`;
 
     if (token.startsWith('**') || token.startsWith('__')) {
-      nodes.push(<strong key={k}>{token.slice(2, -2)}</strong>);
+      nodes.push(<strong key={k}>{plain(token.slice(2, -2), `${k}-t`, term)}</strong>);
     } else if (token.startsWith('`')) {
       nodes.push(<code key={k}>{token.slice(1, -1)}</code>);
     } else if (token.startsWith('[')) {
@@ -46,19 +53,19 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
       nodes.push(
         href ? (
           <a key={k} href={href} target="_blank" rel="noopener noreferrer">
-            {label}
+            {plain(label, `${k}-t`, term)}
           </a>
         ) : (
-          <Fragment key={k}>{label}</Fragment>
+          <Fragment key={k}>{plain(label, `${k}-t`, term)}</Fragment>
         ),
       );
     } else {
-      nodes.push(<em key={k}>{token.slice(1, -1)}</em>);
+      nodes.push(<em key={k}>{plain(token.slice(1, -1), `${k}-t`, term)}</em>);
     }
   }
 
   if (lastIndex < text.length) {
-    nodes.push(text.slice(lastIndex));
+    nodes.push(plain(text.slice(lastIndex), `${keyPrefix}-t${key}`, term));
   }
   return nodes;
 }
@@ -81,7 +88,7 @@ function isTableSeparator(line: string | undefined): boolean {
 
 type Table = { header: string[]; rows: string[][] };
 
-function renderTable(table: Table, key: string): ReactNode {
+function renderTable(table: Table, key: string, term: string): ReactNode {
   const width = table.header.length;
   return (
     <div className="table-scroll" key={key}>
@@ -90,7 +97,7 @@ function renderTable(table: Table, key: string): ReactNode {
           <tr>
             {table.header.map((cell, i) => (
               <th key={i} scope="col">
-                {renderInline(cell, `${key}-h${i}`)}
+                {renderInline(cell, `${key}-h${i}`, term)}
               </th>
             ))}
           </tr>
@@ -99,7 +106,7 @@ function renderTable(table: Table, key: string): ReactNode {
           {table.rows.map((row, r) => (
             <tr key={r}>
               {Array.from({ length: width }, (_, c) => (
-                <td key={c}>{renderInline(row[c] ?? '', `${key}-${r}-${c}`)}</td>
+                <td key={c}>{renderInline(row[c] ?? '', `${key}-${r}-${c}`, term)}</td>
               ))}
             </tr>
           ))}
@@ -109,14 +116,15 @@ function renderTable(table: Table, key: string): ReactNode {
   );
 }
 
-function renderList(items: Inline[], ordered: boolean, key: string): ReactNode {
+function renderList(items: Inline[], ordered: boolean, key: string, term: string): ReactNode {
   const children = items.map((item) => (
-    <li key={item.key}>{renderInline(item.text, `${key}-${item.key}`)}</li>
+    <li key={item.key}>{renderInline(item.text, `${key}-${item.key}`, term)}</li>
   ));
   return ordered ? <ol key={key}>{children}</ol> : <ul key={key}>{children}</ul>;
 }
 
-export default function Markdown({ content }: { content: string }) {
+export default function Markdown({ content, highlight = '' }: { content: string; highlight?: string }) {
+  const term = highlight.trim();
   const lines = content.replace(/\r\n/g, '\n').split('\n');
   const blocks: ReactNode[] = [];
 
@@ -124,25 +132,26 @@ export default function Markdown({ content }: { content: string }) {
   let listOrdered = false;
   let paragraph: string[] = [];
   let codeLines: string[] | null = null;
+  let inMarkdownFence = false;
   let table: Table | null = null;
   let separatorIndex = -1;
 
   const flushList = (index: number) => {
     if (listItems.length === 0) return;
-    blocks.push(renderList(listItems, listOrdered, `list-${index}`));
+    blocks.push(renderList(listItems, listOrdered, `list-${index}`, term));
     listItems = [];
   };
 
   const flushParagraph = (index: number) => {
     if (paragraph.length === 0) return;
     const text = paragraph.join(' ');
-    blocks.push(<p key={`p-${index}`}>{renderInline(text, `p-${index}`)}</p>);
+    blocks.push(<p key={`p-${index}`}>{renderInline(text, `p-${index}`, term)}</p>);
     paragraph = [];
   };
 
   const flushTable = (index: number) => {
     if (table === null) return;
-    blocks.push(renderTable(table, `table-${index}`));
+    blocks.push(renderTable(table, `table-${index}`, term));
     table = null;
   };
 
@@ -159,9 +168,20 @@ export default function Markdown({ content }: { content: string }) {
       flushTable(index);
     }
 
-    // Fenced code blocks are passed through verbatim.
-    if (/^\s*```/.test(line)) {
-      if (codeLines === null) {
+    // Fenced code blocks are passed through verbatim, except a ```markdown
+    // fence: some summaries come back wrapped in one, and their content is
+    // the summary itself, so only the fence lines are dropped.
+    const fence = /^\s*```\s*([\w-]*)/.exec(line);
+    if (fence) {
+      if (codeLines === null && inMarkdownFence && !fence[1]) {
+        flushParagraph(index);
+        flushList(index);
+        inMarkdownFence = false;
+      } else if (codeLines === null && /^(markdown|md)$/i.test(fence[1])) {
+        flushParagraph(index);
+        flushList(index);
+        inMarkdownFence = true;
+      } else if (codeLines === null) {
         flushParagraph(index);
         flushList(index);
         codeLines = [];
@@ -200,7 +220,7 @@ export default function Markdown({ content }: { content: string }) {
       flushList(index);
       const level = Math.min(heading[1].length, 3);
       const Tag = `h${level}` as 'h1' | 'h2' | 'h3';
-      blocks.push(<Tag key={`h-${index}`}>{renderInline(heading[2], `h-${index}`)}</Tag>);
+      blocks.push(<Tag key={`h-${index}`}>{renderInline(heading[2], `h-${index}`, term)}</Tag>);
       return;
     }
 
@@ -229,7 +249,7 @@ export default function Markdown({ content }: { content: string }) {
       flushParagraph(index);
       flushList(index);
       blocks.push(
-        <blockquote key={`q-${index}`}>{renderInline(quote[1], `q-${index}`)}</blockquote>,
+        <blockquote key={`q-${index}`}>{renderInline(quote[1], `q-${index}`, term)}</blockquote>,
       );
       return;
     }

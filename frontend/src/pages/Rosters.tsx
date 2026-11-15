@@ -111,7 +111,7 @@ function DiffView({ diff, showNextStep }: { diff: RosterDiff; showNextStep: bool
 
       {showNextStep && counts.added > 0 && (
         <div className="alert" style={{ margin: '1rem 0' }}>
-          <Play size={18} aria-hidden="true" color="var(--accent-color)" />
+          <Play size={18} aria-hidden="true" color="var(--color-pen)" />
           <div className="alert-body">
             새로 추가된 기업만 요약하려면 <Link to="/pipeline">파이프라인 실행</Link>에서 &lsquo;필터 후
             요약&rsquo;을 실행하세요. 이미 요약한 기업은 자동으로 건너뜁니다.
@@ -253,7 +253,7 @@ function ImportCard({ onImported }: { onImported: () => void }) {
         aria-describedby="roster-dropzone-hint"
         disabled={loading}
       >
-        <UploadCloud size={40} color="var(--accent-color)" aria-hidden="true" />
+        <UploadCloud size={40} color="var(--color-pen)" aria-hidden="true" />
         <span style={{ fontWeight: 600 }}>
           {file ? '다른 파일 선택' : 'PDF 또는 CSV를 끌어다 놓거나 클릭해 선택하세요'}
         </span>
@@ -273,7 +273,7 @@ function ImportCard({ onImported }: { onImported: () => void }) {
       <div aria-live="polite">
         {validationError && (
           <div className="alert alert-error" style={{ marginTop: '1rem' }}>
-            <AlertCircle size={20} aria-hidden="true" color="var(--danger-color)" />
+            <AlertCircle size={20} aria-hidden="true" color="var(--color-redpen)" />
             <div className="alert-body">{validationError}</div>
           </div>
         )}
@@ -387,7 +387,7 @@ function ImportCard({ onImported }: { onImported: () => void }) {
       <div aria-live="polite">
         {error && (
           <div className="alert alert-error" style={{ marginTop: '1rem' }}>
-            <AlertCircle size={20} aria-hidden="true" color="var(--danger-color)" />
+            <AlertCircle size={20} aria-hidden="true" color="var(--color-redpen)" />
             <div>
               <strong className="alert-title">가져오지 못했습니다</strong>
               <div className="alert-body">{error}</div>
@@ -397,7 +397,7 @@ function ImportCard({ onImported }: { onImported: () => void }) {
         {result && (
           <div className="import-result">
             <div className="alert alert-success" style={{ marginTop: '1rem' }}>
-              <CheckCircle size={20} aria-hidden="true" color="var(--success-color)" />
+              <CheckCircle size={20} aria-hidden="true" color="var(--color-ok)" />
               <div>
                 <strong className="alert-title">
                   {result.roster.name} · {result.roster.rows.toLocaleString('ko-KR')}개 기업
@@ -411,7 +411,7 @@ function ImportCard({ onImported }: { onImported: () => void }) {
             </div>
             {result.warnings.length > 0 && (
               <div className="alert alert-warning" style={{ marginTop: '0.75rem' }}>
-                <AlertCircle size={20} aria-hidden="true" color="var(--warning-color)" />
+                <AlertCircle size={20} aria-hidden="true" color="var(--color-warn)" />
                 <div>
                   <strong className="alert-title">확인이 필요합니다</strong>
                   <ul className="alert-body">
@@ -566,7 +566,7 @@ export default function Rosters() {
       </div>
 
       <div className="glass-card card-tight active-roster" style={{ marginBottom: '1.5rem' }}>
-        <ListChecks size={22} aria-hidden="true" color="var(--accent-color)" />
+        <ListChecks size={22} aria-hidden="true" color="var(--color-pen)" />
         {rosters.status === 'loading' ? (
           <span className="text-muted">현재 명단을 확인하는 중...</span>
         ) : active ? (

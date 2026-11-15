@@ -178,7 +178,7 @@ function JobProgress({ job }: { job: Job }) {
       >
         <span
           className="stat-bar-fill"
-          style={{ width: `${percent}%`, background: 'var(--accent-color)' }}
+          style={{ width: `${percent}%`, background: 'var(--color-pen)' }}
         />
       </span>
     </div>
