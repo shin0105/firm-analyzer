@@ -25,7 +25,7 @@ Vercel에는 Flask 서버가 없습니다. `firm-export-site`가 API의 응답�
   앱과 그 **JavaScript** 키. `.env`에 `KAKAO_JS_API_KEY`로 넣습니다.
   ([KOREAN_MAPS_SETUP.md](KOREAN_MAPS_SETUP.md)의 REST 키는 지오코딩 전용이며 내 PC에만
   남습니다.)
-- 선택, [자동 배포](#자동-배포)용: `gh auth login`으로 로그인한
+- 데이터 스냅샷을 올릴 `gh auth login`으로 로그인한
   [GitHub CLI](https://cli.github.com/)
 
 ## 공개되는 것
@@ -38,8 +38,9 @@ Vercel에는 Flask 서버가 없습니다. `firm-export-site`가 API의 응답�
 
 절대 포함되지 않는 것: `raw_search.json`(수집한 웹 페이지), `webpage.json`, `.env`,
 `config.yml`, 모든 서버용 키. 이 폴더는 Git에서 제외되며 업로드로만 PC 밖으로 나갑니다.
-Vercel로, 그리고 [자동 배포](#자동-배포)를 쓰면 저장소 `site-data` 릴리스의
-`static-site.tar.gz` 파일로 올라갑니다. 저장소가 공개라면 이 파일도 공개입니다.
+저장소 `site-data` 릴리스의 `static-site.tar.gz` 파일로 올라가 Vercel이 빌드할 때
+내려받고([자동 배포](#자동-배포)), `scripts/publish_site_data.sh`가 올리는 배포에도
+담깁니다. 저장소가 공개라면 이 릴리스 파일도 공개입니다.
 
 > [!IMPORTANT]
 > 실제 기업에 대해 AI가 쓴 글을 공개하는 것입니다. AI 생성 표시를 유지하고, 기업이
@@ -55,45 +56,56 @@ Vercel로, 그리고 [자동 배포](#자동-배포)를 쓰면 저장소 `site-d
    경로 없이 출처(origin)만 입력하세요. 등록하기 전까지 지도 화면에는 지도 대신 기업
    목록과 "지도를 로드할 수 없습니다" 메시지가 표시됩니다. 정확한 URL은 첫 배포 후에
    알 수 있으니 이 단계는 나중에 해도 됩니다.
-2. **frontend 폴더를 Vercel 프로젝트에 연결합니다.**
+2. **저장소로 Vercel 프로젝트를 만듭니다.** Vercel에서 **Add New → Project**로 GitHub
+   저장소를 가져오거나, CLI로 만든 프로젝트라면 **Settings → Git → Connect Git
+   Repository**를 누릅니다. 그다음 **Settings → Build and Deployment**에서:
+   - **Root Directory:** `frontend`. **Include files outside the root directory in
+     the Build Step**은 켜 두세요. 빌드가 지도 화면의 스크립트와 스타일을 `src/`에서
+     가져옵니다.
+   - 나머지는 그대로 둡니다. [`frontend/vercel.json`](../frontend/vercel.json)에
+     프레임워크, 빌드 명령, 출력 폴더, 라우팅, 아래의 빌드 건너뛰기 규칙이 정해져 있습니다.
+     환경 변수는 필요 없습니다.
+
+   프로젝트 이름이 URL이 됩니다. 예를 들어 `firm-analyzer`라는 프로젝트는 이름이 비어
+   있다면 `https://firm-analyzer.vercel.app`으로 제공됩니다.
+3. **저장소 루트에서 Vercel CLI를 연결합니다.** 내 PC에서 데이터를 배포할 때 씁니다. Root
+   Directory가 `frontend`이면 CLI는 루트에서 실행합니다.
 
    ```bash
-   cd frontend
    npx vercel login
    npx vercel link
    npx vercel pull --yes --environment=production
    ```
 
-   `vercel link`가 프로젝트를 만들고 `frontend/.vercel/`(Git 제외)을 생성합니다.
-   [`frontend/vercel.json`](../frontend/vercel.json)에 빌드 명령, 출력 폴더, 라우팅이
-   정해져 있으므로 제안되는 기본값을 그대로 쓰면 됩니다. 프로젝트 이름이 URL이 됩니다.
-   예를 들어 `firm-analyzer`라는 프로젝트는 이름이 비어 있다면
-   `https://firm-analyzer.vercel.app`으로 제공됩니다. Vercel에 환경 변수를 설정할 필요는
-   없습니다.
+   `.vercel/`(Git 제외)이 만들어집니다. 예전에 만든 `frontend/.vercel/`은 지워도 됩니다.
+4. **첫 스냅샷을 올립니다**(`gh auth login` 필요, 최신 `main`에서).
+
+   ```bash
+   uv run firm-export-site
+   scripts/publish_site_data.sh
+   ```
 
 ## 배포할 때마다
 
-새 기업을 요약했거나 `firm_results/`에서 기업 폴더를 지운 뒤에는 데이터를 스냅샷으로
-저장하고 올립니다. [자동 배포](#자동-배포)를 설정했다면 다음 두 줄이면 됩니다.
+- **코드:** `frontend/` 안의 내용을 바꾼 커밋이 `main`에 푸시되면 프로덕션에 배포됩니다.
+  다른 브랜치, 즉 모든 풀 리퀘스트에서는 미리보기 배포가 만들어지고 Vercel이 PR에 링크를
+  남깁니다. `frontend/`를 바꾸지 않은 푸시(Python, 문서, `src/`의 지도 코드)는 빌드하지
+  않습니다. 다음 프론트엔드 배포 때 함께 나가거나, `main`에서
+  `scripts/publish_site_data.sh`를 실행하면 바로 나갑니다.
+- **데이터:** 새 기업을 요약했거나 `firm_results/`에서 기업 폴더를 지운 뒤:
 
-```bash
-uv run firm-export-site
-scripts/publish_site_data.sh     # 스냅샷을 올리고 Deploy 워크플로를 시작
-```
+  ```bash
+  uv run firm-export-site
+  scripts/publish_site_data.sh
+  ```
 
-프론트엔드나 지도 화면의 코드 변경은 명령이 필요 없습니다. `main`에 병합되면 배포됩니다.
-자동 배포 없이 직접 빌드하고 올리려면:
-
-```bash
-uv run firm-export-site
-cd frontend
-npx vercel build --prod
-npx vercel deploy --prebuilt --prod
-```
+  스크립트가 이후 Git 빌드에 쓸 스냅샷을 올리고, 내 PC에서 빌드해 배포합니다. 배포는
+  `origin/main`과 같은 깨끗한 `main`에서만 하므로 프로덕션에는 항상 `main`의 코드가
+  올라갑니다. 다른 상태에서는 업로드만 하고 배포 방법을 알려 줍니다. `--no-deploy`를 붙이면
+  업로드만 합니다. 지도 화면의 템플릿(`src/firm_analyzer/web/templates/`)이나 Kakao 키를
+  바꾼 뒤에도 이렇게 하세요. 그 HTML은 `firm-export-site`가 만듭니다.
 
 `firm-export-site`는 몇 개 기업을 썼는지 출력하고, `KAKAO_JS_API_KEY`가 없으면 경고합니다.
-`vercel build`는 내 PC에서 빌드하고, `--prebuilt`는 그 결과만 업로드합니다. 마지막 명령이
-배포 URL을 출력하며, 프로덕션 URL이 새 배포를 가리키게 됩니다.
 
 먼저 로컬에서 정적 빌드를 확인하려면:
 
@@ -101,61 +113,38 @@ npx vercel deploy --prebuilt --prod
 cd frontend && npm run build:static && npm run preview:static   # http://localhost:4173
 ```
 
-현재 공개 중인 배포는 `frontend/`에서 `npx vercel ls --prod`로 확인할 수 있습니다.
+직접 배포하려면 저장소 루트에서 실행하세요.
+
+```bash
+npx vercel build --prod
+npx vercel deploy --prebuilt --prod
+```
+
+현재 공개 중인 배포는 `npx vercel ls --prod`로 확인할 수 있습니다.
 
 ## 자동 배포
 
-[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml)은 `main`에 푸시될 때
-`frontend/`나 지도 화면의 스크립트·스타일(`src/firm_analyzer/web/static/`)이 바뀌었으면
-프로덕션에 배포합니다. 직접 시작할 수도 있습니다(**Actions → Deploy → Run workflow**, 또는
-`gh workflow run deploy.yml`).
+**빌드가 시작되는 조건.** `frontend/vercel.json`에는 빌드 건너뛰기 명령
+`git diff --quiet "${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}" HEAD -- .`이 있고, Vercel은 Git
+빌드 전에 이를 Root Directory에서 실행합니다. 그 브랜치의 마지막 성공 배포(브랜치의 첫
+배포라면 직전 커밋)와 비교해 `frontend/`에 바뀐 것이 없으면 빌드를 건너뜁니다. 비교할 수
+없으면 빌드합니다. Vercel은 배포 훅에도 이 규칙을 적용하므로, 데이터는 훅 대신 내 PC에서
+배포합니다.
 
-데이터는 Git에 없으므로 워크플로가 내려받습니다. `site-data` 릴리스의
-`static-site.tar.gz`이고, `scripts/publish_site_data.sh`가 최신 `firm-export-site`
-스냅샷으로 바꿔 올립니다. 릴리스 파일은 교체하거나 지울 수 있어 삭제 요청이 모든 곳에
-반영됩니다. 스냅샷을 커밋하면 모든 요약이 Git 기록에 영원히 남습니다. 워크플로는 수동 배포와
-똑같이 Vercel CLI로 빌드하고, 지도 화면의 스크립트·스타일·명단은 배포하는 커밋의 것을
-씁니다.
+**데이터를 가져오는 방법.** Vercel 서버의 빌드는 저장소에서 시작하는데, 데이터는 커밋하지
+않습니다. `firm_results/`와 `frontend/static-site/`에는 실제 기업에 대한 AI 작성 글이
+들어 있어서(둘 중 하나라도 추적되면 CI가 실패합니다) 데이터는 따로 전달됩니다. 저장소
+`site-data` 릴리스의 `static-site.tar.gz`입니다. `scripts/publish_site_data.sh`가 최신
+스냅샷을 묶고, 서버용 키처럼 보이는 것이 있으면 올리지 않으며, 이전 파일을 교체합니다.
+`npm run build:static`의 마지막 단계
+([`frontend/scripts/copy-static-site.mjs`](../frontend/scripts/copy-static-site.mjs))는
+Vercel에 로컬 스냅샷이 없으므로 빌드 중인 저장소(`VERCEL_GIT_REPO_OWNER`,
+`VERCEL_GIT_REPO_SLUG`)에서 이 파일을 내려받아 사이트에 넣고, 지도 화면의
+스크립트·스타일·명단은 커밋에 있는 것을 씁니다. `SITE_DATA_URL`로 다른 주소를 지정할 수
+있습니다. 포크한 저장소는 자체 `site-data` 릴리스가 필요합니다.
 
-### 한 번만 설정하기
-
-1. **Vercel 토큰 만들기**: <https://vercel.com/account/tokens>에서 프로젝트가 속한 팀
-   범위로 만듭니다. 비밀번호처럼 다루세요.
-2. **저장소 시크릿 세 개 추가**(**Settings → Secrets and variables → Actions**), 또는
-   저장소 루트에서 GitHub CLI로:
-
-   ```bash
-   gh secret set VERCEL_TOKEN                     # 물으면 토큰을 붙여 넣기
-   gh secret set VERCEL_ORG_ID --body "$(node -p "require('./frontend/.vercel/project.json').orgId")"
-   gh secret set VERCEL_PROJECT_ID --body "$(node -p "require('./frontend/.vercel/project.json').projectId")"
-   ```
-
-   두 ID는 `vercel link`가 만든 `frontend/.vercel/project.json`에 있습니다.
-3. **첫 스냅샷 올리기**(`gh auth login` 필요):
-
-   ```bash
-   uv run firm-export-site
-   scripts/publish_site_data.sh --no-deploy
-   ```
-
-   워크플로 파일이 `main`에 들어간 뒤에는 `--no-deploy`를 빼세요. 스크립트가 배포까지
-   시작합니다.
-
-시크릿이나 릴리스 파일이 없으면 워크플로가 이유를 알려 주며 실패합니다. 워크플로는
-파이프라인을 실행하지 않고, AI·검색 API 키도 갖지 않습니다.
-
-### 새 스냅샷이 필요한 경우
-
-Kakao JavaScript 키가 들어간 지도 화면의 HTML은 `firm-export-site`가 만듭니다.
-`src/firm_analyzer/web/templates/`나 키를 바꿨다면
-`uv run firm-export-site && scripts/publish_site_data.sh`를 실행하세요.
-
-### Vercel 자체 Git 빌드를 꺼 두는 이유
-
-Vercel 서버에서 빌드하면 저장소에서 시작하는데, 저장소에는 `firm_results/`가 없어 빈
-뷰어가 공개됩니다. 그래서 `vercel.json`은 `git.deploymentEnabled: false`를 유지하고,
-"Deploy with Vercel" 버튼도 제공하지 않습니다. 위 워크플로는 데이터를 더해 GitHub에서
-빌드하고, 직접 배포할 때와 같은 방식으로 결과를 올립니다.
+릴리스 파일은 커밋과 달리 교체하거나 지울 수 있어 삭제 요청이 모든 곳에 반영됩니다. 빌드는
+AI·검색·GitHub 키를 갖지 않고, 파이프라인을 실행하지 않습니다.
 
 `npm run build:static`은 `frontend/dist/`에 일반 정적 사이트를 만들기 때문에 다른 정적
 호스팅(Netlify, Cloudflare Pages, GitHub Pages)도 쓸 수 있습니다. `vercel.json`의
@@ -166,7 +155,7 @@ rewrite를 그대로 옮기세요. `assets/`, `data/`, `map/`, `static/` 밖의 
 
 정정·삭제 요청을 받으면(이용 안내 화면 참고) `firm_results/`에서 해당 기업 폴더를 지우고
 다시 배포하세요(`uv run firm-export-site` 후 `scripts/publish_site_data.sh`, 릴리스 파일도
-함께 교체됩니다). 이전 배포는 각자의 URL로 계속 남아 있으므로, 예전 글을 모든 곳에서
+함께 교체됩니다). 미리보기를 포함한 이전 배포는 각자의 URL로 계속 남아 있으므로, 예전 글을 모든 곳에서
 지우려면 Vercel 대시보드(**Deployments → ⋯ → Delete**)나
 `npx vercel remove <배포-URL>`로 이전 배포도 삭제하세요.
 

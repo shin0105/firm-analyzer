@@ -45,3 +45,6 @@ instance/
 .claude/
 .agents/
 skills-lock.json
+
+# Vercel CLI link (vercel link / vercel pull at the repository root)
+.vercel
