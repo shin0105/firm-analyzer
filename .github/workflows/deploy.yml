@@ -1,0 +1,99 @@
+name: Deploy
+
+# Publishes the read-only viewer to Vercel production when the frontend or the
+# map page changes on main, or when started by hand. scripts/publish_site_data.sh
+# starts it after uploading new data.
+#
+# The data is not in git. `uv run firm-export-site` writes it on the
+# maintainer's machine, and scripts/publish_site_data.sh uploads it as the
+# `static-site.tar.gz` file of the `site-data` release. A release file can be
+# replaced or deleted, so a firm's removal request can be honoured; a commit
+# would keep the text in the history for good.
+#
+# Needs three repository secrets: VERCEL_TOKEN, VERCEL_ORG_ID and
+# VERCEL_PROJECT_ID. See docs/VERCEL_DEPLOY.md, "Automatic deploys".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'src/firm_analyzer/web/static/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+# One production deploy at a time; a newer one waits for the running one.
+concurrency:
+  group: vercel-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Vercel production
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      # The CLI version these steps were checked with.
+      VERCEL_CLI: vercel@59.25.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the Vercel secrets
+        run: |
+          missing=""
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing. See docs/VERCEL_DEPLOY.md, Automatic deploys."
+            exit 1
+          fi
+
+      - name: Download the site data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release download site-data --repo "$GITHUB_REPOSITORY" \
+               --pattern static-site.tar.gz --dir "$RUNNER_TEMP"; then
+            echo "::error::No static-site.tar.gz on the site-data release. Run scripts/publish_site_data.sh first."
+            exit 1
+          fi
+          mkdir -p frontend/static-site
+          tar -xzf "$RUNNER_TEMP/static-site.tar.gz" -C frontend/static-site
+          # The map page's script, styles and roster come from this commit, so a
+          # change to them deploys without a new data upload. Its HTML (with the
+          # Kakao key) stays as firm-export-site rendered it.
+          cp -R src/firm_analyzer/web/static/. frontend/static-site/static/
+          echo "Firms in the snapshot: $(find frontend/static-site/data/firms -name '*.json' | wc -l)"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Pull the Vercel project settings
+        working-directory: frontend
+        run: npx --yes "$VERCEL_CLI" pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      # Type-checks, builds the static site and copies the snapshot into it.
+      - name: Build
+        working-directory: frontend
+        run: npx --yes "$VERCEL_CLI" build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy
+        working-directory: frontend
+        run: npx --yes "$VERCEL_CLI" deploy --prebuilt --prod --token="$VERCEL_TOKEN"

@@ -8,11 +8,22 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
     <link rel="stylesheet" href="{{ url_for(static_endpoint|default('static'), filename='css/firms_viewer.css') }}">
     <script>
-        // Inside the app (?embed=1) the page header is the app's own, so this
-        // page drops its header and frame. Set before first paint: no flash.
-        if (new URLSearchParams(location.search).get('embed') === '1') {
-            document.documentElement.classList.add('embed');
-        }
+        // Set before first paint, so nothing flashes:
+        // ?embed=1  inside the app, whose header replaces this page's own;
+        // ?theme=   the app's light/dark choice, else the saved one, else the system's.
+        (function () {
+            var root = document.documentElement;
+            var params = new URLSearchParams(location.search);
+            if (params.get('embed') === '1') root.classList.add('embed');
+            var theme = params.get('theme');
+            if (theme !== 'light' && theme !== 'dark') {
+                try { theme = localStorage.getItem('firm-analyzer-theme'); } catch (e) { theme = null; }
+            }
+            if (theme !== 'light' && theme !== 'dark') {
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            root.dataset.theme = theme;
+        })();
     </script>
 </head>
 <body{% if not enable_kakao_map %} class="no-map"{% endif %}>

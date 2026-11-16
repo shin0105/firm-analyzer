@@ -24,7 +24,7 @@ export function LoadingState({ message = '불러오는 중...' }: { message?: st
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <div className="state-block" role="alert">
-      <AlertTriangle size={28} color="var(--danger-color)" aria-hidden="true" />
+      <AlertTriangle size={28} color="var(--color-redpen)" aria-hidden="true" />
       <strong>데이터를 불러오지 못했습니다</strong>
       <span>{message}</span>
       {onRetry && (
