@@ -148,7 +148,8 @@ def main():
               file=sys.stderr)
     print("Everything in it will be public once deployed: AI-written summaries about real "
           "companies, with the AI-generated notice.")
-    print("Deploy: cd frontend && npx vercel build --prod && npx vercel deploy --prebuilt --prod")
+    print("Publish: scripts/publish_site_data.sh (uploads the snapshot and deploys it; "
+          "see docs/VERCEL_DEPLOY.md)")
 
 
 if __name__ == "__main__":

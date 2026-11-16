@@ -55,7 +55,7 @@ Vercel에서 호스팅됩니다. 설치나 로그인 없이 바로 사용할 수
 | **상태** | [![Live demo](https://img.shields.io/website?url=https%3A%2F%2Ffirm-analyzer.vercel.app&label=firm-analyzer.vercel.app&up_message=online&down_message=offline)](https://firm-analyzer.vercel.app) |
 | **공개된 데이터** | 기업 1,085곳(대부분 서울 소재)의 AI 요약, 인원배정 명단 전체 기업의 지도 |
 | **마지막 배포** | 2026-11-14 |
-| **업데이트 방식** | `main`에 병합된 코드는 자동으로 배포됩니다. 새 데이터는 관리자 PC에서 만들어 스냅샷으로 올리며, 올리면 배포도 시작됩니다([직접 배포하기](#직접-배포하기) 참고). |
+| **업데이트 방식** | `main`에 병합된 프론트엔드 변경은 자동으로 배포됩니다. 새 데이터는 관리자 PC에서 만들어 스냅샷으로 올리고 그 PC에서 배포합니다([직접 배포하기](#직접-배포하기) 참고). |
 
 ### 사이트 사용법
 
@@ -151,7 +151,7 @@ OPENAI_API_KEY=...               # 또는 ANTHROPIC_API_KEY / GEMINI_API_KEY
 
 **준비물:** [Vercel](https://vercel.com/) 계정(무료 Hobby 플랜으로 충분),
 [빠른 시작](#빠른-시작) 완료, [파이프라인](#파이프라인-실행)으로 만든 `firm_results/`의
-요약.
+요약, 로그인한 [GitHub CLI](https://cli.github.com/)(`gh auth login`).
 
 ```bash
 # 1. 데이터 생성 (아직 안 했다면, TAVILY_API_KEY와 AI 키 하나 필요)
@@ -160,22 +160,27 @@ uv run firm-summarize --limit 10            # 전체를 처리하려면 --limit 
 
 # 2. 읽기 전용 뷰어를 frontend/static-site/에 스냅샷으로 저장 (Git 제외 폴더)
 uv run firm-export-site
-
-# 3. 최초 1회: 로그인 후 frontend 폴더를 새 Vercel 프로젝트에 연결
-cd frontend
-npx vercel login
-npx vercel link
-npx vercel pull --yes --environment=production
-
-# 4. 배포할 때마다: 내 PC에서 빌드하고 결과만 업로드
-npx vercel build --prod
-npx vercel deploy --prebuilt --prod
 ```
 
-GitHub에서 배포하려면 Vercel 토큰과 프로젝트 ID 두 개를 저장소 시크릿으로 한 번만
-추가하세요. 그 뒤로는 `main`에 병합하면 배포되고, 새 데이터는
-`scripts/publish_site_data.sh`로 올립니다. 스냅샷을 릴리스 파일로 올리고 배포까지
-시작합니다. [자동 배포](docs/VERCEL_DEPLOY.ko.md#자동-배포)를 참고하세요.
+3. **최초 1회, Vercel에서:** GitHub 저장소를 프로젝트로 가져오고
+   **Settings → Build and Deployment**에서 **Root Directory**를 `frontend`로 설정합니다.
+   그다음 저장소 루트에서 CLI를 연결합니다.
+
+   ```bash
+   npx vercel login
+   npx vercel link
+   npx vercel pull --yes --environment=production
+   ```
+
+4. **데이터 공개:** 최신 `main`에서 스냅샷을 올리고 배포합니다.
+
+   ```bash
+   scripts/publish_site_data.sh
+   ```
+
+그 뒤로는 `frontend/`를 바꾼 커밋이 `main`에 푸시되면 자동으로 배포되고, 풀 리퀘스트에는
+미리보기 배포가 만들어지며, `frontend/`를 건드리지 않은 푸시는 빌드하지 않습니다. 새
+데이터는 2단계와 4단계로 올립니다.
 
 배포가 끝나면 Vercel이 URL(`https://<프로젝트>.vercel.app`)을 알려 줍니다. 그 주소에서
 지도가 뜨려면 `firm-export-site`를 실행할 때 `.env`에 `KAKAO_JS_API_KEY`가 있어야 하고,
@@ -189,16 +194,18 @@ Kakao 앱의 허용 도메인에 그 URL이 등록되어 있어야 합니다. �
 > [DISCLAIMER.md](DISCLAIMER.md)의 '운영자의 책임'을 참고하세요.
 
 <details>
-<summary><b>왜 "Import Git Repository"나 Deploy 버튼을 쓰지 않나요?</b></summary>
+<summary><b>왜 데이터는 저장소가 아니라 릴리스 파일인가요?</b></summary>
 
-`firm_results/`는 실제 기업에 대한 AI 작성 글과 수집한 웹 페이지를 담고 있어 커밋하지
-않습니다. 그래서 Vercel 서버에서 빌드하면 데이터가 없는 빈 사이트가 됩니다. 이 때문에
-[`frontend/vercel.json`](frontend/vercel.json)에서 Git 푸시 배포를 꺼 두었고, `vercel build`로
-로컬에서 빌드한 뒤 `--prebuilt`로 업로드합니다.
+`firm_results/`와 스냅샷에는 실제 기업에 대한 AI 작성 글(그리고 `firm_results/`에는 수집한
+웹 페이지)이 들어 있어 커밋하지 않습니다. 커밋하면 기업이 삭제를 요청한 뒤에도 모든 요약이
+Git 기록에 남습니다. 대신 `scripts/publish_site_data.sh`가 스냅샷을 `site-data` 릴리스의
+`static-site.tar.gz`로 올려 이전 파일을 교체하고, Vercel 빌드가 이를 내려받습니다
+([자세히](docs/VERCEL_DEPLOY.ko.md#자동-배포)).
 
 다른 정적 호스팅도 쓸 수 있습니다. `frontend/`에서 `npm run build:static`을 실행하면
 `frontend/dist/`에 일반 정적 사이트가 만들어집니다. `/summary` 같은 링크가 열리도록,
-파일이 아닌 경로에는 `index.html`을 돌려주도록 설정하세요(`vercel.json`의 rewrite와 동일).
+파일이 아닌 경로에는 `index.html`을 돌려주도록 설정하세요(`frontend/vercel.json`의
+rewrite와 동일).
 
 </details>
 

@@ -57,7 +57,7 @@ from this repository and hosted on Vercel. Nothing to install, no sign-in.
 | **Status** | [![Live demo](https://img.shields.io/website?url=https%3A%2F%2Ffirm-analyzer.vercel.app&label=firm-analyzer.vercel.app&up_message=online&down_message=offline)](https://firm-analyzer.vercel.app) |
 | **Published data** | AI summaries of 1,085 firms (mostly in Seoul), and a map of every firm on the 인원배정 list |
 | **Last deployed** | 2026-11-14 |
-| **How it updates** | Code merged into `main` deploys automatically. New data is made on the maintainer's machine and uploaded as a snapshot, which also starts a deploy (see [Deploy your own copy](#deploy-your-own-copy)). |
+| **How it updates** | Frontend changes merged into `main` deploy automatically. New data is made on the maintainer's machine, uploaded as a snapshot and deployed from there (see [Deploy your own copy](#deploy-your-own-copy)). |
 
 ### Using the site
 
@@ -154,8 +154,9 @@ files: every summary is generated on your machine, and no API key except the
 Kakao JavaScript key ever leaves it.
 
 **Before you start:** a [Vercel](https://vercel.com/) account (the free Hobby
-plan is enough), the [Quick start](#quick-start) done, and summaries in
-`firm_results/` from [the pipeline](#running-the-pipeline).
+plan is enough), the [Quick start](#quick-start) done, summaries in
+`firm_results/` from [the pipeline](#running-the-pipeline), and the
+[GitHub CLI](https://cli.github.com/) signed in (`gh auth login`).
 
 ```bash
 # 1. Generate data, if you haven't yet (needs TAVILY_API_KEY + one AI key)
@@ -164,23 +165,28 @@ uv run firm-summarize --limit 10            # drop --limit for the whole list
 
 # 2. Snapshot the read-only viewer into frontend/static-site/ (git-ignored)
 uv run firm-export-site
-
-# 3. Once: sign in and link the frontend folder to a new Vercel project
-cd frontend
-npx vercel login
-npx vercel link
-npx vercel pull --yes --environment=production
-
-# 4. Each deploy: build on your machine, upload the result
-npx vercel build --prod
-npx vercel deploy --prebuilt --prod
 ```
 
-To deploy from GitHub instead, add a Vercel token and the project's two ids as
-repository secrets once. After that, merging into `main` deploys, and new data
-goes up with `scripts/publish_site_data.sh`, which uploads the snapshot as a
-release file and starts the deploy. See
-[Automatic deploys](docs/VERCEL_DEPLOY.md#automatic-deploys).
+3. **Once, in Vercel:** import your GitHub repository as a project, and under
+   **Settings → Build and Deployment** set **Root Directory** to `frontend`.
+   Then link the CLI at the repository root:
+
+   ```bash
+   npx vercel login
+   npx vercel link
+   npx vercel pull --yes --environment=production
+   ```
+
+4. **Publish the data:** on an up-to-date `main`, upload the snapshot and
+   deploy it:
+
+   ```bash
+   scripts/publish_site_data.sh
+   ```
+
+From then on, a push to `main` that changes `frontend/` deploys by itself, pull
+requests get preview deployments, and pushes that touch nothing in `frontend/`
+do not build. New data goes out with steps 2 and 4.
 
 Vercel prints the URL (`https://<project>.vercel.app`). For the map to load
 there, `KAKAO_JS_API_KEY` must be in `.env` when you run `firm-export-site`, and
@@ -195,17 +201,19 @@ previewing locally and removing a firm, is
 > asked. See the operator duties in [DISCLAIMER.md](DISCLAIMER.md).
 
 <details>
-<summary><b>Why not "Import Git Repository" or a Deploy button?</b></summary>
+<summary><b>Why is the data a release file and not in the repository?</b></summary>
 
-`firm_results/` is never committed (it holds AI-written text about real
-companies and scraped web pages), so a build on Vercel's servers would start
-with no data. [`frontend/vercel.json`](frontend/vercel.json) therefore turns off
-deploys from git pushes, and you build locally with `vercel build` and upload
-with `--prebuilt`.
+`firm_results/` and the snapshot hold AI-written text about real companies (and
+`firm_results/` also scraped web pages), so they are never committed: a commit
+would keep every summary in the history even after a firm asks to be removed.
+`scripts/publish_site_data.sh` uploads the snapshot as `static-site.tar.gz` on
+the `site-data` release instead, replacing the previous file, and Vercel's build
+downloads it ([details](docs/VERCEL_DEPLOY.md#automatic-deploys)).
 
 Any other static host works too: `npm run build:static` in `frontend/` writes a
 plain static site to `frontend/dist/`. Serve `index.html` for paths that are not
-files (the same rewrite as `vercel.json`) so that links like `/summary` load.
+files (the same rewrite as `frontend/vercel.json`) so that links like `/summary`
+load.
 
 </details>
 
