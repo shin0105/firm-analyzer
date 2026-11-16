@@ -55,7 +55,7 @@ Vercel에서 호스팅됩니다. 설치나 로그인 없이 바로 사용할 수
 | **상태** | [![Live demo](https://img.shields.io/website?url=https%3A%2F%2Ffirm-analyzer.vercel.app&label=firm-analyzer.vercel.app&up_message=online&down_message=offline)](https://firm-analyzer.vercel.app) |
 | **공개된 데이터** | 기업 1,085곳(대부분 서울 소재)의 AI 요약, 인원배정 명단 전체 기업의 지도 |
 | **마지막 배포** | 2026-11-14 |
-| **업데이트 방식** | 수동 배포: 관리자 PC에서 파이프라인을 실행한 뒤 스냅샷을 업로드합니다([직접 배포하기](#직접-배포하기) 참고). GitHub에 푸시해도 다시 배포되지 않습니다. |
+| **업데이트 방식** | `main`에 병합된 코드는 자동으로 배포됩니다. 새 데이터는 관리자 PC에서 만들어 스냅샷으로 올리며, 올리면 배포도 시작됩니다([직접 배포하기](#직접-배포하기) 참고). |
 
 ### 사이트 사용법
 
@@ -171,6 +171,11 @@ npx vercel pull --yes --environment=production
 npx vercel build --prod
 npx vercel deploy --prebuilt --prod
 ```
+
+GitHub에서 배포하려면 Vercel 토큰과 프로젝트 ID 두 개를 저장소 시크릿으로 한 번만
+추가하세요. 그 뒤로는 `main`에 병합하면 배포되고, 새 데이터는
+`scripts/publish_site_data.sh`로 올립니다. 스냅샷을 릴리스 파일로 올리고 배포까지
+시작합니다. [자동 배포](docs/VERCEL_DEPLOY.ko.md#자동-배포)를 참고하세요.
 
 배포가 끝나면 Vercel이 URL(`https://<프로젝트>.vercel.app`)을 알려 줍니다. 그 주소에서
 지도가 뜨려면 `firm-export-site`를 실행할 때 `.env`에 `KAKAO_JS_API_KEY`가 있어야 하고,

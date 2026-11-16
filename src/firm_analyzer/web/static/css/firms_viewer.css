@@ -64,6 +64,9 @@ body {
     background: var(--page);
     color: var(--ink);
     line-height: 1.5;
+    /* Korean wraps between words, not inside them; an over-long word may still break. */
+    word-break: keep-all;
+    overflow-wrap: break-word;
     -webkit-font-smoothing: antialiased;
 }
 

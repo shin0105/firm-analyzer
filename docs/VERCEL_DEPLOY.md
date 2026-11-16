@@ -25,6 +25,8 @@ as files, and the frontend's static build searches them in the browser.
   **JavaScript** key, set as `KAKAO_JS_API_KEY` in `.env`. (The REST key in
   [KOREAN_MAPS_SETUP.md](KOREAN_MAPS_SETUP.md) is only for geocoding and stays
   on your machine.)
+- Optional, for [automatic deploys](#automatic-deploys): the
+  [GitHub CLI](https://cli.github.com/), signed in with `gh auth login`.
 
 ## What becomes public
 
@@ -35,8 +37,10 @@ Everything in `frontend/static-site/`, which `firm-export-site` writes:
 - the map page and its data (the public 병무청 list), with your Kakao **JavaScript** key.
 
 Never included: `raw_search.json` (scraped pages), `webpage.json`, `.env`,
-`config.yml` and every server-side key. The folder is git-ignored and is uploaded
-from your machine only.
+`config.yml` and every server-side key. The folder is git-ignored and leaves
+your machine only by upload: to Vercel, and, with [automatic deploys](#automatic-deploys),
+as the `static-site.tar.gz` file of the repository's `site-data` release, which
+is public when the repository is.
 
 > [!IMPORTANT]
 > You are publishing AI-written text about real companies. Keep the notices,
@@ -72,7 +76,17 @@ from your machine only.
 
 ## Each deploy
 
-After summarizing new firms, or deleting a firm's folder from `firm_results/`:
+After summarizing new firms, or deleting a firm's folder from `firm_results/`,
+snapshot the data and publish it. With [automatic deploys](#automatic-deploys)
+set up, that is:
+
+```bash
+uv run firm-export-site
+scripts/publish_site_data.sh     # uploads the snapshot and starts the Deploy workflow
+```
+
+Changes to the frontend or the map page need no command at all: merging them
+into `main` deploys them. Without automatic deploys, build and upload by hand:
 
 ```bash
 uv run firm-export-site
@@ -94,13 +108,62 @@ cd frontend && npm run build:static && npm run preview:static   # http://localho
 
 To see what is live, run `npx vercel ls --prod` in `frontend/`.
 
-## Why deploys don't come from git
+## Automatic deploys
 
-A build on Vercel's servers would start from the GitHub repository, which has no
+[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) deploys to
+production on every push to `main` that touches `frontend/` or the map page's
+script and styles (`src/firm_analyzer/web/static/`), and whenever it is started
+by hand (**Actions → Deploy → Run workflow**, or `gh workflow run deploy.yml`).
+
+The data is not in git, so the workflow downloads it: `static-site.tar.gz` on
+the `site-data` release, which `scripts/publish_site_data.sh` replaces with your
+latest `firm-export-site` snapshot. A release file can be replaced or deleted,
+so a removal request takes effect everywhere; a committed snapshot would keep
+every summary in the history for good. The workflow then builds with the Vercel
+CLI exactly as the manual steps do, using the map page's script, styles and
+roster from the commit being deployed.
+
+### Set it up once
+
+1. **Create a Vercel token** at <https://vercel.com/account/tokens> (scope: the
+   team that owns the project). Treat it like a password.
+2. **Add three repository secrets** (**Settings → Secrets and variables →
+   Actions**), or with the GitHub CLI from the repository root:
+
+   ```bash
+   gh secret set VERCEL_TOKEN                     # paste the token when asked
+   gh secret set VERCEL_ORG_ID --body "$(node -p "require('./frontend/.vercel/project.json').orgId")"
+   gh secret set VERCEL_PROJECT_ID --body "$(node -p "require('./frontend/.vercel/project.json').projectId")"
+   ```
+
+   The two ids come from `frontend/.vercel/project.json`, which `vercel link`
+   wrote.
+3. **Upload the first snapshot** (needs `gh auth login`):
+
+   ```bash
+   uv run firm-export-site
+   scripts/publish_site_data.sh --no-deploy
+   ```
+
+   Leave out `--no-deploy` once the workflow file is on `main`; the script then
+   starts a deploy itself.
+
+The workflow fails with a clear message if a secret or the release file is
+missing. It never runs the pipeline and holds no AI or search keys.
+
+### What still needs a new snapshot
+
+The map page's HTML, with your Kakao JavaScript key, is rendered by
+`firm-export-site`. After changing `src/firm_analyzer/web/templates/` or the
+key, run `uv run firm-export-site && scripts/publish_site_data.sh`.
+
+### Why Vercel's own git builds stay off
+
+A build on Vercel's servers starts from the repository, which has no
 `firm_results/`, so it would publish an empty viewer. That is why `vercel.json`
-turns off deploys from git pushes (`git.deploymentEnabled: false`) and why
-there is no "Deploy with Vercel" button: you build locally and upload the
-result.
+keeps `git.deploymentEnabled: false` and why there is no "Deploy with Vercel"
+button. The workflow above builds on GitHub with the data added, and uploads the
+result the same way you would.
 
 `npm run build:static` writes an ordinary static site to `frontend/dist/`, so
 another static host (Netlify, Cloudflare Pages, GitHub Pages) works too. Copy the
@@ -110,8 +173,9 @@ should serve `index.html`.
 ## Removing a firm
 
 For a correction or removal request (see the 이용 안내 page), delete the firm's
-folder from `firm_results/` and deploy again. Earlier deployments keep their own
-URLs, so to remove the old text everywhere, delete those deployments in the
+folder from `firm_results/` and deploy again (`uv run firm-export-site`, then
+`scripts/publish_site_data.sh`, which also replaces the release file). Earlier
+deployments keep their own URLs, so to remove the old text everywhere, delete those deployments in the
 Vercel dashboard (**Deployments → ⋯ → Delete**) or with
 `npx vercel remove <deployment-url>`.
 

@@ -107,6 +107,10 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     line-height: 1.6;
+    /* Korean wraps between words, not inside them ("이용 안내", never "이용 안 / 내").
+       A single word too long for its line (a URL) may still break. */
+    word-break: keep-all;
+    overflow-wrap: break-word;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

@@ -57,7 +57,7 @@ from this repository and hosted on Vercel. Nothing to install, no sign-in.
 | **Status** | [![Live demo](https://img.shields.io/website?url=https%3A%2F%2Ffirm-analyzer.vercel.app&label=firm-analyzer.vercel.app&up_message=online&down_message=offline)](https://firm-analyzer.vercel.app) |
 | **Published data** | AI summaries of 1,085 firms (mostly in Seoul), and a map of every firm on the 인원배정 list |
 | **Last deployed** | 2026-11-14 |
-| **How it updates** | By hand: the pipeline runs on the maintainer's machine, then a snapshot is uploaded (see [Deploy your own copy](#deploy-your-own-copy)). Pushing to GitHub does not redeploy it. |
+| **How it updates** | Code merged into `main` deploys automatically. New data is made on the maintainer's machine and uploaded as a snapshot, which also starts a deploy (see [Deploy your own copy](#deploy-your-own-copy)). |
 
 ### Using the site
 
@@ -175,6 +175,12 @@ npx vercel pull --yes --environment=production
 npx vercel build --prod
 npx vercel deploy --prebuilt --prod
 ```
+
+To deploy from GitHub instead, add a Vercel token and the project's two ids as
+repository secrets once. After that, merging into `main` deploys, and new data
+goes up with `scripts/publish_site_data.sh`, which uploads the snapshot as a
+release file and starts the deploy. See
+[Automatic deploys](docs/VERCEL_DEPLOY.md#automatic-deploys).
 
 Vercel prints the URL (`https://<project>.vercel.app`). For the map to load
 there, `KAKAO_JS_API_KEY` must be in `.env` when you run `firm-export-site`, and
